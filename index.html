@@ -80,6 +80,7 @@ renderMoves();status();
 function pieceName(t){return ({p:'пешка',n:'конь',b:'слон',r:'ладья',q:'ферзь',k:'король'})[t]||t;}
 function clickSquare(sq){
 if(game.game_over())return;
+if(clockBase&&!clockRunning)startClock();
 const p=game.get(sq);
 if(selected&&legal.some(m=>m.to===sq)){
 const move=legal.find(m=>m.to===sq);
@@ -121,7 +122,8 @@ $('install').addEventListener('click',async()=>{if(!installPrompt)return;install
 if('serviceWorker'in navigator && location.protocol.startsWith('http'))window.addEventListener('load',()=>navigator.serviceWorker.register('./sw.js').catch(()=>{}));
 $('clockPreset').addEventListener('change',()=>{clockBase=Number($('clockPreset').value)||0;remaining={w:clockBase,b:clockBase};clockRunning=false;if(timerHandle)clearInterval(timerHandle);render();saveGame();announce(clockBase?'Контроль времени изменён. Часы начнутся с первого хода.':'Игра без часов.');});
 ['whitePlayerName','blackPlayerName'].forEach(id=>$(id).addEventListener('input',()=>{status();saveGame();}));
-restoreGame();render();paintClocks();
+restoreGame();render();if(clockBase&&game.history().length&&!game.game_over())startClock();else paintClocks();
+window.addEventListener('pagehide',()=>{if(clockRunning)tickClock();saveGame();});
 })();
 </script>
 </body>
