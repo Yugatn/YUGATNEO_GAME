@@ -1,0 +1,119 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#101310">
+<meta name="description" content="YUGATNEO CHESS — шахматы для двух игроков на одном устройстве.">
+<link rel="manifest" href="./manifest.json">
+<title>YUGATNEO CHESS</title>
+<style>
+:root{color-scheme:dark;--bg:#101310;--panel:#1b201b;--line:#30382f;--muted:#a5afa2;--light:#e5e7d8;--dark:#657b68;--accent:#d3f36b;--danger:#f08a7e}
+*{box-sizing:border-box}body{margin:0;background:radial-gradient(ellipse at top,#202a20 0,#101310 55%);color:#f1f3e9;font:16px/1.45 system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;min-height:100vh}
+button{font:inherit;cursor:pointer;border:1px solid var(--line);border-radius:12px;padding:10px 13px;background:#242b23;color:#f1f3e9;transition:background .15s,border-color .15s}button:hover{border-color:#718568;background:#303a2d}button:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.app{max-width:1120px;margin:auto;padding:clamp(14px,3vw,30px)}header{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:22px}.brand{display:flex;align-items:center;gap:12px}.mark{width:44px;height:44px;border-radius:14px;background:var(--accent);color:#172012;display:grid;place-items:center;font-size:25px;font-weight:900}.eyebrow{font-size:11px;letter-spacing:.2em;color:var(--accent);font-weight:800}.brand h1{font-size:19px;letter-spacing:.06em;margin:1px 0}.tagline{font-size:12px;color:var(--muted)}.layout{display:grid;grid-template-columns:minmax(0,1.2fr) minmax(270px,.8fr);gap:24px;align-items:start}.board-wrap{width:100%;max-width:680px;margin:auto}.player{display:flex;align-items:center;gap:10px;padding:11px 13px;margin:0 0 10px;background:#1b211a;border:1px solid var(--line);border-radius:14px}.player.bottom{margin:10px 0 0}.avatar{height:35px;width:35px;border-radius:10px;display:grid;place-items:center;font-size:21px;background:#30382f}.player.active{border-color:var(--accent);box-shadow:0 0 0 1px #d3f36b24}.player-info{flex:1;min-width:0}.player-name{font-weight:750;font-size:14px}.player-sub{color:var(--muted);font-size:12px}.turn-dot{height:8px;width:8px;border-radius:50%;background:var(--accent);opacity:0}.active .turn-dot{opacity:1}.board{display:grid;grid-template-columns:repeat(8,minmax(0,1fr));width:100%;aspect-ratio:1;border:5px solid #252d24;border-radius:7px;overflow:hidden;box-shadow:0 18px 45px #0006;touch-action:manipulation}.square{position:relative;display:grid;place-items:center;min-width:0;min-height:0;border:0;border-radius:0;padding:0;color:#101310}.square.light{background:var(--light)}.square.dark{background:var(--dark)}.square.selected{background:#d3f36b!important}.square.last:before{content:"";position:absolute;inset:0;background:#d3f36b55;pointer-events:none}.square.legal:after{content:"";position:absolute;width:23%;height:23%;border-radius:50%;background:#14221466;z-index:1}.square.capture:after{content:"";position:absolute;inset:4%;border:4px solid #18261899;border-radius:50%;z-index:1}.piece{position:relative;z-index:2;font-family:"DejaVu Sans","Arial Unicode MS",serif;font-size:clamp(25px,5.8vw,58px);line-height:1;user-select:none;filter:drop-shadow(0 2px 1px #0002)}.piece.white{color:#fffdf0;text-shadow:0 1px 1px #273026,1px 0 #273026,-1px 0 #273026,0 -1px #273026,0 3px 2px #0005}.piece.black{color:#172019;text-shadow:0 1px #a9b7a4,1px 0 #a9b7a4,-1px 0 #a9b7a4,0 -1px #a9b7a4,0 3px 2px #0004}.coord{position:absolute;left:3px;top:1px;font-size:clamp(8px,1.5vw,11px);font-weight:800;opacity:.72;z-index:3}.light .coord{color:#526953}.dark .coord{color:#f0f2e6}.board-note{display:flex;justify-content:space-between;gap:10px;color:var(--muted);font-size:12px;margin-top:12px}.side{display:flex;flex-direction:column;gap:14px}.card{background:#1a201a;border:1px solid var(--line);border-radius:18px;padding:18px}.card h2{font-size:15px;margin:0 0 14px}.status-row{display:flex;align-items:center;gap:10px;margin-bottom:8px}.status-icon{display:grid;place-items:center;width:36px;height:36px;border-radius:12px;background:#2b3528;color:var(--accent);font-size:19px}.status-title{font-weight:800}.status-desc{font-size:12px;color:var(--muted)}.status-banner{border-radius:10px;background:#252d23;padding:11px 12px;font-size:13px;margin:14px 0}.actions{display:grid;grid-template-columns:1fr 1fr;gap:8px}.actions .primary{background:var(--accent);color:#172012;border-color:var(--accent);font-weight:800}.actions .wide{grid-column:1/-1}.moves{min-height:85px;max-height:270px;overflow:auto;display:flex;flex-direction:column;gap:5px}.empty{font-size:13px;color:var(--muted);padding:12px 0}.move-row{display:grid;grid-template-columns:32px 1fr 1fr;gap:8px;padding:6px 8px;border-radius:8px;font-size:13px}.move-row:nth-child(even){background:#242b23}.move-number{color:var(--muted)}.move-san{font-weight:700}.move-san.latest{color:var(--accent)}.hint{color:var(--muted);font-size:12px;margin:13px 0 0}.footer{text-align:center;color:#788274;font-size:11px;padding:24px 0 4px}.modal{position:fixed;inset:0;background:#0009;display:none;place-items:center;padding:20px;z-index:20}.modal.open{display:grid}.modal-card{background:#1b211a;border:1px solid #4b5847;border-radius:18px;padding:20px;max-width:330px;width:100%}.modal-card h2{font-size:17px;margin:0 0 8px}.modal-card p{color:var(--muted);font-size:13px}.promos{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}.promos button{font-size:32px;padding:10px}.toast{font-size:12px;color:var(--muted);min-height:18px;margin-top:9px}
+@media(max-width:760px){.layout{grid-template-columns:1fr;gap:16px}.board-wrap{max-width: min(100%,620px)}.side{display:grid;grid-template-columns:1fr}.card{padding:15px}.piece{font-size:clamp(27px,9vw,55px)}header{margin-bottom:15px}.tagline{display:none}}
+@media(min-width:761px){.side{position:sticky;top:18px}}
+</style>
+</head>
+<body>
+<div class="app">
+<header><div class="brand"><div class="mark">♞</div><div><div class="eyebrow">YUGATNEO · GAMES</div><h1>CHESS</h1><div class="tagline">Думай. Предугадывай. Играй вместе.</div></div></div><button id="flipTop" aria-label="Перевернуть доску">⇅ Доска</button></header>
+<main class="layout">
+<section class="board-wrap" aria-label="Шахматная доска">
+<div id="topPlayer" class="player"><div class="avatar">♚</div><div class="player-info"><div class="player-name" id="topName">Чёрные</div><div class="player-sub" id="topSub">Игрок 2</div></div><span class="turn-dot"></span></div>
+<div id="board" class="board" role="grid" aria-label="Шахматная доска"></div>
+<div id="bottomPlayer" class="player bottom active"><div class="avatar">♔</div><div class="player-info"><div class="player-name" id="bottomName">Белые</div><div class="player-sub" id="bottomSub">Игрок 1</div></div><span class="turn-dot"></span></div>
+<div class="board-note"><span>Нажми на фигуру, затем на клетку</span><span id="moveCount">Ход 1</span></div>
+</section>
+<aside class="side">
+<section class="card"><h2>Партия</h2><div class="status-row"><div class="status-icon" id="statusIcon">♙</div><div><div class="status-title" id="statusTitle">Ход белых</div><div class="status-desc" id="statusDesc">Партия началась</div></div></div><div class="status-banner" id="statusBanner" aria-live="polite">Белые начинают. Удачной игры!</div><div class="actions"><button class="primary" id="newGame">＋ Новая партия</button><button id="undo">↶ Отменить ход</button><button id="flip">⇅ Перевернуть доску</button><button id="copyPgn">⧉ Скопировать PGN</button><button id="install" class="wide" hidden>＋ Установить мини-апп</button></div><div class="toast" id="toast" aria-live="polite"></div></section>
+<section class="card"><h2>История ходов</h2><div class="moves" id="moves"><div class="empty">Ходы появятся здесь после первого хода.</div></div><p class="hint">Локальная игра для двух игроков на одном устройстве. Передайте устройство сопернику после своего хода.</p></section>
+</aside>
+</main><footer class="footer">YUGATNEO CHESS · ЛОКАЛЬНАЯ ИГРА ДЛЯ ДВУХ ИГРОКОВ</footer>
+</div>
+<div class="modal" id="promotion" role="dialog" aria-modal="true" aria-labelledby="promotionTitle"><div class="modal-card"><h2 id="promotionTitle">Превращение пешки</h2><p>Выбери фигуру для превращения.</p><div class="promos" id="promos"></div></div></div>
+<div class="modal" id="confirmNew" role="dialog" aria-modal="true" aria-labelledby="confirmTitle"><div class="modal-card"><h2 id="confirmTitle">Начать новую партию?</h2><p>Текущая история ходов будет очищена.</p><div class="actions"><button class="primary" id="confirmYes">Начать</button><button id="confirmNo">Продолжить партию</button></div></div></div>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/chess.js/0.10.3/chess.min.js"></script>
+<script>
+(function(){
+'use strict';
+const $=id=>document.getElementById(id);
+if(typeof Chess==='undefined'){ $('statusTitle').textContent='Не удалось загрузить движок';$('statusBanner').textContent='Проверь подключение к интернету и обнови страницу.';return;}
+let game=new Chess(),selected=null,legal=[],flipped=false,lastMove=null,pendingPromotion=null,installPrompt=null;
+const symbols={wk:'♔',wq:'♕',wr:'♖',wb:'♗',wn:'♘',wp:'♙',bk:'♚',bq:'♛',br:'♜',bb:'♝',bn:'♞',bp:'♟'};
+const files='abcdefgh';
+function announce(msg){$('toast').textContent=msg;}
+function status(){
+const over=game.game_over(),check=game.in_check(),turn=game.turn();
+let title,desc,icon,banner;
+if(game.in_checkmate()){title='Мат';desc='Партия окончена';icon='♛';banner=(turn==='w'?'Чёрные':'Белые')+' победили матом!';}
+else if(game.in_stalemate()){title='Пат';desc='Ничья';icon='½';banner='Пат — у короля нет легальных ходов.';}
+else if(game.in_threefold_repetition()){title='Ничья';desc='Троекратное повторение';icon='½';banner='Позиция повторилась трижды.';}
+else if(game.insufficient_material()){title='Ничья';desc='Недостаточно материала';icon='½';banner='Недостаточно материала для мата.';}
+else if(game.in_draw()){title='Ничья';desc='Правило 50 ходов или ничья';icon='½';banner='Партия завершилась вничью.';}
+else{title='Ход '+(turn==='w'?'белых':'чёрных');desc=check?'Король под шахом':'Ход '+(Math.floor(game.history().length/2)+1);icon=check?'⚠':(turn==='w'?'♙':'♟');banner=check?'Шах! Король под атакой.':(turn==='w'?'Ход белых.':'Ход чёрных.');}
+$('statusTitle').textContent=title;$('statusDesc').textContent=desc;$('statusIcon').textContent=icon;$('statusBanner').textContent=banner;$('moveCount').textContent='Ход '+(Math.floor(game.history().length/2)+1);
+$('topPlayer').classList.toggle('active',turn==='b'&&!over);$('bottomPlayer').classList.toggle('active',turn==='w'&&!over);
+}
+function render(){
+const board=$('board');board.innerHTML='';
+for(let r=0;r<8;r++)for(let c=0;c<8;c++){
+const file=flipped?7-c:c,rank=flipped?r+1:8-r,sq=files[file]+rank,p=game.get(sq),el=document.createElement('button');
+el.type='button';el.className='square '+(((file+rank)%2===0)?'light':'dark');el.setAttribute('role','gridcell');el.setAttribute('aria-label',sq+(p?', '+(p.color==='w'?'белая ':'чёрная ')+pieceName(p.type):''));
+if(selected===sq)el.classList.add('selected');
+if(lastMove&&(lastMove.from===sq||lastMove.to===sq))el.classList.add('last');
+const move=legal.find(m=>m.to===sq);if(move)el.classList.add(p?'capture':'legal');
+if(p){const span=document.createElement('span');span.className='piece '+(p.color==='w'?'white':'black');span.textContent=symbols[p.color+p.type];el.appendChild(span);}
+if((!flipped&&file===0)||(flipped&&file===7)){const co=document.createElement('span');co.className='coord';co.textContent=rank;el.appendChild(co);}
+if((!flipped&&rank===1)||(flipped&&rank===8)){const co=document.createElement('span');co.className='coord';co.style.left='auto';co.style.right='3px';co.style.top='auto';co.style.bottom='1px';co.textContent=files[file];el.appendChild(co);}
+el.addEventListener('click',()=>clickSquare(sq));board.appendChild(el);
+}
+renderMoves();status();
+}
+function pieceName(t){return ({p:'пешка',n:'конь',b:'слон',r:'ладья',q:'ферзь',k:'король'})[t]||t;}
+function clickSquare(sq){
+if(game.game_over())return;
+const p=game.get(sq);
+if(selected&&legal.some(m=>m.to===sq)){
+const move=legal.find(m=>m.to===sq);
+if(move.flags.indexOf('p')!==-1){pendingPromotion={from:selected,to:sq};showPromotion();return;}
+makeMove(selected,sq);return;
+}
+if(p&&p.color===game.turn()){selected=sq;legal=game.moves({square:sq,verbose:true});}
+else{selected=null;legal=[];}
+render();
+}
+function makeMove(from,to,promotion){
+const result=game.move({from:from,to:to,promotion:promotion||'q'});
+if(result){lastMove={from:result.from,to:result.to};selected=null;legal=[];pendingPromotion=null;$('promotion').classList.remove('open');render();announce('Ход: '+result.san);}
+else{announce('Недопустимый ход.');}
+}
+function showPromotion(){
+const color=game.turn(),items=[['q','Ферзь'],['r','Ладья'],['b','Слон'],['n','Конь']],wrap=$('promos');wrap.innerHTML='';
+items.forEach(([type,label])=>{const b=document.createElement('button');b.textContent=symbols[color+type];b.setAttribute('aria-label',label);b.title=label;b.addEventListener('click',()=>{if(pendingPromotion)makeMove(pendingPromotion.from,pendingPromotion.to,type);});wrap.appendChild(b);});
+$('promotion').classList.add('open');
+}
+function renderMoves(){
+const wrap=$('moves'),hist=game.history({verbose:true});wrap.innerHTML='';
+if(!hist.length){wrap.innerHTML='<div class="empty">Ходы появятся здесь после первого хода.</div>';return;}
+for(let i=0;i<hist.length;i+=2){const row=document.createElement('div');row.className='move-row';const num=document.createElement('span');num.className='move-number';num.textContent=(Math.floor(i/2)+1)+'.';row.appendChild(num);
+for(let j=i;j<Math.min(i+2,hist.length);j++){const san=document.createElement('span');san.className='move-san'+(j===hist.length-1?' latest':'');san.textContent=hist[j].san;row.appendChild(san);}
+if(i+1>=hist.length){const blank=document.createElement('span');row.appendChild(blank);}wrap.appendChild(row);}
+wrap.scrollTop=wrap.scrollHeight;
+}
+function reset(){game.reset();selected=null;legal=[];lastMove=null;pendingPromotion=null;$('promotion').classList.remove('open');announce('Новая партия готова. Ход белых.');render();}
+$('newGame').addEventListener('click',()=>{if(game.history().length)$('confirmNew').classList.add('open');else reset();});
+$('confirmYes').addEventListener('click',()=>{$('confirmNew').classList.remove('open');reset();});
+$('confirmNo').addEventListener('click',()=>$('confirmNew').classList.remove('open'));
+$('undo').addEventListener('click',()=>{const m=game.undo();if(!m){announce('Пока нечего отменять.');return;}lastMove=null;selected=null;legal=[];const h=game.history({verbose:true});if(h.length)lastMove={from:h[h.length-1].from,to:h[h.length-1].to};render();announce('Последний ход отменён.');});
+function flip(){flipped=!flipped;render();} $('flip').addEventListener('click',flip);$('flipTop').addEventListener('click',flip);
+$('copyPgn').addEventListener('click',async()=>{const pgn=game.pgn({newline:'\n'});try{await navigator.clipboard.writeText(pgn||'Партия ещё не началась.');announce('PGN скопирован.');}catch(e){const ta=document.createElement('textarea');ta.value=pgn;document.body.appendChild(ta);ta.select();const ok=document.execCommand('copy');ta.remove();announce(ok?'PGN скопирован.':'Не удалось скопировать PGN.');}});
+window.addEventListener('beforeinstallprompt',e=>{e.preventDefault();installPrompt=e;$('install').hidden=false;});
+$('install').addEventListener('click',async()=>{if(!installPrompt)return;installPrompt.prompt();await installPrompt.userChoice;installPrompt=null;$('install').hidden=true;});
+if('serviceWorker'in navigator && location.protocol.startsWith('http'))window.addEventListener('load',()=>navigator.serviceWorker.register('./sw.js').catch(()=>{}));
+render();
+})();
+</script>
+</body>
+</html>
