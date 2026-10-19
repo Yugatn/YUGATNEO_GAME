@@ -1,5 +1,5 @@
-const CACHE = 'yugatneo-chess-v1';
-const SHELL = ['./', './index.html', './manifest.json'];
+const CACHE = 'yugatneo-chess-v2';
+const SHELL = ['./', './index.html', './manifest.json', './icon.svg'];
 const ENGINE = 'https://cdnjs.cloudflare.com/ajax/libs/chess.js/0.10.3/chess.min.js';
 self.addEventListener('install', event => {
   event.waitUntil((async () => {
