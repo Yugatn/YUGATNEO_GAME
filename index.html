@@ -27,7 +27,7 @@ button{font:inherit;cursor:pointer;border:1px solid var(--line);border-radius:12
 <div class="board-note"><span>Нажми на фигуру, затем на клетку</span><span id="moveCount">Ход 1</span></div>
 </section>
 <aside class="side">
-<section class="card"><h2>Партия</h2><div class="clock-settings"><label for="clockPreset">Контроль времени</label><select id="clockPreset"><option value="0">Без часов</option><option value="180">3 минуты</option><option value="300" selected>5 минут</option><option value="600">10 минут</option><option value="900">15 минут</option></select></div><div class="clocks"><div id="whiteClock" class="clock active-clock"><span>♔ Белые</span><strong>05:00</strong></div><div id="blackClock" class="clock"><span>♚ Чёрные</span><strong>05:00</strong></div></div><div class="status-row"><div class="status-icon" id="statusIcon">♙</div><div><div class="status-title" id="statusTitle">Ход белых</div><div class="status-desc" id="statusDesc">Партия началась</div></div></div><div class="status-banner" id="statusBanner" aria-live="polite">Белые начинают. Удачной игры!</div><div class="actions"><button class="primary" id="newGame">＋ Новая партия</button><button id="undo">↶ Отменить ход</button><button id="flip">⇅ Перевернуть доску</button><button id="copyPgn">⧉ Скопировать PGN</button><button id="install" class="wide" hidden>＋ Установить мини-апп</button></div><div class="toast" id="toast" aria-live="polite"></div></section>
+<section class="card"><h2>Партия</h2><div class="clock-settings"><label for="gameMode">Режим</label><select id="gameMode"><option value="local">Игра вдвоём</option><option value="ai">Против компьютера</option></select></div><div class="clock-settings" id="difficultyRow"><label for="aiLevel">Сложность ИИ</label><select id="aiLevel"><option value="1">Начинающий</option><option value="2" selected>Любитель</option><option value="3">Сложнее</option></select></div><div class="clock-settings"><label for="clockPreset">Контроль времени</label><select id="clockPreset"><option value="0">Без часов</option><option value="180">3 минуты</option><option value="300" selected>5 минут</option><option value="600">10 минут</option><option value="900">15 минут</option></select></div><div class="clocks"><div id="whiteClock" class="clock active-clock"><span>♔ Белые</span><strong>05:00</strong></div><div id="blackClock" class="clock"><span>♚ Чёрные</span><strong>05:00</strong></div></div><div class="status-row"><div class="status-icon" id="statusIcon">♙</div><div><div class="status-title" id="statusTitle">Ход белых</div><div class="status-desc" id="statusDesc">Партия началась</div></div></div><div class="status-banner" id="statusBanner" aria-live="polite">Белые начинают. Удачной игры!</div><div class="actions"><button class="primary" id="newGame">＋ Новая партия</button><button id="undo">↶ Отменить ход</button><button id="flip">⇅ Перевернуть доску</button><button id="copyPgn">⧉ Скопировать PGN</button><button id="install" class="wide" hidden>＋ Установить мини-апп</button></div><div class="toast" id="toast" aria-live="polite"></div></section>
 <section class="card"><h2>История ходов</h2><div class="moves" id="moves"><div class="empty">Ходы появятся здесь после первого хода.</div></div><p class="hint">Локальная игра для двух игроков на одном устройстве. Передайте устройство сопернику после своего хода.</p></section>
 </aside>
 </main><footer class="footer">YUGATNEO CHESS · ЛОКАЛЬНАЯ ИГРА ДЛЯ ДВУХ ИГРОКОВ</footer>
@@ -40,7 +40,7 @@ button{font:inherit;cursor:pointer;border:1px solid var(--line);border-radius:12
 'use strict';
 const $=id=>document.getElementById(id);
 if(typeof Chess==='undefined'){ $('statusTitle').textContent='Не удалось загрузить движок';$('statusBanner').textContent='Проверь подключение к интернету и обнови страницу.';return;}
-let game=new Chess(),selected=null,legal=[],flipped=false,lastMove=null,pendingPromotion=null,installPrompt=null;let clockBase=300,remaining={w:300,b:300},clockRunning=false,lastTick=0,timerHandle=null;
+let game=new Chess(),selected=null,legal=[],flipped=false,lastMove=null,pendingPromotion=null,installPrompt=null;let clockBase=300,remaining={w:300,b:300},clockRunning=false,lastTick=0,timerHandle=null;let aiMode=false,aiThinking=false,aiTimer=null;
 const symbols={wk:'♔',wq:'♕',wr:'♖',wb:'♗',wn:'♘',wp:'♙',bk:'♚',bq:'♛',br:'♜',bb:'♝',bn:'♞',bp:'♟'};
 const files='abcdefgh';
 function announce(msg){$('toast').textContent=msg;}
@@ -48,8 +48,8 @@ function fmtTime(seconds){seconds=Math.max(0,Math.ceil(seconds));return String(M
 function paintClocks(){['w','b'].forEach(color=>{const el=$(color==='w'?'whiteClock':'blackClock');el.querySelector('strong').textContent=clockBase?fmtTime(remaining[color]):'∞';el.classList.toggle('active-clock',clockRunning&&!game.game_over()&&game.turn()===color);el.classList.toggle('low-time',remaining[color]<=30&&remaining[color]>0);});}
 function tickClock(){if(!clockRunning||!clockBase)return;const now=Date.now();remaining[game.turn()]-=(now-lastTick)/1000;lastTick=now;if(remaining[game.turn()]<=0){remaining[game.turn()]=0;clockRunning=false;clearInterval(timerHandle);$('statusTitle').textContent='Время истекло';$('statusDesc').textContent='Партия окончена';$('statusBanner').textContent=(game.turn()==='w'?'Белые':'Чёрные')+' проиграли по времени.';announce('Флаг пал.');paintClocks();return;}paintClocks();}
 function startClock(){if(!clockBase||game.game_over())return;clockRunning=true;lastTick=Date.now();if(timerHandle)clearInterval(timerHandle);timerHandle=setInterval(tickClock,200);paintClocks();}
-function saveGame(){try{localStorage.setItem('yugatneo-chess-save',JSON.stringify({pgn:game.pgn(),remaining,clockBase,flipped,whiteName:$('whitePlayerName').value,blackName:$('blackPlayerName').value}));}catch(e){}}
-function restoreGame(){try{const data=JSON.parse(localStorage.getItem('yugatneo-chess-save')||'null');if(!data)return;if(data.pgn)game.load_pgn(data.pgn);if(data.remaining&&typeof data.remaining.w==='number'&&typeof data.remaining.b==='number')remaining=data.remaining;clockBase=Number(data.clockBase)||0;$('clockPreset').value=String(clockBase);flipped=!!data.flipped;if(data.whiteName)$('whitePlayerName').value=data.whiteName;if(data.blackName)$('blackPlayerName').value=data.blackName;const h=game.history({verbose:true});if(h.length)lastMove={from:h[h.length-1].from,to:h[h.length-1].to};}catch(e){localStorage.removeItem('yugatneo-chess-save');}}
+function saveGame(){try{localStorage.setItem('yugatneo-chess-save',JSON.stringify({pgn:game.pgn(),remaining,clockBase,flipped,aiMode,aiLevel:$('aiLevel').value,whiteName:$('whitePlayerName').value,blackName:$('blackPlayerName').value}));}catch(e){}}
+function restoreGame(){try{const data=JSON.parse(localStorage.getItem('yugatneo-chess-save')||'null');if(!data)return;if(data.pgn)game.load_pgn(data.pgn);if(data.remaining&&typeof data.remaining.w==='number'&&typeof data.remaining.b==='number')remaining=data.remaining;clockBase=Number(data.clockBase)||0;$('clockPreset').value=String(clockBase);flipped=!!data.flipped;if(data.whiteName)$('whitePlayerName').value=data.whiteName;if(data.blackName)$('blackPlayerName').value=data.blackName;aiMode=!!data.aiMode;$('gameMode').value=aiMode?'ai':'local';$('aiLevel').value=data.aiLevel||'2';$('difficultyRow').style.display=aiMode?'flex':'none';const h=game.history({verbose:true});if(h.length)lastMove={from:h[h.length-1].from,to:h[h.length-1].to};}catch(e){localStorage.removeItem('yugatneo-chess-save');}}
 function status(){
 const over=game.game_over(),check=game.in_check(),turn=game.turn();
 let title,desc,icon,banner;
@@ -79,7 +79,7 @@ renderMoves();status();
 }
 function pieceName(t){return ({p:'пешка',n:'конь',b:'слон',r:'ладья',q:'ферзь',k:'король'})[t]||t;}
 function clickSquare(sq){
-if(game.game_over())return;
+if(game.game_over()||aiThinking||(aiMode&&game.turn()==='b'))return;
 if(clockBase&&!clockRunning)startClock();
 const p=game.get(sq);
 if(selected&&legal.some(m=>m.to===sq)){
@@ -91,10 +91,10 @@ if(p&&p.color===game.turn()){selected=sq;legal=game.moves({square:sq,verbose:tru
 else{selected=null;legal=[];}
 render();
 }
-function makeMove(from,to,promotion){
+function makeMove(from,to,promotion,byAI){
 if(clockBase&&!clockRunning)startClock();
 const mover=game.turn();const result=game.move({from:from,to:to,promotion:promotion||'q'});
-if(result){lastMove={from:result.from,to:result.to};selected=null;legal=[];pendingPromotion=null;$('promotion').classList.remove('open');if(game.game_over()){clockRunning=false;if(timerHandle)clearInterval(timerHandle);}else if(clockBase){lastTick=Date.now();clockRunning=true;}render();saveGame();announce('Ход: '+result.san);}
+if(result){lastMove={from:result.from,to:result.to};selected=null;legal=[];pendingPromotion=null;$('promotion').classList.remove('open');if(game.game_over()){clockRunning=false;if(timerHandle)clearInterval(timerHandle);}else if(clockBase){lastTick=Date.now();clockRunning=true;}render();saveGame();announce((byAI?'Компьютер: ':'Ход: ')+result.san);if(aiMode&&!byAI&&!game.game_over()&&game.turn()==='b')scheduleAI();}
 else{announce('Недопустимый ход.');}
 }
 function showPromotion(){
@@ -102,6 +102,10 @@ const color=game.turn(),items=[['q','Ферзь'],['r','Ладья'],['b','Сл�
 items.forEach(([type,label])=>{const b=document.createElement('button');b.textContent=symbols[color+type];b.setAttribute('aria-label',label);b.title=label;b.addEventListener('click',()=>{if(pendingPromotion)makeMove(pendingPromotion.from,pendingPromotion.to,type);});wrap.appendChild(b);});
 $('promotion').classList.add('open');
 }
+const pieceValues={p:100,n:320,b:330,r:500,q:900,k:20000};
+function evaluatePosition(){const board=game.board();let score=0;for(let r=0;r<8;r++)for(let c=0;c<8;c++){const p=board[r][c];if(!p)continue;let v=pieceValues[p.type]||0;if(p.type==='p')v+=(p.color==='w'?(6-r):(r-1))*5;if(p.type==='n'||p.type==='b')v+=(3.5-Math.abs(3.5-c))*4;score+=(p.color==='b'?v:-v);}return score;}
+function minimax(depth,alpha,beta,maximizing){if(depth===0||game.game_over()){if(game.in_checkmate())return game.turn()==='b'?-100000-depth:100000+depth;return evaluatePosition();}const moves=game.moves({verbose:true});if(maximizing){let best=-Infinity;for(const m of moves){game.move(m);const score=minimax(depth-1,alpha,beta,false);game.undo();best=Math.max(best,score);alpha=Math.max(alpha,best);if(beta<=alpha)break;}return best;}let best=Infinity;for(const m of moves){game.move(m);const score=minimax(depth-1,alpha,beta,true);game.undo();best=Math.min(best,score);beta=Math.min(beta,best);if(beta<=alpha)break;}return best;}
+function scheduleAI(){if(!aiMode||game.game_over()||game.turn()!=='b')return;aiThinking=true;selected=null;legal=[];announce('Компьютер обдумывает ход…');render();if(aiTimer)clearTimeout(aiTimer);aiTimer=setTimeout(()=>{if(!aiMode||game.game_over()||game.turn()!=='b'){aiThinking=false;return;}const moves=game.moves({verbose:true});if(!moves.length){aiThinking=false;return;}const level=Number($('aiLevel').value)||2;let bestScore=Infinity,best=[];const depth=level===1?1:level===2?2:3;for(const m of moves){game.move(m);const score=minimax(depth-1,-Infinity,Infinity,true);game.undo();if(score<bestScore){bestScore=score;best=[m];}else if(score===bestScore)best.push(m);}const chosen=best[Math.floor(Math.random()*best.length)];aiThinking=false;makeMove(chosen.from,chosen.to,chosen.promotion||'q',true);},250);}
 function renderMoves(){
 const wrap=$('moves'),hist=game.history({verbose:true});wrap.innerHTML='';
 if(!hist.length){wrap.innerHTML='<div class="empty">Ходы появятся здесь после первого хода.</div>';return;}
@@ -110,19 +114,21 @@ for(let j=i;j<Math.min(i+2,hist.length);j++){const san=document.createElement('s
 if(i+1>=hist.length){const blank=document.createElement('span');row.appendChild(blank);}wrap.appendChild(row);}
 wrap.scrollTop=wrap.scrollHeight;
 }
-function reset(){game.reset();selected=null;legal=[];lastMove=null;pendingPromotion=null;remaining={w:clockBase,b:clockBase};clockRunning=false;if(timerHandle)clearInterval(timerHandle);$('promotion').classList.remove('open');announce('Новая партия готова. Ход белых.');render();saveGame();}
+function reset(){game.reset();selected=null;legal=[];lastMove=null;pendingPromotion=null;aiThinking=false;if(aiTimer)clearTimeout(aiTimer);remaining={w:clockBase,b:clockBase};clockRunning=false;if(timerHandle)clearInterval(timerHandle);$('promotion').classList.remove('open');announce(aiMode?'Новая партия. Вы играете белыми.':'Новая партия готова. Ход белых.');render();saveGame();if(aiMode)scheduleAI();}
 $('newGame').addEventListener('click',()=>{if(game.history().length)$('confirmNew').classList.add('open');else reset();});
 $('confirmYes').addEventListener('click',()=>{$('confirmNew').classList.remove('open');reset();});
 $('confirmNo').addEventListener('click',()=>$('confirmNew').classList.remove('open'));
-$('undo').addEventListener('click',()=>{const m=game.undo();if(!m){announce('Пока нечего отменять.');return;}clockRunning=false;if(timerHandle)clearInterval(timerHandle);remaining={w:clockBase,b:clockBase};selected=null;legal=[];const h=game.history({verbose:true});lastMove=h.length?{from:h[h.length-1].from,to:h[h.length-1].to}:null;render();saveGame();announce('Последний ход отменён. Часы сброшены.');});
+$('undo').addEventListener('click',()=>{if(aiTimer)clearTimeout(aiTimer);aiThinking=false;let m=game.undo();if(aiMode&&m&&game.history().length)game.undo();if(!m){announce('Пока нечего отменять.');return;}clockRunning=false;if(timerHandle)clearInterval(timerHandle);remaining={w:clockBase,b:clockBase};selected=null;legal=[];const h=game.history({verbose:true});lastMove=h.length?{from:h[h.length-1].from,to:h[h.length-1].to}:null;render();saveGame();announce('Ход отменён. Часы сброшены.');});
 function flip(){flipped=!flipped;render();} $('flip').addEventListener('click',flip);$('flipTop').addEventListener('click',flip);
 $('copyPgn').addEventListener('click',async()=>{const pgn=game.pgn({newline:'\n'});try{await navigator.clipboard.writeText(pgn||'Партия ещё не началась.');announce('PGN скопирован.');}catch(e){const ta=document.createElement('textarea');ta.value=pgn;document.body.appendChild(ta);ta.select();const ok=document.execCommand('copy');ta.remove();announce(ok?'PGN скопирован.':'Не удалось скопировать PGN.');}});
 window.addEventListener('beforeinstallprompt',e=>{e.preventDefault();installPrompt=e;$('install').hidden=false;});
 $('install').addEventListener('click',async()=>{if(!installPrompt)return;installPrompt.prompt();await installPrompt.userChoice;installPrompt=null;$('install').hidden=true;});
 if('serviceWorker'in navigator && location.protocol.startsWith('http'))window.addEventListener('load',()=>navigator.serviceWorker.register('./sw.js').catch(()=>{}));
+$('gameMode').addEventListener('change',()=>{aiMode=$('gameMode').value==='ai';$('difficultyRow').style.display=aiMode?'flex':'none';$('whitePlayerName').value=aiMode?'Вы':'Игрок 1';$('blackPlayerName').value=aiMode?'Компьютер':'Игрок 2';reset();});
+$('aiLevel').addEventListener('change',saveGame);
 $('clockPreset').addEventListener('change',()=>{clockBase=Number($('clockPreset').value)||0;remaining={w:clockBase,b:clockBase};clockRunning=false;if(timerHandle)clearInterval(timerHandle);render();saveGame();announce(clockBase?'Контроль времени изменён. Часы начнутся с первого хода.':'Игра без часов.');});
 ['whitePlayerName','blackPlayerName'].forEach(id=>$(id).addEventListener('input',()=>{status();saveGame();}));
-restoreGame();render();if(clockBase&&game.history().length&&!game.game_over())startClock();else paintClocks();
+restoreGame();render();if(clockBase&&game.history().length&&!game.game_over())startClock();else paintClocks();if(aiMode&&game.turn()==='b'&&!game.game_over())scheduleAI();
 window.addEventListener('pagehide',()=>{if(clockRunning)tickClock();saveGame();});
 })();
 </script>
