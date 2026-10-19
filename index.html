@@ -40,13 +40,13 @@ button{font:inherit;cursor:pointer;border:1px solid var(--line);border-radius:12
 'use strict';
 const $=id=>document.getElementById(id);
 if(typeof Chess==='undefined'){ $('statusTitle').textContent='Не удалось загрузить движок';$('statusBanner').textContent='Проверь подключение к интернету и обнови страницу.';return;}
-let game=new Chess(),selected=null,legal=[],flipped=false,lastMove=null,pendingPromotion=null,installPrompt=null;let clockBase=300,remaining={w:300,b:300},clockRunning=false,lastTick=0,timerHandle=null;let aiMode=false,aiThinking=false,aiTimer=null;
+let game=new Chess(),selected=null,legal=[],flipped=false,lastMove=null,pendingPromotion=null,installPrompt=null;let clockBase=300,remaining={w:300,b:300},clockRunning=false,lastTick=0,timerHandle=null;let aiMode=false,aiThinking=false,aiTimer=null,timeExpired=false;
 const symbols={wk:'♔',wq:'♕',wr:'♖',wb:'♗',wn:'♘',wp:'♙',bk:'♚',bq:'♛',br:'♜',bb:'♝',bn:'♞',bp:'♟'};
 const files='abcdefgh';
 function announce(msg){$('toast').textContent=msg;}
 function fmtTime(seconds){seconds=Math.max(0,Math.ceil(seconds));return String(Math.floor(seconds/60)).padStart(2,'0')+':'+String(seconds%60).padStart(2,'0');}
 function paintClocks(){['w','b'].forEach(color=>{const el=$(color==='w'?'whiteClock':'blackClock');el.querySelector('strong').textContent=clockBase?fmtTime(remaining[color]):'∞';el.classList.toggle('active-clock',clockRunning&&!game.game_over()&&game.turn()===color);el.classList.toggle('low-time',remaining[color]<=30&&remaining[color]>0);});}
-function tickClock(){if(!clockRunning||!clockBase)return;const now=Date.now();remaining[game.turn()]-=(now-lastTick)/1000;lastTick=now;if(remaining[game.turn()]<=0){remaining[game.turn()]=0;clockRunning=false;clearInterval(timerHandle);$('statusTitle').textContent='Время истекло';$('statusDesc').textContent='Партия окончена';$('statusBanner').textContent=(game.turn()==='w'?'Белые':'Чёрные')+' проиграли по времени.';announce('Флаг пал.');paintClocks();return;}paintClocks();}
+function tickClock(){if(!clockRunning||!clockBase)return;const now=Date.now();remaining[game.turn()]-=(now-lastTick)/1000;lastTick=now;if(remaining[game.turn()]<=0){remaining[game.turn()]=0;clockRunning=false;timeExpired=true;clearInterval(timerHandle);$('statusTitle').textContent='Время истекло';$('statusDesc').textContent='Партия окончена';$('statusBanner').textContent=(game.turn()==='w'?'Белые':'Чёрные')+' проиграли по времени.';announce('Флаг пал.');paintClocks();return;}paintClocks();}
 function startClock(){if(!clockBase||game.game_over())return;clockRunning=true;lastTick=Date.now();if(timerHandle)clearInterval(timerHandle);timerHandle=setInterval(tickClock,200);paintClocks();}
 function saveGame(){try{localStorage.setItem('yugatneo-chess-save',JSON.stringify({pgn:game.pgn(),remaining,clockBase,flipped,aiMode,aiLevel:$('aiLevel').value,whiteName:$('whitePlayerName').value,blackName:$('blackPlayerName').value}));}catch(e){}}
 function restoreGame(){try{const data=JSON.parse(localStorage.getItem('yugatneo-chess-save')||'null');if(!data)return;if(data.pgn)game.load_pgn(data.pgn);if(data.remaining&&typeof data.remaining.w==='number'&&typeof data.remaining.b==='number')remaining=data.remaining;clockBase=Number(data.clockBase)||0;$('clockPreset').value=String(clockBase);flipped=!!data.flipped;if(data.whiteName)$('whitePlayerName').value=data.whiteName;if(data.blackName)$('blackPlayerName').value=data.blackName;aiMode=!!data.aiMode;$('gameMode').value=aiMode?'ai':'local';$('aiLevel').value=data.aiLevel||'2';$('difficultyRow').style.display=aiMode?'flex':'none';const h=game.history({verbose:true});if(h.length)lastMove={from:h[h.length-1].from,to:h[h.length-1].to};}catch(e){localStorage.removeItem('yugatneo-chess-save');}}
@@ -79,7 +79,7 @@ renderMoves();status();
 }
 function pieceName(t){return ({p:'пешка',n:'конь',b:'слон',r:'ладья',q:'ферзь',k:'король'})[t]||t;}
 function clickSquare(sq){
-if(game.game_over()||aiThinking||(aiMode&&game.turn()==='b'))return;
+if(game.game_over()||timeExpired||aiThinking||(aiMode&&game.turn()==='b'))return;
 if(clockBase&&!clockRunning)startClock();
 const p=game.get(sq);
 if(selected&&legal.some(m=>m.to===sq)){
@@ -92,6 +92,7 @@ else{selected=null;legal=[];}
 render();
 }
 function makeMove(from,to,promotion,byAI){
+if(timeExpired)return;
 if(clockBase&&!clockRunning)startClock();
 const mover=game.turn();const result=game.move({from:from,to:to,promotion:promotion||'q'});
 if(result){lastMove={from:result.from,to:result.to};selected=null;legal=[];pendingPromotion=null;$('promotion').classList.remove('open');if(game.game_over()){clockRunning=false;if(timerHandle)clearInterval(timerHandle);}else if(clockBase){lastTick=Date.now();clockRunning=true;}render();saveGame();announce((byAI?'Компьютер: ':'Ход: ')+result.san);if(aiMode&&!byAI&&!game.game_over()&&game.turn()==='b')scheduleAI();}
@@ -114,7 +115,7 @@ for(let j=i;j<Math.min(i+2,hist.length);j++){const san=document.createElement('s
 if(i+1>=hist.length){const blank=document.createElement('span');row.appendChild(blank);}wrap.appendChild(row);}
 wrap.scrollTop=wrap.scrollHeight;
 }
-function reset(){game.reset();selected=null;legal=[];lastMove=null;pendingPromotion=null;aiThinking=false;if(aiTimer)clearTimeout(aiTimer);remaining={w:clockBase,b:clockBase};clockRunning=false;if(timerHandle)clearInterval(timerHandle);$('promotion').classList.remove('open');announce(aiMode?'Новая партия. Вы играете белыми.':'Новая партия готова. Ход белых.');render();saveGame();if(aiMode)scheduleAI();}
+function reset(){game.reset();selected=null;legal=[];lastMove=null;pendingPromotion=null;aiThinking=false;timeExpired=false;if(aiTimer)clearTimeout(aiTimer);remaining={w:clockBase,b:clockBase};clockRunning=false;if(timerHandle)clearInterval(timerHandle);$('promotion').classList.remove('open');announce(aiMode?'Новая партия. Вы играете белыми.':'Новая партия готова. Ход белых.');render();saveGame();if(aiMode)scheduleAI();}
 $('newGame').addEventListener('click',()=>{if(game.history().length)$('confirmNew').classList.add('open');else reset();});
 $('confirmYes').addEventListener('click',()=>{$('confirmNew').classList.remove('open');reset();});
 $('confirmNo').addEventListener('click',()=>$('confirmNew').classList.remove('open'));
