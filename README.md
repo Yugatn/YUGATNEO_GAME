@@ -1,5 +1,11 @@
 # YUGATNEO GAME — CHESS и MATRIX RUNNER
 
+## MATRIX CHESS · Telegram Mini App
+
+**[Открыть после публикации на Pages](https://yugatn.github.io/YUGATNEO_GAME/chess-mini/)** · **[Исходники](chess-mini/)** · **[Правила, офлайн-рейтинг, Telegram](chess-mini/README.md)**
+
+Дополнительная шахматная игра в стиле матричного кода: **два игрока на одном устройстве**, компьютерный соперник с тремя уровнями сложности, **12 тактических задач** с бонусами за первое решение, включаемые и отключаемые подсказки, четыре темы доски, три комплекта фигур, четыре цветовые схемы. Рейтинг и баллы сохраняются локально, не в Telegram. На GitHub Pages онлайн-партии без отдельного сервера не реализованы. Существующие шахматы, `runner/`, `matrix-sprint/` и `runner-x/` сохранены.
+
 ## MATRIX RUNNER X · Telegram Mini App (новая игра)
 
 **[Исходники и запуск после публикации на Pages](runner-x/)** · **[Инструкция запуска через Telegram](docs/TELEGRAM_MATRIX_RUNNER_X_RU.md)** · **[Тесты движка](tests/runner-x.test.cjs)**
