@@ -1,0 +1,7 @@
+{
+ "id":"./index.html","name":"YUGATNEO MATRIX RUNNER X","short_name":"RUNNER X",
+ "description":"Вертикальный 3D-раннер с режимом Матрицы, агентами, прыжками и поворотами.",
+ "lang":"ru","start_url":"./index.html","scope":"./","display":"standalone",
+ "orientation":"portrait","background_color":"#07131b","theme_color":"#07131b",
+ "icons":[{"src":"./icon.svg","sizes":"any","type":"image/svg+xml","purpose":"any maskable"}]
+}
