@@ -21,7 +21,10 @@ self.addEventListener('fetch', event => {
   if (request.method !== 'GET') return;
   const url = new URL(request.url);
   // The runner has its own /runner/ service worker and cache; never hijack it.
-  if (url.origin === self.location.origin && url.pathname.startsWith(new URL('./runner/', self.registration.scope).pathname)) return;
+  // Each independent Mini App has its own scoped service worker.
+  if (url.origin === self.location.origin &&
+    ['runner/','matrix-sprint/','runner-x/','chess-mini/'].some(dir =>
+      url.pathname.startsWith(new URL('./'+dir, self.registration.scope).pathname))) return;
   if (url.origin === self.location.origin) {
     event.respondWith((async () => {
       const cached = await caches.match(request);

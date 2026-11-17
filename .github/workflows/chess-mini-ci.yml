@@ -1,0 +1,27 @@
+name: Matrix Chess Mini App tests
+on:
+  push:
+    branches: [main, 'feature/**']
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Install chess.js 0.10.3 for test harness
+        run: npm install --no-save --no-audit --no-fund chess.js@0.10.3 jsdom@26.1.0
+      - name: Parse tactical puzzle scripts
+        run: |
+          node --check chess-mini/puzzles.js
+          node --check chess-mini/sw.js
+      - name: Run checks for puzzle bank, chess rules and interface
+        run: node --test tests/chess-mini.test.cjs tests/chess-mini-ui.test.cjs
