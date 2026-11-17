@@ -35,7 +35,7 @@ test('left and right controls change lanes but clamp to three tracks',()=>{
 });
 test('mandatory corners: miss = lose, correct edge = real turn',()=>{
  const fail=playing();
- near(fail,119.7,0);
+ near(fail,119.85,0);
  assert.ok(C.step(fail,tick).includes('hit'));
  assert.equal(fail.phase,'gameover');assert.match(fail.reason,/поворот/);
  const pass=playing();
@@ -43,7 +43,7 @@ test('mandatory corners: miss = lose, correct edge = real turn',()=>{
  assert.equal(C.steer(pass,'left'),false,'wrong edge rejected near a right turn');
  assert.equal(C.steer(pass,'right'),'corner');
  assert.equal(pass.lane,0,'corner input does not change lane');
- near(pass,119.7,0);
+ near(pass,119.85,0);
  assert.ok(C.step(pass,tick).includes('turn'));
  assert.equal(pass.phase,'running');assert.equal(pass.segmentIndex,1);
  assert.equal(pass.turnArmed,null);
