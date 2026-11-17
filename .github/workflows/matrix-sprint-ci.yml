@@ -1,0 +1,28 @@
+name: Matrix Sprint Telegram Mini App tests
+on:
+  push:
+    branches: [main, 'feature/**']
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout project
+        uses: actions/checkout@v4
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Verify browser and pure game scripts
+        run: |
+          node --check matrix-sprint/engine.js
+          node --check matrix-sprint/game.js
+          node --check matrix-sprint/sw.js
+      - name: Test original runner and new Spiral Run
+        run: node --test tests/runner-engine.test.cjs tests/matrix-sprint.test.cjs
