@@ -1,0 +1,22 @@
+name: Matrix Runner X smoke checks
+on:
+  push:
+    paths:
+      - 'runner-x/**'
+      - 'tests/runner-x.test.cjs'
+      - '.github/workflows/runner-x-check.yml'
+  pull_request:
+    paths:
+      - 'runner-x/**'
+      - 'tests/runner-x.test.cjs'
+      - '.github/workflows/runner-x-check.yml'
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: node --check runner-x/engine.js && node --check runner-x/render.js && node --check runner-x/app.js
+      - run: node tests/runner-x.test.cjs

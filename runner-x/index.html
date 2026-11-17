@@ -1,0 +1,99 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,viewport-fit=cover,user-scalable=no">
+<meta name="theme-color" content="#07131b">
+<meta name="description" content="YUGATNEO Matrix Runner X — трёхмерная спиральная трасса, порталы, агенты и быстрая реакция. Telegram Mini App.">
+<meta property="og:title" content="MATRIX RUNNER X · YUGATNEO">
+<meta property="og:description" content="Прыгай, уклоняйся, поворачивай и выходи за пределы Матрицы.">
+<meta property="og:type" content="website">
+<link rel="icon" href="./icon.svg" type="image/svg+xml">
+<link rel="manifest" href="./manifest.webmanifest">
+<title>MATRIX RUNNER X · YUGATNEO</title>
+<style>
+:root{--bg:#061018;--ink:#effff9;--secondary:#89a6ad;--green:#56eeb6;--amber:#f1d391;--danger:#fd8394}
+*{box-sizing:border-box}html,body{margin:0;width:100%;min-height:100%;overflow:hidden;background:var(--bg);color:var(--ink)}
+body{font-family:Inter,ui-sans-serif,-apple-system,BlinkMacSystemFont,"Segoe UI",Arial,sans-serif;-webkit-tap-highlight-color:transparent}
+button{font-family:inherit;cursor:pointer;-webkit-tap-highlight-color:transparent}button:focus-visible{outline:2px solid var(--green);outline-offset:3px}
+.app{position:relative;width:100%;max-width:730px;margin:0 auto;min-height:100vh;min-height:100dvh;height:100dvh;display:flex;flex-direction:column;background:#09151d;overflow:hidden;overscroll-behavior:none;border-left:1px solid #14313e;border-right:1px solid #14313e}
+.app:before{content:"";pointer-events:none;position:absolute;inset:0;background:radial-gradient(ellipse at 50% -15%,#20495133,transparent 50%);z-index:2}
+.bar{position:relative;z-index:4;display:flex;align-items:center;justify-content:space-between;gap:8px;padding:max(12px,env(safe-area-inset-top)) 15px 9px;border-bottom:1px solid #1d3742;background:#07151ced}
+.brand{font-weight:900;font-size:14px;letter-spacing:.11em;line-height:1.2}.brand small{display:block;font-size:9px;color:#78aaa9;font-weight:700;letter-spacing:.17em;margin-top:4px}
+.tag{font-size:10px;color:#96ecce;border:1px solid #2b8a76;background:#143c34;padding:6px 9px;border-radius:100px;white-space:nowrap;letter-spacing:.06em}
+.metrics{position:relative;z-index:4;display:grid;grid-template-columns:1fr 1fr 1fr;gap:1px;background:#15313a;border-bottom:1px solid #1d3742}
+.metric{padding:8px 8px 7px;text-align:center;background:#0a1c24}.metric label{display:block;color:#7e9ca2;font-size:9px;letter-spacing:.13em;font-weight:800}.metric strong{display:block;font-size:20px;font-weight:900;font-variant-numeric:tabular-nums;line-height:1.3}.metric:nth-child(2) strong{color:var(--amber)}.metric:nth-child(3) strong{color:var(--green)}
+.stage{position:relative;flex:1 1 auto;min-height:180px;overflow:hidden;background:#06131d;touch-action:none}
+canvas{display:block;width:100%;height:100%;touch-action:none;outline:none}
+.vignette{position:absolute;inset:0;pointer-events:none;background:linear-gradient(180deg,#03121c99 0%,transparent 26%,transparent 72%,#03101a88 100%)}
+.top-hint{position:absolute;z-index:3;left:12px;right:12px;top:12px;display:flex;align-items:flex-start;justify-content:space-between;pointer-events:none;gap:10px}
+.hint{font-size:12px;font-weight:900;letter-spacing:.08em;color:#e9fff4;background:#06202bb9;border:1px solid #29576a;border-radius:8px;padding:8px 10px;min-height:35px;max-width:77%}
+.hint.urgent{color:#fbe7a6;border-color:#bf9854;background:#342715cc}
+.mode{color:#83f8b7;font-size:10px;font-weight:900;border:1px solid #337a5d;background:#0b2a24cc;padding:8px 10px;border-radius:8px;white-space:nowrap;max-width:30%;text-align:right}
+.legend{position:absolute;z-index:2;bottom:11px;left:50%;transform:translateX(-50%);white-space:nowrap;text-align:center;pointer-events:none;color:#d4edf0a6;font-size:10px;font-weight:700;letter-spacing:.07em}
+.overlay{position:absolute;z-index:8;inset:0;background:linear-gradient(165deg,#061a23f8,#091421ef 65%,#081a1ff9);display:flex;align-items:center;justify-content:center;text-align:center;padding:16px 23px 30px;overflow:auto}
+.overlay[hidden]{display:none}.splash{width:100%;max-width:400px;display:flex;flex-direction:column;align-items:center;gap:8px}
+.kicker{color:var(--green);font-size:10px;letter-spacing:.23em;font-weight:900}.splash h1{margin:0;font-size:clamp(27px,6vw,43px);font-weight:950;line-height:1.02;letter-spacing:-.045em}.splash h1 em{font-style:normal;color:var(--green)}
+.splash-art{height:clamp(150px,26vh,245px);width:min(100%,280px);margin:-6px 0 0;filter:drop-shadow(0 2px 19px #23efbd53)}
+.splash p{font-size:12px;line-height:1.65;margin:0;color:#b4cbd1;max-width:340px}
+.splash .highlight{color:#d8fff0;font-weight:750}
+.btn-start{border:1px solid #80ffe2;color:#041914;background:linear-gradient(95deg,#b3ffe5,#62e9bc);font-weight:950;letter-spacing:.16em;font-size:14px;border-radius:14px;padding:16px 28px;width:min(100%,300px);margin-top:12px;box-shadow:0 10px 28px #0ddc9b30;min-height:54px}
+.instructions{font-size:11px;color:#8eb4bc;border:1px solid #29515b;border-radius:9px;padding:9px 13px;margin-top:8px}
+.actions{position:relative;z-index:4;padding:9px 11px calc(9px + env(safe-area-inset-bottom));border-top:1px solid #20414a;background:#07151b;display:grid;grid-template-columns:1fr 1.4fr 1fr;grid-template-rows:58px 45px;gap:8px}
+.control{color:#e8fff7;border:1px solid #32636a;background:linear-gradient(180deg,#173740,#0c252c);border-radius:12px;min-width:0;font-size:14px;font-weight:850;letter-spacing:.03em;touch-action:manipulation}
+.control:active{transform:scale(.97);background:#235e5f}.control.jump{background:linear-gradient(125deg,#c5ffe9,#56e7ac);color:#092822;border-color:#8effd0;font-size:16px}.control:disabled{color:#668e86;opacity:.57;cursor:default}
+.control.small{font-size:11px;letter-spacing:.08em;background:#0b222a;min-height:42px}.control.power{border-color:#3b8d6c;color:#82ffc8}.control.view{border-color:#3c637c;color:#a9d9fb}
+@media(max-height:670px){.bar{padding-top:max(7px,env(safe-area-inset-top));padding-bottom:5px}.metric{padding-top:4px;padding-bottom:4px}.metric strong{font-size:17px}.actions{grid-template-rows:46px 38px;gap:6px}.splash-art{height:120px}.splash h1{font-size:27px}.splash p{font-size:11px}.btn-start{padding:10px}}
+@media(min-width:731px){.app{box-shadow:0 0 120px #0009}.stage{min-height:470px}.actions{grid-template-rows:62px 46px}}
+@media(prefers-reduced-motion:reduce){.btn-start,.control{transition:none!important}.splash-art{filter:none}}
+</style>
+<script src="https://telegram.org/js/telegram-web-app.js" defer></script>
+</head>
+<body>
+<main class="app">
+ <div class="bar"><div class="brand">YUGATNEO <small>STORY X · MATRIX RUNNER</small></div><span class="tag" id="source">MINI APP · X/01</span></div>
+ <div class="metrics" aria-live="off">
+  <div class="metric"><label>ОЧКИ</label><strong id="score">0</strong></div>
+  <div class="metric"><label>РЕКОРД</label><strong id="best">0</strong></div>
+  <div class="metric"><label>УРОВЕНЬ</label><strong id="level">1</strong></div>
+ </div>
+ <section class="stage" id="stage" aria-label="Трёхмерная трасса Matrix Runner X">
+  <canvas id="scene" role="img" tabindex="0" aria-label="Вид сверху на бегуна в круглых очках: нажми центр, чтобы прыгнуть, края — чтобы повернуть или сменить полосу"></canvas>
+  <div class="vignette"></div>
+  <div class="top-hint"><span class="hint" id="hint">ПРЫЖОК · ЦЕНТР ЭКРАНА</span><span class="mode" id="mode">РЕАЛЬНОСТЬ</span></div>
+  <div class="legend" id="legend">КРАЯ — ПОЛОСЫ / ПОВОРОТЫ · ЦЕНТР — ПРЫЖОК</div>
+  <div class="overlay" id="overlay">
+   <div class="splash">
+    <span class="kicker" id="overlay-kicker">ВНИМАНИЕ · РЕАКЦИЯ · ДВИЖЕНИЕ</span>
+    <svg class="splash-art" viewBox="0 0 240 220" role="img" aria-label="Бегущий персонаж в круглых тёмных очках среди зелёного матричного кода">
+      <defs><linearGradient id="g" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#7cffe4"/><stop offset="1" stop-color="#21bc85"/></linearGradient></defs>
+      <g opacity=".30" fill="#6dffab" font-family="monospace" font-size="13"><text x="12" y="38">1010</text><text x="184" y="23">001</text><text x="0" y="184">1101</text><text x="190" y="148">0110</text><text x="174" y="200">101</text></g>
+      <path d="M18 200 L108 94 L220 200 M32 200 L109 123 L204 200" fill="none" stroke="#46e9ba" stroke-width="2" opacity=".35"/>
+      <g stroke="url(#g)" stroke-width="8" stroke-linecap="round" stroke-linejoin="round" fill="none"><path d="M121 88 L122 137 L91 176 L76 200 M122 137 L162 156 L169 193 M122 105 L88 117 L67 148 M122 105 L150 118 L178 104"/></g>
+      <path d="M104 83 Q99 67 102 51 Q111 31 129 36 Q144 38 148 56 Q149 78 139 88 Z" fill="#e7bc94" stroke="#e8ffe9" stroke-width="3"/>
+      <path d="M105 43 Q109 28 129 29 Q140 29 146 42" fill="none" stroke="#0b2329" stroke-width="8" stroke-linecap="round"/>
+      <g fill="#09131a" stroke="#e2fff0" stroke-width="3.2"><circle cx="115" cy="59" r="10"/><circle cx="138" cy="59" r="10"/></g><path d="M125 58 L128 58" stroke="#ebfff6" stroke-width="3"/>
+      <path d="M56 203 L193 203" stroke="#45ffc6" stroke-width="3" opacity=".85"/>
+      <circle cx="121" cy="92" r="4" fill="#f7d994"/>
+    </svg>
+    <h1 id="overlay-title">MATRIX<br><em>RUNNER X</em></h1>
+    <p id="overlay-description">Беги сквозь спиральный мир. <span class="highlight">Прыгай по центру</span>, поворачивай касанием краёв, поднимайся на новые уровни. Портал открывает код Матрицы и суперспособность.</p>
+    <button type="button" class="btn-start" id="start">▶ НАЧАТЬ</button>
+    <div class="instructions" id="overlay-tips">◁ КРАЙ — ЛЕВО · ЦЕНТР — ПРЫЖОК · ПРАВЫЙ КРАЙ — ПРАВО ▷</div>
+   </div>
+  </div>
+ </section>
+ <nav class="actions" aria-label="Игровое управление">
+   <button class="control" type="button" id="left" aria-label="Повернуть или перейти влево">◀ ЛЕВО</button>
+   <button class="control jump" type="button" id="jump" aria-label="Прыжок">↑ ПРЫЖОК</button>
+   <button class="control" type="button" id="right" aria-label="Повернуть или перейти вправо">ПРАВО ▶</button>
+   <button class="control small power" type="button" id="fire" disabled aria-label="Импульс после портала">⚡ ИМПУЛЬС</button>
+   <button class="control small view" type="button" id="camera" aria-label="Переключить камеру">◉ ВИД СЗАДИ</button>
+   <button class="control small" type="button" id="pause" aria-label="Пауза">Ⅱ ПАУЗА</button>
+ </nav>
+</main>
+<script src="./engine.js"></script>
+<script src="./render.js"></script>
+<script src="./app.js"></script>
+</body>
+</html>
