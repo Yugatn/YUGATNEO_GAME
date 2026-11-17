@@ -1,0 +1,120 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,maximum-scale=1">
+<meta name="theme-color" content="#050b14">
+<meta name="description" content="YUGATNEO SPIRAL RUN — Telegram Mini App: прыжки, 3D-повороты, портал Матрицы, агенты и сверхспособность.">
+<meta property="og:title" content="YUGATNEO · SPIRAL RUN">
+<meta property="og:description" content="Беги по спирали, обходи препятствия, прыгай через портал и уходи от агентов.">
+<link rel="manifest" href="./manifest.webmanifest">
+<link rel="icon" href="./icon.svg" type="image/svg+xml">
+<title>YUGATNEO · SPIRAL RUN</title>
+<style>
+:root{color-scheme:dark;--mint:#75ffd3;--line:#26464d;--bg:#050b14;--ink:#e8fff7;--soft:#9db6b4}
+*{box-sizing:border-box}html,body{margin:0;width:100%;height:100%;background:var(--bg);overflow:hidden}
+body{font-family:system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;color:var(--ink);-webkit-user-select:none;user-select:none}
+button{font:inherit;color:inherit;touch-action:manipulation}
+button:focus-visible{outline:3px solid #ffdc7b;outline-offset:2px}
+#app{position:relative;width:100%;height:100vh;height:100dvh;overflow:hidden;background:#040a14}
+#scene{display:block;width:100%;height:100%;touch-action:none;outline:none}
+.hud{position:absolute;inset:0 0 auto;pointer-events:none;z-index:3;padding:calc(12px + env(safe-area-inset-top)) max(13px,env(safe-area-inset-right)) 10px max(13px,env(safe-area-inset-left));display:flex;align-items:flex-start;gap:13px;justify-content:space-between}
+.brand{font-size:10px;letter-spacing:.19em;color:var(--mint);font-weight:800;line-height:1.3;text-shadow:0 2px 9px #050b14}
+.brand b{display:block;font-size:21px;letter-spacing:.05em;color:#f6fffc}
+.numbers{display:flex;align-items:flex-start;gap:clamp(9px,3vw,20px);font-variant-numeric:tabular-nums;text-shadow:0 2px 10px #02050b}
+.stat small{display:block;font-size:10px;letter-spacing:.10em;color:#a2c1bb;font-weight:800}
+.stat strong{display:block;font-size:17px;line-height:1.4}
+.top-actions{position:absolute;top:calc(76px + env(safe-area-inset-top));right:12px;z-index:5;display:flex;gap:7px}
+.tool{border:1px solid #5c8588;background:#0d2531dd;border-radius:10px;font-size:12px;padding:9px 11px;font-weight:800;min-height:36px;box-shadow:0 2px 15px #0005}
+.tool:active,.control:active{transform:scale(.95);background:#14565a}
+.mode{position:absolute;top:calc(130px + env(safe-area-inset-top));left:50%;transform:translateX(-50%);z-index:3;color:#8fffd4;background:#052923d9;border:1px solid #265f4d;border-radius:100px;padding:6px 13px;font-size:12px;font-weight:800;letter-spacing:.07em;white-space:nowrap;pointer-events:none;display:none}
+.hint{position:absolute;top:29%;left:50%;transform:translateX(-50%);width:min(92%,420px);color:#eafff8;text-align:center;z-index:4;text-shadow:0 2px 12px #000;background:#0a1725b3;border-radius:12px;font-weight:800;font-size:clamp(16px,4vw,22px);padding:10px;pointer-events:none;opacity:0;transition:opacity .25s}
+.hint.show{opacity:1}
+.controls{position:absolute;bottom:calc(17px + env(safe-area-inset-bottom));left:0;right:0;z-index:4;display:grid;grid-template-columns:1fr 1.2fr 1fr;gap:clamp(7px,3vw,15px);padding:0 14px;pointer-events:none}
+.control{pointer-events:auto;min-height:clamp(62px,12vh,92px);border:1.5px solid #477b81;background:linear-gradient(165deg,#184651e5,#102731e8);border-radius:19px;color:#dffff1;font-size:clamp(15px,3.4vw,21px);font-weight:900;box-shadow:0 6px 30px #0008;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px}
+.control small{font-size:10px;letter-spacing:.08em;color:#aac9c5}
+.control.jump{border-color:#bfe4c4;background:linear-gradient(150deg,#2d735be8,#1b4439ef)}
+#blast{position:absolute;right:15px;bottom:calc(130px + env(safe-area-inset-bottom));z-index:4;padding:12px 16px;border:1px solid #8afa99;border-radius:16px;background:#135639e8;color:#ddfff0;font-weight:900;letter-spacing:.05em;display:none;box-shadow:0 0 25px #3aff8450}
+#blast.visible{display:block}
+.overlay{position:absolute;inset:0;z-index:9;background:radial-gradient(ellipse at 53% 23%,#0c3d41 0%,#071626 37%,#020610 80%);display:flex;flex-direction:column;justify-content:center;align-items:center;padding:calc(24px + env(safe-area-inset-top)) 24px calc(24px + env(safe-area-inset-bottom));text-align:center;overflow-y:auto}
+.overlay[hidden]{display:none}
+.eyebrow{font-size:11px;letter-spacing:.25em;color:#a0f0dd;font-weight:800;margin:8px 0 3px}
+.overlay h1{font-size:clamp(36px,9vw,70px);line-height:.99;letter-spacing:-.06em;margin:12px 0;background:linear-gradient(#fff,#9ef4c9);background-clip:text;-webkit-background-clip:text;color:transparent}
+.overlay .sub{color:#b9d5cf;max-width:480px;font-size:clamp(13px,3vw,16px);line-height:1.65;margin:12px 0 23px}
+.start{border:0;background:linear-gradient(100deg,#abffcf,#6df3cf);color:#062b26;border-radius:16px;padding:15px 32px;min-width:200px;font-weight:950;font-size:18px;letter-spacing:.06em;box-shadow:0 12px 45px #42eb9c3d}
+.secondary{border:1px solid #6a9b96;background:#103039;color:#e8fff7;border-radius:12px;padding:12px 24px;margin-top:11px}
+.hero{width:min(280px,55vw);height:min(250px,37vh);filter:drop-shadow(0 9px 33px #46ffbe33)}
+.tip{max-width:410px;color:#7faaa5;font-size:12px;line-height:1.6;margin-top:19px}
+#scoreline{font-size:18px;font-weight:800;color:#a7f8c8;margin:5px 0}
+#status{position:absolute;bottom:calc(109px + env(safe-area-inset-bottom));left:15px;right:15px;text-align:center;font-size:11px;color:#a0c3b9;z-index:2;pointer-events:none}
+@media(max-height:610px){.hero{height:105px}.overlay .sub{margin:3px 0 11px}.overlay h1{font-size:38px}.tip{margin-top:9px}.controls{bottom:7px}.control{min-height:53px}#blast{bottom:75px}}
+@media(prefers-reduced-motion:reduce){.hint{transition:none}.tool,.control{transition:none}}
+</style>
+<script src="https://telegram.org/js/telegram-web-app.js"></script>
+<script defer src="./engine.js"></script>
+<script defer src="./game.js"></script>
+</head>
+<body>
+<div id="app">
+<canvas id="scene" role="img" aria-label="Вид сверху на спиральную трассу. Края экрана — смена полосы или поворот, центр — прыжок." tabindex="0"></canvas>
+<header class="hud">
+  <div class="brand">YUGATNEO / STORY X<b>SPIRAL RUN</b></div>
+  <div class="numbers">
+    <div class="stat"><small>ОЧКИ</small><strong id="score">00000</strong></div>
+    <div class="stat"><small>ПУТЬ</small><strong id="distance">0 м</strong></div>
+    <div class="stat"><small>РЕКОРД</small><strong id="best">00000</strong></div>
+  </div>
+</header>
+<nav class="top-actions" aria-label="Настройки игры">
+<button id="view" class="tool" type="button" aria-label="Переключить камеру">ВИД: СВЕРХУ</button>
+<button id="pause" class="tool" type="button" aria-label="Пауза">Ⅱ</button>
+</nav>
+<div class="mode" id="mode">МАТРИЦА АКТИВНА · ЗАРЯДЫ: <span id="ammo">3</span></div>
+<div class="hint" id="hint" aria-live="polite"></div>
+<div id="status" role="status">Края экрана: поворот • Центр: прыжок • V: камера</div>
+<div class="controls" aria-label="Сенсорное управление">
+<button class="control" id="left" type="button" aria-label="Налево"><span>↶ НАЛЕВО</span><small>ПОЛОСА / ПОВОРОТ</small></button>
+<button class="control jump" id="jump" type="button" aria-label="Прыгнуть"><span>↑ ПРЫЖОК</span><small>ЦЕНТР ЭКРАНА</small></button>
+<button class="control" id="right" type="button" aria-label="Направо"><span>НАПРАВО ↷</span><small>ПОЛОСА / ПОВОРОТ</small></button>
+</div>
+<button id="blast" type="button" aria-label="Суперспособность: импульс">✦ ИМПУЛЬС <span id="charges">3</span></button>
+
+<section class="overlay" id="intro" aria-labelledby="introTitle">
+<div class="eyebrow">СЮЖЕТ ИКС · ТВОЯ СПИРАЛЬ ВОСПРИЯТИЯ</div>
+<svg class="hero" viewBox="0 0 260 225" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+ <defs><linearGradient id="cloth" x1="0" y1="0" x2="0" y2="1"><stop stop-color="#3d6e72"/><stop offset="1" stop-color="#12232f"/></linearGradient></defs>
+ <g fill="none" stroke="#57ffbe" stroke-width="2" opacity=".45"><path d="M7 201Q131 110 253 201M18 211Q131 125 242 211M29 221Q131 140 231 221"/><path d="M40 190Q140 70 229 172"/></g>
+ <path d="M96 142L74 195M163 142L186 195" fill="none" stroke="#72e3bf" stroke-width="20" stroke-linecap="round"/>
+ <path d="M112 140L104 202M146 140L157 202" fill="none" stroke="#598d89" stroke-width="22" stroke-linecap="round"/>
+ <path d="M98 102Q130 89 162 102L171 153Q128 168 88 150Z" fill="url(#cloth)" stroke="#7effda" stroke-width="3"/>
+ <circle cx="130" cy="69" r="35" fill="#c7b493" stroke="#dcffe5" stroke-width="3"/>
+ <path d="M98 61q31-43 65 0q-29-16-65 0z" fill="#12222a"/>
+ <g fill="#0a1822" stroke="#e4f6de" stroke-width="3"><circle cx="115" cy="75" r="15"/><circle cx="146" cy="75" r="15"/></g>
+ <path d="M128 75h5" stroke="#e4f6de" stroke-width="3"/>
+ <path d="M125 96q6 4 12 0" stroke="#73624d" stroke-width="2" fill="none"/>
+ <g fill="#8bffcf"><circle cx="32" cy="39" r="2"/><circle cx="221" cy="22" r="2"/><circle cx="235" cy="114" r="2"/></g>
+</svg>
+<h1 id="introTitle">SPIRAL<br>RUN</h1>
+<p class="sub">Сначала ты видишь мир сверху. Меняй полосу, прыгай на новый уровень и поворачивай на перекрёстках. Найди портал, чтобы увидеть матричный код и получить энергетический импульс против агентов.</p>
+<button id="start" class="start" type="button">▶ НАЧАТЬ ПУТЬ</button>
+<p class="tip">Тап по левому/правому краю — манёвр; по центру — прыжок. На перекрёстке нажми указанную сторону до поворота. Камеру можно переключить на вид сзади.</p>
+</section>
+
+<section class="overlay" id="end" hidden aria-labelledby="endTitle">
+<div class="eyebrow">ПУТЬ ПРОДОЛЖАЕТСЯ</div>
+<h1 id="endTitle">НОВЫЙ<br>ВИТОК</h1>
+<p class="sub" id="reason">Один шаг завершён. Следующий можно пройти лучше.</p>
+<div id="scoreline"></div>
+<button id="restart" class="start" type="button">↻ ЕЩЁ ОДИН ВИТОК</button>
+<button id="backIntro" class="secondary" type="button">НА ЗАСТАВКУ</button>
+</section>
+<section class="overlay" id="paused" hidden aria-labelledby="pauseTitle">
+<div class="eyebrow">ПАУЗА</div>
+<h1 id="pauseTitle">ВРЕМЯ<br>ОСТАНОВЛЕНО</h1>
+<p class="sub">Игра не продолжается, пока ты отдыхаешь. Никаких штрафов за перерыв.</p>
+<button id="resume" class="start" type="button">▶ ПРОДОЛЖИТЬ</button>
+<button id="pauseIntro" class="secondary" type="button">НА ЗАСТАВКУ</button>
+</section>
+</div>
+</body>
+</html>
