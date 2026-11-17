@@ -15,7 +15,7 @@
     return {
       phase: 'ready',
       player: { x: CONFIG.PLAYER_X, y: CONFIG.FLOOR - CONFIG.PLAYER_H, vy: 0, extraJumps: 0 },
-      time: 0, score: 0, distance: 0, speed: CONFIG.BASE_SPEED,
+      time: 0, score: 0, bonus: 0, distance: 0, speed: CONFIG.BASE_SPEED,
       obstacleTimer: 1.45, portalTimer: 7.0,
       obstacles: [], portals: [], boost: 0, flash: 0, lastEvent: null
     };
@@ -93,7 +93,7 @@
     if (previousBoost > 0 && state.boost === 0) events.push('boost-ended');
     state.speed = Math.min(CONFIG.MAX_SPEED, CONFIG.BASE_SPEED + state.time * 5.1);
     state.distance += state.speed * dt;
-    state.score = Math.max(state.score, Math.floor(state.distance / 20));
+    state.score = Math.floor(state.distance / 20) + state.bonus;
 
     const p = state.player;
     p.vy += CONFIG.GRAVITY * dt;
@@ -136,6 +136,7 @@
       if (!grounded(state) && dx * dx + dy * dy < 1) {
         state.boost = CONFIG.BOOST_TIME;
         state.flash = 0.6;
+        state.bonus += 175;
         state.score += 175;
         state.lastEvent = 'portal';
         events.push('portal');
