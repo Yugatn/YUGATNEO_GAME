@@ -1,0 +1,20 @@
+{
+  "name": "YUGATNEO MATRIX CHESS · STORY X",
+  "short_name": "Matrix Chess",
+  "description": "Шахматы вдвоём, с ботом и головоломки в стиле Матрицы",
+  "lang": "ru",
+  "start_url": "./index.html",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "any",
+  "background_color": "#03100e",
+  "theme_color": "#051711",
+  "icons": [
+    {
+      "src": "./icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}
