@@ -207,6 +207,7 @@ function loadPuzzle(index){
 }
 function solvePuzzle(result){
  if(!puzzleCurrent||puzzleFinished)return;
+ pendingPromotion=null;$('promotion').classList.remove('open');
  const uci=result.from+result.to+(result.promotion||'');
  if(uci!==puzzleCurrent.uci){
   game.undo();puzzleAttempts++;
@@ -330,6 +331,8 @@ $('gameMode').addEventListener('change',()=>{
  $('difficultyRow').style.display=aiMode?'flex':'none';
  $('puzzleControls').style.display=puzzleMode?'block':'none';
  $('clockPreset').disabled=puzzleMode;
+ document.querySelector('.clocks').style.display=puzzleMode?'none':'grid';
+ $('clockPreset').parentElement.style.display=puzzleMode?'none':'flex';
  $('newGame').textContent=puzzleMode?'→ Другая задача':'＋ Новая партия';
  $('undo').textContent=puzzleMode?'↻ Повторить задачу':'↶ Отменить ход';
  $('whitePlayerName').value=aiMode?'Вы':'Игрок 1';
