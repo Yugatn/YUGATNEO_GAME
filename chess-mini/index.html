@@ -317,18 +317,64 @@ function reset(){if(puzzleMode){loadPuzzle(puzzleIndex);return;}gameRecorded=fal
 $('newGame').addEventListener('click',()=>{if(puzzleMode){loadPuzzle(puzzleIndex+1);return;}if(game.history().length)$('confirmNew').classList.add('open');else reset();});
 $('confirmYes').addEventListener('click',()=>{$('confirmNew').classList.remove('open');reset();});
 $('confirmNo').addEventListener('click',()=>$('confirmNew').classList.remove('open'));
-$('undo').addEventListener('click',()=>{if(puzzleMode){loadPuzzle(puzzleIndex);return;}resetAssist();gameRecorded=false;const wasThinking=aiThinking;if(aiTimer)clearTimeout(aiTimer);aiThinking=false;let m=game.undo();if(aiMode&&!wasThinking&&m&&game.history().length)game.undo();if(!m){announce('Пока нечего отменять.');return;}clockRunning=false;if(timerHandle)clearInterval(timerHandle);remaining={w:clockBase,b:clockBase};selected=null;legal=[];const h=game.history({verbose:true});lastMove=h.length?{from:h[h.length-1].from,to:h[h.length-1].to}:null;render();saveGame();announce('Ход отменён. Часы сброшены.');});
+$('undo').addEventListener('click',()=>{if(puzzleMode){loadPuzzle(puzzleIndex);return;}resetAssist();const wasThinking=aiThinking;if(aiTimer)clearTimeout(aiTimer);aiThinking=false;let m=game.undo();if(aiMode&&!wasThinking&&m&&game.history().length)game.undo();if(!m){announce('Пока нечего отменять.');return;}clockRunning=false;if(timerHandle)clearInterval(timerHandle);remaining={w:clockBase,b:clockBase};selected=null;legal=[];const h=game.history({verbose:true});lastMove=h.length?{from:h[h.length-1].from,to:h[h.length-1].to}:null;render();saveGame();announce('Ход отменён. Часы сброшены.');});
 function flip(){flipped=!flipped;render();} $('flip').addEventListener('click',flip);$('flipTop').addEventListener('click',flip);
 $('copyPgn').addEventListener('click',async()=>{const pgn=game.pgn({newline:'\n'});try{await navigator.clipboard.writeText(pgn||'Партия ещё не началась.');announce('PGN скопирован.');}catch(e){const ta=document.createElement('textarea');ta.value=pgn;document.body.appendChild(ta);ta.select();const ok=document.execCommand('copy');ta.remove();announce(ok?'PGN скопирован.':'Не удалось скопировать PGN.');}});
 window.addEventListener('beforeinstallprompt',e=>{e.preventDefault();installPrompt=e;$('install').hidden=false;});
 $('install').addEventListener('click',async()=>{if(!installPrompt)return;installPrompt.prompt();await installPrompt.userChoice;installPrompt=null;$('install').hidden=true;});
 if('serviceWorker'in navigator && location.protocol.startsWith('http'))window.addEventListener('load',()=>navigator.serviceWorker.register('./sw.js').catch(()=>{}));
-$('gameMode').addEventListener('change',()=>{aiMode=$('gameMode').value==='ai';$('difficultyRow').style.display=aiMode?'flex':'none';$('whitePlayerName').value=aiMode?'Вы':'Игрок 1';$('blackPlayerName').value=aiMode?'Компьютер':'Игрок 2';reset();});
+$('gameMode').addEventListener('change',()=>{
+ const mode=$('gameMode').value;
+ puzzleMode=mode==='puzzle';
+ aiMode=mode==='ai';
+ $('difficultyRow').style.display=aiMode?'flex':'none';
+ $('puzzleControls').style.display=puzzleMode?'block':'none';
+ $('clockPreset').disabled=puzzleMode;
+ $('newGame').textContent=puzzleMode?'→ Другая задача':'＋ Новая партия';
+ $('undo').textContent=puzzleMode?'↻ Повторить задачу':'↶ Отменить ход';
+ $('whitePlayerName').value=aiMode?'Вы':'Игрок 1';
+ $('blackPlayerName').value=aiMode?'Компьютер':'Игрок 2';
+ if(puzzleMode){puzzleIndex=0;loadPuzzle(0);}
+ else{reset();}
+});
 $('aiLevel').addEventListener('change',saveGame);
+$('puzzleTheme').addEventListener('change',()=>{puzzleIndex=0;loadPuzzle(0);});
+$('nextPuzzle').addEventListener('click',()=>{if(puzzleMode)loadPuzzle(puzzleIndex+1);});
+$('retryPuzzle').addEventListener('click',()=>{if(puzzleMode)loadPuzzle(puzzleIndex);});
+['boardTheme','pieceSet','piecePalette','hintsToggle'].forEach(id=>
+ $(id).addEventListener('change',savePrefs)
+);
+$('hintMove').addEventListener('click',()=>{
+ if(!assist){announce('Сначала включи режим подсказок.');return;}
+ if(puzzleMode&&puzzleFinished){announce('Задача уже решена.');return;}
+ if(game.game_over()||timeExpired){announce('Партия завершена.');return;}
+ const best=bestMove();
+ if(!best){announce('Подходящих ходов нет.');return;}
+ bestSuggestion={from:best.from,to:best.to};
+ if(puzzleMode)puzzleHintUsed=true;
+ announce((puzzleMode?'Подсказка к задаче: ':'Вариант по локальной оценке: ')+
+   best.from+' → '+best.to+'.');
+ render();
+});
+$('clearHint').addEventListener('click',()=>{resetAssist();render();announce('Подсказка скрыта.');});
+
 $('clockPreset').addEventListener('change',()=>{clockBase=Number($('clockPreset').value)||0;remaining={w:clockBase,b:clockBase};clockRunning=false;if(timerHandle)clearInterval(timerHandle);render();saveGame();announce(clockBase?'Контроль времени изменён. Часы начнутся с первого хода.':'Игра без часов.');});
 ['whitePlayerName','blackPlayerName'].forEach(id=>$(id).addEventListener('input',()=>{status();saveGame();}));
-restoreGame();render();if(clockBase&&game.history().length&&!game.game_over())startClock();else paintClocks();if(aiMode&&game.turn()==='b'&&!game.game_over())scheduleAI();
-window.addEventListener('pagehide',()=>{if(clockRunning)tickClock();saveGame();});
+restoreGame();applyPrefs();renderRanks();render();
+if(clockBase&&game.history().length&&!game.game_over())startClock();else paintClocks();
+if(aiMode&&game.turn()==='b'&&!game.game_over())scheduleAI();
+$('enterGame').addEventListener('click',()=>{
+ $('chessIntro').hidden=true;
+ try{
+  const telegram=window.Telegram&&window.Telegram.WebApp;
+  if(telegram){telegram.ready();telegram.expand();}
+ }catch(_){}
+});
+
+document.addEventListener('visibilitychange',()=>{
+ if(document.hidden&&clockRunning){tickClock();clockRunning=false;if(timerHandle)clearInterval(timerHandle);}
+});
+window.addEventListener('pagehide',()=>{if(clockRunning)tickClock();saveGame();writeRanks();});
 })();
 </script>
 </body>
