@@ -1,0 +1,97 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#000000">
+<meta name="description" content="YUGATNEO MATRIX RUNNER — игра с белым линейным бегуном, препятствиями и порталами. Прыгай и выходи из Матрицы.">
+<meta property="og:title" content="YUGATNEO MATRIX RUNNER">
+<meta property="og:description" content="Прыгай через препятствия, войди в портал и на время получи суперпрыжок.">
+<meta property="og:type" content="website">
+<link rel="manifest" href="./manifest.webmanifest">
+<link rel="icon" type="image/svg+xml" href="./icon.svg">
+<title>YUGATNEO · MATRIX RUNNER</title>
+<style>
+:root{color-scheme:dark;--bg:#000;--ink:#fff;--shade:#a9b3b1;--line:#3d4240;--green:#92ffad}
+*{box-sizing:border-box}
+html{background:#000}
+body{margin:0;min-height:100vh;min-height:100dvh;background:#000;color:var(--ink);
+  font:16px/1.5 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}
+button,a{font:inherit}
+button{cursor:pointer}
+button:focus-visible,a:focus-visible,canvas:focus-visible{outline:2px solid var(--green);outline-offset:4px}
+.shell{max-width:1110px;margin:auto;padding:clamp(12px,2.8vw,28px);
+  padding-top:max(14px,env(safe-area-inset-top));padding-bottom:max(24px,env(safe-area-inset-bottom))}
+header{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap}
+.brand{font-weight:800;letter-spacing:.12em;font-size:clamp(.85rem,2vw,1.07rem)}
+.brand span{color:#afb7b2;font-weight:400}
+.back{color:var(--shade);font-size:.81rem;text-decoration:none;border-bottom:1px solid var(--line)}
+h1{font-size:clamp(1.9rem,5vw,3.5rem);letter-spacing:-.065em;line-height:1.07;margin:18px 0 8px}
+.lead{color:var(--shade);max-width:700px;font-size:clamp(.79rem,2vw,.98rem);margin:0 0 17px}
+.hud{display:flex;justify-content:space-between;gap:10px;align-items:center;flex-wrap:wrap;
+  border:1px solid #3b3b3b;border-bottom:0;border-radius:15px 15px 0 0;padding:11px 16px;background:#080808}
+.hud-group{display:flex;gap:clamp(12px,3vw,31px);flex-wrap:wrap}
+.hud span{color:var(--shade);font-size:.76rem}
+.hud strong{font-size:clamp(.9rem,2.6vw,1.22rem);font-variant-numeric:tabular-nums}
+#power{color:var(--green)}
+.viewport{position:relative;border:1px solid #424242;overflow:hidden;background:#000;aspect-ratio:2/1;touch-action:manipulation}
+canvas{display:block;width:100%;height:100%;background:#000;touch-action:manipulation}
+.center-prompt{position:absolute;inset:0;display:flex;justify-content:center;align-items:center;text-align:center;
+  padding:12px;background:linear-gradient(#0006,#000a);pointer-events:none}
+.center-prompt[hidden]{display:none}
+.prompt-box{border:1px solid #aaa;background:#050505e9;padding:19px 25px;max-width:410px}
+.prompt-box h2{font-size:clamp(1rem,3vw,1.7rem);letter-spacing:.04em;margin:0 0 7px}
+.prompt-box p{font-size:clamp(.75rem,2.5vw,.9rem);color:#dedede;margin:0}
+.prompt-box .accent{color:var(--green)}
+.action-row{display:grid;grid-template-columns:1.1fr 1fr 1fr;gap:10px;padding:13px 0}
+.action{min-height:53px;border:1px solid #767676;border-radius:10px;background:#101010;color:white;font-weight:750;letter-spacing:.04em;touch-action:manipulation}
+.action.primary{background:white;color:black;border-color:white}
+.action:hover{border-color:var(--green)}
+.notes{display:grid;grid-template-columns:1fr 1fr;gap:13px;margin:12px 0 20px}
+.note{border:1px solid var(--line);padding:14px;border-radius:12px;background:#080808;font-size:.82rem;color:var(--shade)}
+.note strong{color:white}
+.note.matrix{border-color:#427853}
+.status{color:var(--shade);font-size:.82rem;min-height:25px}
+footer{font-size:.73rem;color:#7e8883;margin-top:18px}
+footer a{color:#bacbc1}
+@media(max-width:550px){.shell{padding-left:10px;padding-right:10px}.notes{grid-template-columns:1fr}.hud{padding:7px 9px}.hud-group{gap:12px}.hud span{font-size:.66rem}.action{min-height:57px}.prompt-box{padding:13px}.lead{margin-bottom:12px}}
+@media(prefers-reduced-motion:reduce){.center-prompt{background:#000c}}
+</style>
+</head>
+<body>
+<main class="shell">
+<header><div class="brand">YUGATNEO <span>/ GAMES / 01</span></div><a class="back" href="../index.html">♜ Шахматы</a></header>
+<h1>MATRIX RUNNER<span style="color:#666">_</span></h1>
+<p class="lead">Чёрный мир. Белые линии. Перепрыгивай преграды. Попади в портал — и на 8 секунд увидишь матричный код, получишь высокий прыжок и второй прыжок в воздухе.</p>
+<section aria-label="Игровое поле">
+<div class="hud" aria-live="off">
+  <div class="hud-group"><div><span>ОЧКИ </span><strong id="score">00000</strong></div>
+  <div><span>РЕКОРД </span><strong id="best">00000</strong></div></div>
+  <div><span>РЕЖИМ </span><strong id="power">РЕАЛЬНОСТЬ</strong></div>
+</div>
+<div class="viewport" id="viewport">
+  <canvas id="game" width="960" height="480" tabindex="0" role="img" aria-label="Бегущий человечек. Препятствия на земле и порталы в воздухе. Коснись поля или нажми Пробел, чтобы прыгнуть."></canvas>
+  <div class="center-prompt" id="prompt">
+    <div class="prompt-box">
+      <h2 id="prompt-title">НАЧАТЬ ВЫХОД</h2>
+      <p id="prompt-detail">Нажми «Прыжок» или коснись поля. <span class="accent">Для портала нужно подпрыгнуть.</span></p>
+    </div>
+  </div>
+</div>
+<div class="action-row" aria-label="Управление">
+  <button class="action primary" id="jump" type="button" aria-label="Прыгнуть">↑ ПРЫЖОК</button>
+  <button class="action" id="pause" type="button" aria-label="Пауза или продолжить">Ⅱ ПАУЗА</button>
+  <button class="action" id="restart" type="button" aria-label="Начать заново">↻ ЗАНОВО</button>
+</div>
+<p id="status" class="status" role="status" aria-live="polite">Готов к забегу. Управление: ↑, пробел, W или касание экрана.</p>
+</section>
+<div class="notes">
+ <div class="note"><strong>ОБЫЧНЫЙ МИР</strong><div>Белые контуры на чёрном фоне. Держись подальше от препятствий. Портал находится над землёй — в него нужно впрыгнуть.</div></div>
+ <div class="note matrix"><strong>ВЫХОД ИЗ МАТРИЦЫ</strong><div>Мягкий поток зелёных символов без резких вспышек. Прыжок выше, плюс один дополнительный прыжок в воздухе. Бонус временный.</div></div>
+</div>
+<footer>© 2026 Югатн · YUGATNEO GAME · <a href="../LICENSE">MIT</a>. Игра работает без регистрации. На устройстве сохраняется только число рекорда. Через Telegram открывается по HTTPS-ссылке; для режима Telegram Mini App через бота нужна отдельная настройка.</footer>
+</main>
+<script src="./engine.js"></script>
+<script src="./game.js"></script>
+</body>
+</html>

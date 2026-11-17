@@ -1,0 +1,21 @@
+{
+  "id": "./index.html",
+  "name": "YUGATNEO MATRIX RUNNER",
+  "short_name": "MATRIX RUNNER",
+  "description": "Мини-игра с бегущим линейным человечком, порталами и временным режимом Матрицы.",
+  "lang": "ru",
+  "start_url": "./index.html",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "any",
+  "background_color": "#000000",
+  "theme_color": "#000000",
+  "icons": [
+    {
+      "src": "./icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    }
+  ]
+}

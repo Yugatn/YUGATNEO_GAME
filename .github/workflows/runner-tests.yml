@@ -1,0 +1,36 @@
+name: Matrix Runner smoke and gameplay tests
+on:
+  push:
+    paths:
+      - 'runner/**'
+      - 'tests/runner-engine.test.cjs'
+      - 'index.html'
+      - 'sw.js'
+      - '.github/workflows/runner-tests.yml'
+  pull_request:
+    paths:
+      - 'runner/**'
+      - 'tests/runner-engine.test.cjs'
+      - 'index.html'
+      - 'sw.js'
+      - '.github/workflows/runner-tests.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  runner:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Check browser game and worker syntax
+        run: |
+          node --check runner/engine.js
+          node --check runner/game.js
+          node --check runner/sw.js
+          node --check sw.js
+      - name: Test gameplay physics, portal, collision and PWA assets
+        run: node tests/runner-engine.test.cjs
