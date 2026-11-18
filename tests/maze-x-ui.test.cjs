@@ -111,3 +111,50 @@ test('saved Matrix state allows arming a phase wall jump without a server',()=>{
   assert.deepEqual(errors,[]);
  }finally{w.close();}
 });
+
+test('memory-map overlay only shows explored corridors and freezes the timer',()=>{
+ const {w,frames,errors}=prepare();
+ try{
+  el(w,'mode').value='explorer';el(w,'start').click();
+  el(w,'mapButton').click();
+  assert.equal(el(w,'mapOverlay').hidden,false);
+  assert.match(el(w,'mapStats').textContent,/Открыто/);
+  assert.match(el(w,'mapStats').textContent,/Пройдено новых клеток/);
+  w.dispatchEvent(new w.Event('pagehide'));
+  const save=JSON.parse(w.localStorage.getItem('yugatneo.maze-x.campaign.v1'));
+  assert.equal(save.phase,'map','open map saves state safely');
+  const previous=save.elapsed;
+  stepFrame(frames,1400);stepFrame(frames,1450);
+  assert.equal(el(w,'timer').textContent,'0:00','time frozen while reading map');
+  el(w,'closeMap').click();
+  assert.equal(el(w,'mapOverlay').hidden,true);
+  w.dispatchEvent(new w.Event('pagehide'));
+  const after=JSON.parse(w.localStorage.getItem('yugatneo.maze-x.campaign.v1'));
+  assert.equal(after.phase,'playing');
+  assert.equal(after.elapsed,previous);
+  assert.deepEqual(errors,[]);
+ }finally{w.close();}
+});
+test('legacy v1 saved game restores earlier points and gains the map feature',()=>{
+ const old=E.create('explorer',245);
+ E.start(old);old.score=438;old.steps=50;old.bonus=38;
+ delete old.uniqueSteps;delete old.legacyPoints;
+ for(const f of old.floors)delete f.walked;
+ const {w,frames,errors}=prepare(old);
+ try{
+  assert.equal(el(w,'continue').hidden,false);
+  el(w,'continue').click();
+  assert.equal(el(w,'score').textContent,'438');
+  el(w,'mapButton').click();
+  assert.equal(el(w,'mapOverlay').hidden,false);
+  assert.doesNotThrow(()=>stepFrame(frames,1800));
+  assert.deepEqual(errors,[]);
+ }finally{w.close();}
+});
+test('the map never renders unknown walls, explored-only visual rule is explicit',()=>{
+ const source=fs.readFileSync(path.join(root,'game.js'),'utf8');
+ assert.ok(source.includes('if(!f.seen[k])continue'),'unknown cells must not appear on map');
+ assert.ok(source.includes('E.openMap(s)'));
+ assert.ok(source.includes('E.closeMap(s)'));
+ assert.ok(source.includes('E.upgradeSave(raw)'));
+});
