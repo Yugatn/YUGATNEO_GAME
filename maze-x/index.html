@@ -1,0 +1,139 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#020a0b">
+<meta name="description" content="Лабиринт Икс — большая головоломка в матричном стиле: спиральные этажи, загадки на развилках, агенты, порталы и фазовые прыжки. Telegram Mini App.">
+<meta property="og:title" content="YUGATNEO · ЛАБИРИНТ ИКС">
+<link rel="manifest" href="./manifest.webmanifest">
+<link rel="icon" href="./icon.svg" type="image/svg+xml">
+<title>ЛАБИРИНТ ИКС · Telegram Mini App</title>
+<style>
+:root{color-scheme:dark;--bg:#030b11;--panel:#081f24;--mint:#8cffe0;--line:#416a70;--text:#effff9;--dim:#a0c3bd}
+*{box-sizing:border-box}
+html,body{margin:0;width:100%;height:100%;overflow:hidden;background:var(--bg)}
+body{font:14px/1.45 system-ui,-apple-system,"Segoe UI",sans-serif;color:var(--text);-webkit-user-select:none;user-select:none}
+button,select{font:inherit;color:inherit}
+button{cursor:pointer;touch-action:manipulation}
+button:focus-visible,select:focus-visible{outline:3px solid #ffe4a0;outline-offset:2px}
+#app{height:100vh;height:100dvh;width:100%;position:relative;isolation:isolate;overflow:hidden;background:#02080d}
+#scene{display:block;position:absolute;inset:0;width:100%;height:100%;touch-action:none;outline:none}
+.top{position:absolute;z-index:3;top:0;left:0;right:0;padding:calc(11px + env(safe-area-inset-top)) max(12px,env(safe-area-inset-right)) 0 max(12px,env(safe-area-inset-left));display:flex;justify-content:space-between;align-items:flex-start;gap:8px;pointer-events:none}
+.brand{font-size:10px;letter-spacing:.12em;font-weight:900;color:#96fad4;text-shadow:0 1px 8px #000}
+.brand b{display:block;font-size:19px;color:#f3fff7;letter-spacing:.025em;white-space:nowrap}
+.numbers{display:flex;gap:12px;text-align:right;font-variant-numeric:tabular-nums}
+.metric small{display:block;font-size:10px;color:#b1cec5;font-weight:800;letter-spacing:.07em}
+.metric strong{font-size:17px;font-weight:900}
+.status{position:absolute;z-index:3;top:calc(67px + env(safe-area-inset-top));left:12px;right:12px;display:flex;gap:7px;justify-content:space-between;pointer-events:none;font-size:11px;font-weight:900}
+.pill{padding:5px 9px;border:1px solid #2c7569;border-radius:99px;background:#06352dce;color:#b5ffe3;white-space:nowrap}
+.pill.alert{border-color:#ffac9d;color:#ffe3d8;background:#58302fd0}
+#matrix{display:none;border-color:#70ffbc;color:#d6ffe6}
+#matrix.on{display:block}
+#pause{position:absolute;right:12px;top:calc(108px + env(safe-area-inset-top));z-index:4;border:1px solid #477b74;background:#0b3432dd;border-radius:10px;font-weight:800;font-size:12px;padding:8px 11px}
+#junction{position:absolute;z-index:4;top:calc(109px + env(safe-area-inset-top));left:13px;max-width:75%;border:1px solid #ffe6a1;color:#fff1bd;background:#45391ccb;border-radius:11px;padding:8px 11px;font-weight:900;font-size:12px;display:none}
+#junction.visible{display:block}
+#hint{position:absolute;z-index:5;top:26%;left:50%;transform:translateX(-50%);width:min(90%,360px);padding:10px;border:1px solid #7cffc3;border-radius:13px;background:#063329dc;text-align:center;font-weight:850;pointer-events:none;opacity:0;transition:opacity .2s}
+#hint.visible{opacity:1}
+.legend{position:absolute;z-index:2;bottom:calc(174px + env(safe-area-inset-bottom));left:8px;right:8px;text-align:center;color:#aed5ca;text-shadow:0 2px 8px #000;font-size:11px;pointer-events:none}
+.controller{position:absolute;z-index:4;bottom:calc(13px + env(safe-area-inset-bottom));left:12px;right:12px;display:grid;grid-template-columns:1fr 1fr 1fr 1fr;grid-template-rows:64px 72px;gap:7px}
+.ctrl{border:1px solid #529886;border-radius:16px;background:linear-gradient(150deg,#164945ed,#092a31ef);font-size:23px;font-weight:900;box-shadow:0 4px 18px #000b}
+.ctrl:active{background:#267365;transform:scale(.96)}
+.ctrl small{display:block;font-size:9px;color:#d1e9da;font-weight:750}
+#up{grid-column:2;grid-row:1}#down{grid-column:2;grid-row:2}
+#left{grid-column:1;grid-row:2}#right{grid-column:3;grid-row:2}
+#phase{grid-column:4;grid-row:1/3;border-color:#c9fca8;background:linear-gradient(140deg,#2c6342,#0b382b);font-size:14px}
+#phase:disabled{opacity:.45}
+.overlay{position:absolute;z-index:10;inset:0;display:flex;flex-direction:column;justify-content:center;align-items:center;overflow-y:auto;text-align:center;gap:12px;padding:calc(18px + env(safe-area-inset-top)) 22px calc(20px + env(safe-area-inset-bottom));background:radial-gradient(ellipse at 50% 24%,#16413e 0%,#071d25 42%,#02080e 85%)}
+.overlay[hidden]{display:none}
+.kicker{letter-spacing:.22em;font-size:10px;font-weight:900;color:#9cffd5}
+.hero{width:min(290px,64vw);height:min(225px,29vh);filter:drop-shadow(0 0 25px #4ff3b44f)}
+.overlay h1{font-size:clamp(33px,10vw,62px);font-weight:1000;line-height:.95;letter-spacing:-.06em;margin:5px 0;color:#f5fff8}
+.overlay h1 em{font-style:normal;color:#78ffc3}
+.overlay p{max-width:480px;margin:0 0 5px;color:#bbdcd3;line-height:1.6;font-size:clamp(12px,3.3vw,15px)}
+.choices{display:flex;flex-wrap:wrap;gap:8px;justify-content:center}
+.choices span{border:1px solid #42796b;background:#123a36;border-radius:30px;padding:6px 9px;font-size:11px;color:#b9ffe0}
+.mode-label{font-size:12px;font-weight:800;color:#dcffee}
+#mode{width:min(100%,320px);padding:12px 15px;border-radius:13px;background:#0b2f32;border:1px solid #68b7a1;font-weight:800}
+.start{background:linear-gradient(95deg,#a1ffe4,#b4f6a6);border:0;color:#073b31;padding:14px 28px;border-radius:14px;font-weight:950;font-size:16px;min-width:205px}
+.secondary{background:#153f3e;border:1px solid #6dad96;border-radius:12px;padding:11px 24px;font-weight:850}
+.small{font-size:11px!important;color:#90b9ad!important}
+#riddle{z-index:15;background:radial-gradient(ellipse at center,#1a3a33,#020d14 82%)}
+#question{font-size:clamp(17px,4.3vw,24px);font-weight:900;color:#eaffed;max-width:475px}
+#answers{display:grid;gap:10px;width:min(100%,440px)}
+#answers button{padding:13px 14px;border:1px solid #80bda4;background:#143f37;border-radius:12px;font-size:14px;text-align:left;font-weight:750}
+#answers button:active{background:#266d56}
+#explanation{font-size:13px;color:#eaffd7;max-width:445px;min-height:1em}
+#timeResult{font-size:17px;color:#abffc9;font-weight:900}
+@media(max-width:360px){.brand b{font-size:16px}.numbers{gap:7px}.metric strong{font-size:14px}.pill{font-size:10px;padding:5px 6px}.controller{grid-template-rows:58px 62px}.legend{bottom:146px}}
+@media(max-height:620px){.overlay{display:block;padding-top:12px}.overlay>*{display:block;margin:6px auto}.hero{height:96px}.overlay h1{font-size:37px}.overlay p{font-size:12px;line-height:1.35}.controller{grid-template-rows:45px 48px}.legend{bottom:120px}#phase{font-size:11px}.ctrl{font-size:19px}}
+@media(prefers-reduced-motion:reduce){#hint{transition:none}}
+</style>
+<script src="https://telegram.org/js/telegram-web-app.js"></script>
+<script defer src="./engine.js"></script>
+<script defer src="./game.js"></script>
+</head>
+<body>
+<div id="app">
+<canvas id="scene" tabindex="0" role="img" aria-label="Камера следует за человечком в большом многоярусном лабиринте; виден только ближайший участок"></canvas>
+<header class="top"><div class="brand">YUGATNEO / STORY X<b>ЛАБИРИНТ ИКС</b></div>
+<div class="numbers"><div class="metric"><small>ОЧКИ</small><strong id="score">0</strong></div><div class="metric"><small>ВРЕМЯ</small><strong id="timer">0:00</strong></div></div></header>
+<div class="status"><span class="pill" id="floor">ВИТОК 1/3</span><span class="pill" id="lives">♥ ♥ ♥</span><span class="pill" id="progress">РАЗВЕДАНО 0%</span><span class="pill" id="matrix">01 КОД</span></div>
+<button id="pause" type="button" aria-label="Пауза">Ⅱ</button>
+<button id="junction" type="button">◈ ЗАГАДКА НА РАЗВИЛКЕ</button>
+<div id="hint" role="status" aria-live="polite"></div>
+<div class="legend" id="legend">Исследуй коридоры · Агентов можно обойти · Портал открывает переход сквозь стену</div>
+<nav class="controller" aria-label="Управление в лабиринте">
+<button id="up" class="ctrl" type="button" aria-label="Вверх">↑<small>ВВЕРХ</small></button>
+<button id="left" class="ctrl" type="button" aria-label="Влево">←<small>ВЛЕВО</small></button>
+<button id="down" class="ctrl" type="button" aria-label="Вниз">↓<small>ВНИЗ</small></button>
+<button id="right" class="ctrl" type="button" aria-label="Вправо">→<small>ВПРАВО</small></button>
+<button id="phase" class="ctrl" type="button" aria-label="Подготовить фазовый прыжок сквозь стену" disabled>✦ ФАЗА<small id="charges">ПОСЛЕ ПОРТАЛА</small></button>
+</nav>
+<section class="overlay" id="intro" aria-labelledby="introTitle">
+<div class="kicker">СЮЖЕТ ИКС · СПИРАЛЬ ВОСПРИЯТИЯ</div>
+<svg class="hero" viewBox="0 0 300 230" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+<defs><linearGradient id="m" x1="0" y1="0" x2="0" y2="1"><stop stop-color="#a3ffe0"/><stop offset="1" stop-color="#2b9d8c"/></linearGradient></defs>
+<rect x="23" y="18" width="254" height="194" rx="16" fill="#051922" stroke="#75efc8" stroke-width="3"/>
+<g fill="none" stroke="#62dba9" stroke-width="9" stroke-linecap="square"><path d="M45 52H113V102H77V150H139"/><path d="M150 41V98H209V139H257"/><path d="M174 191H101V169H45"/><path d="M231 183H260V161H184V122"/></g>
+<path d="M64 25Q150-10 236 23" stroke="#83ffe0" stroke-width="2" fill="none"/>
+<circle cx="135" cy="130" r="24" fill="#d1bfa0" stroke="#c6ffdd" stroke-width="2"/>
+<path d="M114 120q21-25 42 0" fill="#11343a"/>
+<g fill="#071820" stroke="#dcfff1" stroke-width="2"><circle cx="126" cy="133" r="9"/><circle cx="146" cy="133" r="9"/></g>
+<path d="M136 133h2" stroke="#dcfff1" stroke-width="2"/>
+<path d="M132 157L119 184M140 157L158 184" fill="none" stroke="url(#m)" stroke-width="13" stroke-linecap="round"/>
+<g fill="none" stroke="#94ffcc" stroke-width="3"><circle cx="232" cy="72" r="21"/><circle cx="232" cy="72" r="12"/><path d="M214 72h36M232 53v38"/></g>
+<g fill="#4dffe0"><circle cx="58" cy="190" r="3"/><circle cx="254" cy="190" r="3"/></g>
+</svg>
+<h1 id="introTitle">ЛАБИРИНТ <em>ИКС</em></h1>
+<p>Исследуй огромный лабиринт, раскрывая только ближайшие коридоры. Уклоняйся от агентов, разгадывай логические задачи на развилках, найди портал, чтобы изменить реальность на матричный код, и поднимись по спиральным виткам к выходу.</p>
+<div class="choices"><span>ГЕНЕРАЦИЯ МАРШРУТОВ</span><span>2–5 ЭТАЖЕЙ</span><span>ЗАГАДКИ + ОЧКИ</span><span>ПОРТАЛЫ</span></div>
+<label class="mode-label" for="mode">Сложность и размер лабиринта</label>
+<select id="mode">
+<option value="explorer">Исследователь · 25×25 · 2 витка</option>
+<option value="navigator" selected>Навигатор · 37×37 · 3 витка</option>
+<option value="architect">Архитектор · 49×49 · 4 витка</option>
+<option value="master">Мастер Матрицы · 65×65 · 5 витков</option>
+</select>
+<button class="start" id="start" type="button">▶ НАЧАТЬ ИССЛЕДОВАНИЕ</button>
+<button class="secondary" id="continue" type="button" hidden>↳ ПРОДОЛЖИТЬ СОХРАНЕНИЕ</button>
+<p class="small">Загадки необязательны, но правильный ответ подсветит маршрут и принесёт бонус. Фантастический лабиринт — игра для тренировки логического поиска и реакции, не клинический тест.</p>
+</section>
+<section class="overlay" id="riddle" hidden aria-labelledby="riddleTitle">
+<div class="kicker">РАЗВИЛКА · ЛОГИЧЕСКОЕ ИСПЫТАНИЕ</div><h1 id="riddleTitle">ЗАГАДКА</h1>
+<p id="question"></p><div id="answers"></div><div id="explanation" role="status"></div>
+<button class="secondary" id="skip" type="button">ПРОПУСТИТЬ БЕЗ ШТРАФА</button>
+</section>
+<section class="overlay" id="paused" hidden aria-labelledby="pauseTitle">
+<div class="kicker">ПУТЬ ПРИОСТАНОВЛЕН</div><h1 id="pauseTitle">ПАУЗА</h1>
+<p>Ни время, ни агенты не движутся, пока ты отдыхаешь.</p>
+<button class="start" id="resume" type="button">▶ ПРОДОЛЖИТЬ</button><button class="secondary" id="menu" type="button">НА ЗАСТАВКУ</button>
+</section>
+<section class="overlay" id="end" hidden aria-labelledby="endTitle">
+<div class="kicker" id="endKicker">МАРШРУТ ЗАВЕРШЁН</div><h1 id="endTitle">НОВЫЙ <em>ВИТОК</em></h1>
+<p id="reason"></p><div id="timeResult"></div>
+<button class="start" id="again" type="button">↻ НОВЫЙ ЛАБИРИНТ</button><button class="secondary" id="endMenu" type="button">СМЕНИТЬ СЛОЖНОСТЬ</button>
+</section>
+</div>
+</body>
+</html>
