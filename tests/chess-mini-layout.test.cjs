@@ -26,6 +26,12 @@ async function createPage(browser, width, height) {
   await page.addScriptTag({content:chessScript+'\nwindow.Chess=Chess;'});
   await page.addScriptTag({content:puzzleScript});
   await page.addScriptTag({content:inlineScripts[0]});
+  const state=await page.evaluate(()=>({
+    chess:typeof Chess,puzzles:typeof NeoChessPuzzles,
+    squares:document.querySelectorAll('#board .square').length,
+    title:document.querySelector('#statusTitle')?.textContent,
+  }));
+  if(state.squares!==64)throw Error('Chess initialization failed: '+JSON.stringify({state,issues}));
   await page.locator('#enterGame').click();
   await page.locator('#board .square').first().waitFor();
   return {page,issues};
