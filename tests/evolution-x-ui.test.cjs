@@ -11,7 +11,7 @@ const script=fs.readFileSync(path.join(root,'game.js'),'utf8');
 function fakeContext(){
  const gradient=()=>({addColorStop(){}});
  const ctx={
-  fillRect(){},strokeRect(){},fillText(){},beginPath(){},ellipse(){},
+  fillRect(){},strokeRect(){},fillText(){},beginPath(){},ellipse(){},arc(){},
   fill(){},stroke(){},moveTo(){},lineTo(){},closePath(){},save(){},restore(){},
   translate(){},rotate(){},setTransform(){},
   createLinearGradient:gradient,createRadialGradient:gradient
