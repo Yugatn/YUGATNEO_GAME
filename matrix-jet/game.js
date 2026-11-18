@@ -35,6 +35,7 @@ function writeBest(){
 function size(){
  const r=canvas.getBoundingClientRect();
  w=Math.max(280,r.width||window.innerWidth);h=Math.max(400,r.height||window.innerHeight);
+ s.aspect=w/h;
  dpr=Math.min(2,window.devicePixelRatio||1);
  canvas.width=Math.round(w*dpr);canvas.height=Math.round(h*dpr);
  ctx.setTransform(dpr,0,0,dpr,0,0);
@@ -47,6 +48,7 @@ function overlay(name){
 function note(message,ms=1250){noteText=message;noteEnd=performance.now()+ms;}
 function reset(){
  s=Engine.create((Date.now()^Math.floor(Math.random()*1000000))>>>0);
+ s.aspect=w/h;
  Engine.start(s);last=performance.now();
  overlay(null);note('УКЛОНЯЙСЯ И МЕНЯЙ ВЫСОТУ',1600);
  hud();feel('light');
