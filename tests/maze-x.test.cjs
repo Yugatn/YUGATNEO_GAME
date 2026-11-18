@@ -33,12 +33,13 @@ test('four difficulty profiles have increasingly large multi-layer labyrinths',(
   const cfg=E.MODES[name];
   assert.deepEqual([cfg.size,cfg.levels],expected[i]);
   assert.equal(s.floors.length,cfg.levels);
-  for(const f of s.floors){
+  s.floors.forEach((f,floorIndex)=>{
    assert.equal(f.walls.length,cfg.size**2);
    assert.equal(f.seen.length,cfg.size**2);
-   assert.equal(f.visited>0,true);
-   assert.equal(f.visited<cfg.size*cfg.size,true,'only nearby tiles initially visible');
-  }
+   if(floorIndex===0)assert.ok(f.visited>0,'starting area is revealed');
+   else assert.equal(f.visited,0,'future spiral floors stay unexplored');
+   assert.ok(f.visited<cfg.size*cfg.size,'only nearby tiles initially visible');
+  });
  });
 });
 test('all maze cells reachable; wall connections reciprocal; outer border stays solid',()=>{
