@@ -25,3 +25,26 @@ jobs:
           node --check chess-mini/sw.js
       - name: Run checks for puzzle bank, chess rules and interface
         run: node --test tests/chess-mini.test.cjs tests/chess-mini-ui.test.cjs
+
+  visual-layout:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Install chess rules and Chromium test runner
+        run: npm install --no-save --no-audit --no-fund chess.js@0.10.3 playwright@1.55.1
+      - name: Install Chromium
+        run: npx playwright install --with-deps chromium
+      - name: Verify geometry and interactions across screen sizes
+        run: node --test tests/chess-mini-layout.test.cjs
+      - name: Save screenshots for manual inspection
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: matrix-chess-layout-screenshots
+          path: test-artifacts/chess-mini/
+          if-no-files-found: ignore
