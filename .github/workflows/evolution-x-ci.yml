@@ -1,0 +1,26 @@
+name: Evolution X Mini App gameplay tests
+on:
+  push:
+    branches: [main, 'feature/**']
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  unit-tests:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Validate game source
+        run: |
+          node --check evolution-x/engine.js
+          node --check evolution-x/game.js
+          node --check evolution-x/sw.js
+      - name: Test full world cycle
+        run: node --test tests/evolution-x.test.cjs
