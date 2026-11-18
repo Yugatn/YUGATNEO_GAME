@@ -63,3 +63,17 @@ test('offline app shell and services exist',()=>{
  const rootWorker=fs.readFileSync(path.join(__dirname,'../sw.js'),'utf8');
  assert.ok(rootWorker.includes("chess-mini/"),'root worker must defer to this app');
 });
+
+test('responsive 8x8 board CSS is versioned in the offline app shell',()=>{
+ const html=fs.readFileSync(path.join(root,'index.html'),'utf8');
+ const css=fs.readFileSync(path.join(root,'board-layout.css'),'utf8');
+ const sw=fs.readFileSync(path.join(root,'sw.js'),'utf8');
+ assert.ok(html.includes('href="./board-layout.css"'),'game loads dedicated layout rules');
+ assert.ok(css.includes('grid-template-rows: repeat(8, minmax(0, 1fr))'),'8 explicit equal rows');
+ assert.ok(css.includes('grid-template-columns: repeat(8, minmax(0, 1fr))'),'8 explicit equal columns');
+ assert.ok(css.includes('aspect-ratio: 1 / 1'),'board constrained to square');
+ assert.ok(css.includes('font-size: clamp(16px, 8.8cqi, 65px)'),'piece sizes follow board, not viewport');
+ assert.ok(sw.includes("'./board-layout.css'"),'PWA caches responsive layout');
+ assert.ok(sw.includes('yugatneo-matrix-chess-v2'),'PWA version changed to avoid old styles');
+ assert.ok(html.includes('el.dataset.square=sq'),'each square is addressable for geometry and mobile tests');
+});

@@ -1,0 +1,153 @@
+/* MATRIX CHESS / v0.2: invariant 8×8 geometry across mobile WebViews.
+   Keep all overrides here rather than layering more ad-hoc media queries.
+   Game logic remains in index.html and does not depend on viewport dimensions.
+*/
+:root { --board-frame: 4px; }
+.layout,
+.board-wrap,
+.board,
+.side,
+.card { min-width: 0; }
+.board-wrap {
+  width: 100%;
+  max-width: 680px;
+  margin-inline: auto;
+}
+/* The original stylesheet declared 8 columns but left rows implicitly auto-sized.
+   Intrinsic Unicode glyph heights could therefore stretch rows unevenly. */
+.board {
+  display: grid;
+  grid-template-columns: repeat(8, minmax(0, 1fr));
+  grid-template-rows: repeat(8, minmax(0, 1fr));
+  grid-auto-rows: minmax(0, 1fr);
+  grid-auto-flow: row;
+  width: 100%;
+  height: auto;
+  aspect-ratio: 1 / 1;
+  min-width: 0;
+  min-height: 0;
+  box-sizing: border-box;
+  gap: 0;
+  padding: 0;
+  border: var(--board-frame) solid #194933;
+  border-radius: 8px;
+  overflow: hidden;
+  isolation: isolate;
+  container-type: inline-size;
+}
+.board > .square {
+  position: relative;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  width: 100%;
+  height: 100%;
+  min-width: 0;
+  min-height: 0;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  overflow: hidden;
+  box-sizing: border-box;
+  appearance: none;
+  -webkit-appearance: none;
+  -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
+  line-height: 1;
+}
+.board .piece {
+  display: block;
+  flex: none;
+  max-width: 100%;
+  width: auto;
+  height: auto;
+  margin: 0;
+  padding: 0;
+  white-space: nowrap;
+  text-align: center;
+  line-height: 1;
+  font-size: clamp(18px, 7.9vw, 63px); /* fallback for older WebViews */
+  font-weight: normal;
+  font-variant-ligatures: none;
+  user-select: none;
+  pointer-events: none;
+  transform: translateY(-.025em);
+}
+@supports (font-size: 1cqi) {
+  /* cqi measures the board's width, not the viewport. 8.8% of its width
+     fits inside one 12.5%-wide square even on 320px devices. */
+  .board .piece { font-size: clamp(16px, 8.8cqi, 65px); }
+  body[data-piece-set="letters"] .board .piece {
+    font-size: clamp(15px, 7.7cqi, 58px);
+    letter-spacing: -.035em;
+  }
+}
+.board .coord {
+  position: absolute;
+  z-index: 4;
+  pointer-events: none;
+  line-height: 1.1;
+  font-size: clamp(8px, 1.25vw, 11px);
+}
+.board .square:focus-visible {
+  outline: 2px solid #ffdf89;
+  outline-offset: -3px;
+  z-index: 5;
+}
+.board .square.last::before,
+.board .square.best-from::before,
+.board .square.best-to::before,
+.board .square.legal::after,
+.board .square.capture::after { pointer-events: none; }
+.setting-row > label {
+  min-width: 0;
+}
+.setting-row select {
+  width: 100%;
+  min-width: 0;
+  max-width: 100%;
+}
+@media (max-width: 760px) {
+  .layout { grid-template-columns: minmax(0, 1fr); }
+  .board-wrap { max-width: min(100%, 620px); }
+  .board { --board-frame: 3px; }
+}
+@media (max-width: 390px) {
+  .app { padding: 9px; }
+  header { gap: 7px; margin-bottom: 11px; }
+  .brand { gap: 8px; min-width: 0; }
+  .mark { width: 34px; height: 34px; flex-shrink: 0; font-size: 21px; }
+  .brand h1 { font-size: clamp(14px, 4.3vw, 18px); }
+  .brand .eyebrow { font-size: 9px; letter-spacing: .08em; }
+  header > button { padding: 8px; font-size: 12px; flex-shrink: 0; }
+  .board-note { font-size: 11px; }
+}
+@media (max-width: 330px) {
+  .board .coord { font-size: 8px; }
+  header > button { padding: 7px 5px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  button { transition: none; }
+}
+
+/* Short Telegram WebViews and landscape phones: the intro's centered
+   grid hid the Start button outside the viewport. Allow scrolling. */
+@media (max-height: 540px) {
+  .intro {
+    display: block;
+    overflow-y: auto;
+    overflow-x: hidden;
+    -webkit-overflow-scrolling: touch;
+    overscroll-behavior: contain;
+    padding: 12px 16px max(22px, env(safe-area-inset-bottom));
+    text-align: center;
+  }
+  .intro-inner { max-width: 480px; margin: 0 auto; }
+  .intro .eye { font-size: clamp(26px, 9vh, 48px); margin: 0 0 4px; }
+  .intro h2 { font-size: clamp(24px, 8vh, 38px); margin: 4px 0; }
+  .intro p { line-height: 1.35; font-size: 12px; margin: 5px 0; }
+  .intro .primary { margin: 8px auto; padding: 11px 25px; font-size: 15px; }
+  .modal { overflow-y: auto; align-items: start; }
+  .modal-card { margin: auto; max-height: calc(100dvh - 24px); overflow-y: auto; }
+}

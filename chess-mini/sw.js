@@ -1,8 +1,8 @@
 /* YUGATNEO MATRIX CHESS offline shell: no personal data or chat messages cached. */
 'use strict';
-const CACHE='yugatneo-matrix-chess-v1';
+const CACHE='yugatneo-matrix-chess-v2';
 const PREFIX='yugatneo-matrix-chess-';
-const FILES=['./','./index.html','./puzzles.js','./manifest.webmanifest','./icon.svg'];
+const FILES=['./','./index.html','./board-layout.css','./puzzles.js','./manifest.webmanifest','./icon.svg'];
 const ENGINE='https://cdnjs.cloudflare.com/ajax/libs/chess.js/0.10.3/chess.min.js';
 self.addEventListener('install',event=>event.waitUntil((async()=>{
  const cache=await caches.open(CACHE);

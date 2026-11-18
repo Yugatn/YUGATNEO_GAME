@@ -25,3 +25,34 @@ jobs:
           node --check chess-mini/sw.js
       - name: Run checks for puzzle bank, chess rules and interface
         run: node --test tests/chess-mini.test.cjs tests/chess-mini-ui.test.cjs
+
+  visual-layout:
+    # Playwright 1.55 Chromium image supports Ubuntu 24.04, not GitHub's Ubuntu 26.04 latest.
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Install chess rules and Chromium test runner
+        run: npm install --no-save --no-audit --no-fund chess.js@0.10.3 playwright@1.55.1
+      - name: Use preinstalled Chrome where available
+        run: |
+          if command -v google-chrome >/dev/null 2>&1; then
+            echo "CHROME_BIN=$(command -v google-chrome)" >> "$GITHUB_ENV"
+          elif command -v chromium >/dev/null 2>&1; then
+            echo "CHROME_BIN=$(command -v chromium)" >> "$GITHUB_ENV"
+          else
+            npx playwright install --with-deps chromium
+          fi
+      - name: Verify geometry and interactions across screen sizes
+        run: node --test tests/chess-mini-layout.test.cjs
+      - name: Save screenshots for manual inspection
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: matrix-chess-layout-screenshots
+          path: test-artifacts/chess-mini/
+          if-no-files-found: ignore

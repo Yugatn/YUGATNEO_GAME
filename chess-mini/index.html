@@ -58,6 +58,7 @@ body[data-board="matrix"] .square.dark{background-image:repeating-linear-gradien
 @media(max-width:550px){.app{padding:10px}.card{padding:12px}.board{border-width:3px}.actions{grid-template-columns:1fr 1fr}.setting-row{gap:5px}header{margin-bottom:10px}}
 
 </style>
+<link rel="stylesheet" href="./board-layout.css">
 </head>
 <body>
 <section class="intro" id="chessIntro" aria-labelledby="chessTitle"><div class="intro-inner"><div class="eye" aria-hidden="true">♔ ◈ ♚</div><div class="eyebrow">ЮГАТН · СЮЖЕТ ИКС · ИЗМЕРЕНИЕ РАЗУМА</div><h2 id="chessTitle">MATRIX CHESS</h2><p>Войди в матричное шахматное измерение. Играй вдвоём, с компьютером или решай тактические головоломки. Развивай внимательность и мышление через практику.</p><button class="primary" id="enterGame">▶ НАЧАТЬ ИГРУ</button><p style="font-size:11px;margin-top:15px">Подсказки по желанию · Сохраняемые результаты · Без регистрации</p></div></section><div class="app">
@@ -263,7 +264,7 @@ function render(){
 const board=$('board');board.innerHTML='';
 for(let r=0;r<8;r++)for(let c=0;c<8;c++){
 const file=flipped?7-c:c,rank=flipped?r+1:8-r,sq=files[file]+rank,p=game.get(sq),el=document.createElement('button');
-el.type='button';el.className='square '+(((file+rank)%2===0)?'light':'dark');el.setAttribute('role','gridcell');el.setAttribute('aria-label',sq+(p?', '+(p.color==='w'?'белая ':'чёрная ')+pieceName(p.type):''));
+el.type='button';el.className='square '+(((file+rank)%2===0)?'light':'dark');el.dataset.square=sq;el.setAttribute('role','gridcell');el.setAttribute('aria-rowindex',String(r+1));el.setAttribute('aria-colindex',String(c+1));el.setAttribute('aria-label',sq+(p?', '+(p.color==='w'?'белая ':'чёрная ')+pieceName(p.type):''));
 if(selected===sq)el.classList.add('selected');
 if(assist&&bestSuggestion){if(bestSuggestion.from===sq)el.classList.add('best-from');if(bestSuggestion.to===sq)el.classList.add('best-to');}
 if(lastMove&&(lastMove.from===sq||lastMove.to===sq))el.classList.add('last');
