@@ -23,6 +23,17 @@ async function createPage(browser, width, height) {
   // Load the real committed HTML and CSS in memory without DNS or CDN requests.
   // The production chess.js and puzzles are injected as local JavaScript.
   await page.setContent(staticHtml,{waitUntil:'load'});
+  // about:blank denies native localStorage. Supply an in-memory equivalent
+  // for layout testing; production HTTPS storage is covered in separate tests.
+  await page.evaluate(()=>{
+    const values=new Map();
+    Object.defineProperty(window,'localStorage',{configurable:true,value:{
+      getItem:key=>values.has(String(key))?values.get(String(key)):null,
+      setItem:(key,value)=>values.set(String(key),String(value)),
+      removeItem:key=>values.delete(String(key)),
+      clear:()=>values.clear(),
+    }});
+  });
   await page.addScriptTag({content:chessScript+'\nwindow.Chess=Chess;'});
   await page.addScriptTag({content:puzzleScript});
   await page.addScriptTag({content:inlineScripts[0]});
