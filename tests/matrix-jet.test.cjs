@@ -119,7 +119,7 @@ test('uncollected portal is optional and does not harm the plane',()=>{
 });
 test('speed rises to bounded maximum and spawns both obstacle kinds and portals',()=>{
  const s=E.create(211);E.start(s);
- for(let i=0;i<180*30;i++)E.step(s,1/30);
+ for(let i=0;i<180*30;i++){s.invulnerable=2;E.step(s,1/30);}
  assert.ok(s.speed<=E.C.MAX_SPEED);
  assert.ok(s.speed>E.C.START_SPEED);
  assert.ok(s.nextId>12);
