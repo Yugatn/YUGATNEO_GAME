@@ -17,10 +17,12 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: '22'
+      - name: Install browser simulation dependency
+        run: npm install --no-save --no-audit --no-fund jsdom@26.1.0
       - name: Validate game source
         run: |
           node --check evolution-x/engine.js
           node --check evolution-x/game.js
           node --check evolution-x/sw.js
       - name: Test full world cycle
-        run: node --test tests/evolution-x.test.cjs
+        run: node --test tests/evolution-x.test.cjs tests/evolution-x-ui.test.cjs
