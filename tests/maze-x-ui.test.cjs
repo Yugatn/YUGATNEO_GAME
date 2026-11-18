@@ -158,3 +158,16 @@ test('the map never renders unknown walls, explored-only visual rule is explicit
  assert.ok(source.includes('E.closeMap(s)'));
  assert.ok(source.includes('E.upgradeSave(raw)'));
 });
+
+test('corrupted legacy save is ignored without breaking a new game',()=>{
+ const broken=E.create('explorer',700);E.start(broken);
+ delete broken.floors[0].start;
+ const {w,frames,errors}=prepare(broken);
+ try{
+  assert.equal(el(w,'continue').hidden,true,'no Resume for an invalid save');
+  el(w,'start').click();
+  assert.equal(el(w,'intro').hidden,true); // replaced below
+  assert.doesNotThrow(()=>stepFrame(frames,1300));
+  assert.deepEqual(errors,[]);
+ }finally{w.close();}
+});
