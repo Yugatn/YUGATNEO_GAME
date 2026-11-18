@@ -18,7 +18,9 @@ function restore(){
   const item=JSON.parse(localStorage.getItem(KEY)||'null');
   if(!item||item.version!==1||!validPhases.has(item.phase))return null;
   if(!Array.isArray(item.cells)||item.cells.length>Core.CELL_GOAL)return null;
-  if(item.phase==='runner'&&!item.runner||item.phase==='space'&&!item.space)return null;
+  if((item.phase==='runner'||item.phase==='launch')&&!item.runner)return null;
+  if((item.phase==='space'||item.phase==='landing')&&!item.space)return null;
+  if((item.phase==='cells'||item.phase==='emergence')&&!item.cells.length)return null;
   if(!Number.isFinite(item.score)||item.score<0||!Number.isInteger(item.planet)||item.planet<0||item.planet>1000)return null;
   return item;
  }catch(_){return null;}
