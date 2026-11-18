@@ -343,8 +343,8 @@ function drawRocket(x,y,sz){
 function drawSpace(){
  const p=state.space;
  gradient('#020817','#081829');drawStars(72,'#fff');
- if(p.distance>SPACE_GOAL-250){
-  const size=Math.max(20,Math.min(100,(p.distance-(SPACE_GOAL-250))*.37));
+ if(p.distance>Core.SPACE_GOAL-250){
+  const size=Math.max(20,Math.min(100,(p.distance-(Core.SPACE_GOAL-250))*.37));
   const pg=ctx.createRadialGradient(W*.54,H*.17,8,W*.54,H*.17,size);
   pg.addColorStop(0,'#6ef2a1');pg.addColorStop(.7,'#1d7b8d');pg.addColorStop(1,'#174452');
   ellipse(W*.54,H*.17,size,size,pg,'#94ffcb');
