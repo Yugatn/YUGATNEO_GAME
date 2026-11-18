@@ -1,0 +1,20 @@
+{
+  "name": "YUGATNEO EVOLUTION X · STORY X",
+  "short_name": "EVOLUTION X",
+  "description": "Клетки, человек, порталы Матрицы, ракета и новая планета",
+  "lang": "ru",
+  "start_url": "./index.html",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#060e1c",
+  "theme_color": "#060e1c",
+  "icons": [
+    {
+      "src": "./icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}
