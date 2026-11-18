@@ -26,3 +26,31 @@ jobs:
           node --check maze-x/sw.js
       - name: Verify maze generation, escape paths and UI
         run: node --test tests/maze-x.test.cjs tests/maze-x-ui.test.cjs
+
+  visual-browser:
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Install Playwright
+        run: npm install --no-save --no-audit --no-fund playwright@1.55.1
+      - name: Find Chrome or install Chromium
+        run: |
+          if command -v google-chrome >/dev/null 2>&1; then
+            echo "CHROME_BIN=$(command -v google-chrome)" >> "$GITHUB_ENV"
+          else
+            npx playwright install --with-deps chromium
+          fi
+      - name: Check portrait viewport, riddle UI and maze Canvas
+        run: node --test tests/maze-x-browser.test.cjs
+      - name: Keep manual review screenshots
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: labyrinth-x-mobile-views
+          path: test-artifacts/maze-x/
+          if-no-files-found: ignore
