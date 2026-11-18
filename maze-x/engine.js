@@ -67,7 +67,7 @@ function makeFloor(s,n,braid){
   walls[a]&=~d.bit;walls[b]&=~d.reverse;
  }
  return {size:n,walls,start:{x:1,y:1},stair:null,exit:null,portals:[],
-  agents:[],seen:Array(total).fill(0),answered:{},visited:0};
+  agents:[],seen:Array(total).fill(0),walked:Array(total).fill(0),answered:{},visited:0};
 }
 function search(f,origin,target){
  const n=f.size,N=n*n,prev=new Int32Array(N),dist=new Int32Array(N),q=new Int32Array(N);
@@ -124,18 +124,46 @@ function create(mode='navigator',seed=2026){
  const cfg=MODES[mode];
  const s={version:1,mode,seed:(Number.isInteger(seed)?seed:2026)>>>0,phase:'ready',
   floors:[],floor:0,player:{x:1,y:1,facing:'right'},lives:3,
-  elapsed:0,steps:0,score:0,bonus:0,discovered:0,portals:0,riddlesSolved:0,
+  elapsed:0,steps:0,uniqueSteps:0,legacyPoints:0,score:0,bonus:0,discovered:0,portals:0,riddlesSolved:0,
   agentsDodged:0,wallJumps:0,matrix:false,charges:0,phaseArmed:false,
   moveCooldown:0,safeTimer:1.5,events:[],riddle:null,hintPath:[],hintUntil:0,
-  reason:'',timeBonus:0,nearAgent:false};
+  reason:'',timeBonus:0,nearAgent:false,lastEscapeAt:-100};
  for(let i=0;i<cfg.levels;i++){
   const floor=makeFloor(s,cfg.size,cfg.braid);
   populate(s,floor,cfg,i);s.floors.push(floor);
  }
+ s.floors[0].walked[ix(s.player.x,s.player.y,cfg.size)]=1;
  reveal(s);return s;
 }
 function start(s){if(s.phase!=='ready'&&s.phase!=='paused')return false;s.phase='playing';return true;}
 function pause(s){if(s.phase!=='playing')return false;s.phase='paused';return true;}
+function openMap(s){
+ if(s.phase!=='playing')return false;
+ s.phase='map';s.events=['mapOpen'];return true;
+}
+function closeMap(s){
+ if(s.phase!=='map')return false;
+ s.phase='playing';s.events=['mapClose'];return true;
+}
+function upgradeSave(s){
+ // Preserve v1 progress and scores. Earlier builds awarded points for every
+ // step, so retain points already earned while switching future movement
+ // rewards to a once-per-cell model.
+ if(!s||!MODES[s.mode]||!Array.isArray(s.floors))return s;
+ const n=MODES[s.mode].size;
+ if(!Number.isFinite(s.legacyPoints))s.legacyPoints=Math.max(0,(Number(s.score)||0)-(Number(s.bonus)||0));
+ if(!Number.isFinite(s.uniqueSteps))s.uniqueSteps=0;
+ if(!Number.isFinite(s.lastEscapeAt))s.lastEscapeAt=-100;
+ for(let i=0;i<s.floors.length;i++){
+  const f=s.floors[i];
+  if(!Array.isArray(f.walked)||f.walked.length!==n*n){
+   f.walked=Array(n*n).fill(0);
+   f.walked[ix(f.start.x,f.start.y,n)]=1;
+   if(i===s.floor)f.walked[ix(s.player.x,s.player.y,n)]=1;
+  }
+ }
+ return s;
+}
 function nearAgent(s){
  const f=s.floors[s.floor];
  return f.agents.some(a=>Math.abs(a.x-s.player.x)+Math.abs(a.y-s.player.y)<=3);
@@ -151,11 +179,25 @@ function agentHit(s){
  }else{
   s.player.x=s.floors[s.floor].start.x;
   s.player.y=s.floors[s.floor].start.y;
+  s.nearAgent=false;
   s.events.push('respawn');reveal(s);
  }
  return true;
 }
-function score(s){s.score=Math.floor(s.steps*8*MODES[s.mode].mult)+s.bonus;return s.score;}
+function score(s){
+ s.score=Math.max(0,Math.floor((s.uniqueSteps||0)*8*MODES[s.mode].mult+
+  (s.legacyPoints||0)+s.bonus));
+ return s.score;
+}
+function rememberCell(s){
+ const f=s.floors[s.floor],i=ix(s.player.x,s.player.y,f.size);
+ if(!f.walked[i]){
+  f.walked[i]=1;s.uniqueSteps++;
+  s.events.push('newCell');
+  return true;
+ }
+ return false;
+}
 function complete(s){
  const cfg=MODES[s.mode];
  s.timeBonus=Math.max(0,Math.round((cfg.bonusTime-s.elapsed)*4*cfg.mult));
@@ -174,7 +216,9 @@ function arrived(s){
   s.floor++;s.player.x=s.floors[s.floor].start.x;s.player.y=s.floors[s.floor].start.y;
   s.player.facing='right';s.moveCooldown=.3;s.safeTimer=2.5;
   s.bonus+=370*MODES[s.mode].mult;s.events.push('stair');
-  s.phaseArmed=false;s.hintPath=[];s.hintUntil=0;reveal(s);
+  s.phaseArmed=false;s.hintPath=[];s.hintUntil=0;s.nearAgent=false;
+  s.floors[s.floor].walked[ix(s.player.x,s.player.y,s.floors[s.floor].size)]=1;
+  reveal(s);
  }else if(f.exit&&p.x===f.exit.x&&p.y===f.exit.y)complete(s);
 }
 function tryMove(s,direction,phaseWall=false){
@@ -192,7 +236,7 @@ function tryMove(s,direction,phaseWall=false){
  if(wall){s.charges--;s.phaseArmed=false;s.wallJumps++;s.safeTimer=Math.max(1.0,s.safeTimer);s.bonus+=55;s.events.push('phaseWall');}
  else if(s.phaseArmed){s.phaseArmed=false;}
  p.x=nx;p.y=ny;s.steps++;s.moveCooldown=.095;
- s.events.push('step');reveal(s);arrived(s);
+ s.events.push('step');rememberCell(s);reveal(s);arrived(s);
  if(s.phase==='playing')agentHit(s);
  score(s);return true;
 }
@@ -275,7 +319,10 @@ function step(s,dtInput){
   }
  }
  const near=nearAgent(s);
- if(s.nearAgent&&!near){s.agentsDodged++;s.bonus+=40*cfg.mult;s.events.push('escape');}
+ if(s.nearAgent&&!near&&s.elapsed-s.lastEscapeAt>=12){
+  s.agentsDodged++;s.lastEscapeAt=s.elapsed;
+  s.bonus+=40*cfg.mult;s.events.push('escape');
+ }
  s.nearAgent=near;
  if(s.hintUntil&&s.elapsed>s.hintUntil){s.hintUntil=0;s.hintPath=[];s.events.push('hintGone');}
  score(s);
@@ -293,7 +340,7 @@ function progress(s){
   mode:cfg.label
  };
 }
-const api={MODES,DIRECTIONS,RIDDLES,create,start,pause,move,armPhase,phaseThrough,step,
+const api={MODES,DIRECTIONS,RIDDLES,create,start,pause,openMap,closeMap,upgradeSave,move,armPhase,phaseThrough,step,
  riddleOffer,askRiddle,answerRiddle,skipRiddle,shortestHint,search,openDirs,progress,score,
  atJunction,ix,within,nearAgent};
 if(typeof module!=='undefined'&&module.exports)module.exports=api;
