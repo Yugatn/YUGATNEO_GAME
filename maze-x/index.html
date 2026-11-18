@@ -68,6 +68,19 @@ button:focus-visible,select:focus-visible{outline:3px solid #ffe4a0;outline-offs
 @media(max-width:360px){.brand b{font-size:16px}.numbers{gap:7px}.metric strong{font-size:14px}.pill{font-size:10px;padding:5px 6px}.controller{grid-template-rows:58px 62px}.legend{bottom:146px}}
 @media(max-height:620px){.overlay{display:block;padding-top:12px}.overlay>*{display:block;margin:6px auto}.hero{height:96px}.overlay h1{font-size:37px}.overlay p{font-size:12px;line-height:1.35}.controller{grid-template-rows:45px 48px}.legend{bottom:120px}#phase{font-size:11px}.ctrl{font-size:19px}}
 @media(prefers-reduced-motion:reduce){#hint{transition:none}}
+
+/* v1.1 — optional explored-only memory map; still never reveals the full maze. */
+#mapButton{position:absolute;right:57px;top:calc(108px + env(safe-area-inset-top));z-index:4;
+ border:1px solid #578c82;background:#103b38e8;border-radius:10px;
+ padding:8px 10px;font-size:12px;font-weight:850}
+#mapOverlay{z-index:16;gap:10px}
+#mapCanvas{display:block;width:min(83vw,430px,52vh);max-width:100%;height:auto;aspect-ratio:1;
+ background:#020d11;border:2px solid #66b99b;border-radius:13px;
+ image-rendering:pixelated;box-shadow:0 0 25px #49fbb02a}
+#mapStats{font-size:12px;color:#cbf5e1;font-variant-numeric:tabular-nums}
+#mapOverlay .small{max-width:440px}
+@media(max-height:620px){#mapCanvas{width:min(54vw,220px,40vh)}#mapOverlay{gap:5px}
+ #mapOverlay .small{font-size:10px!important}}
 </style>
 <script src="https://telegram.org/js/telegram-web-app.js"></script>
 <script defer src="./engine.js"></script>
@@ -79,10 +92,11 @@ button:focus-visible,select:focus-visible{outline:3px solid #ffe4a0;outline-offs
 <header class="top"><div class="brand">YUGATNEO / STORY X<b>ЛАБИРИНТ ИКС</b></div>
 <div class="numbers"><div class="metric"><small>ОЧКИ</small><strong id="score">0</strong></div><div class="metric"><small>ВРЕМЯ</small><strong id="timer">0:00</strong></div></div></header>
 <div class="status"><span class="pill" id="floor">ВИТОК 1/3</span><span class="pill" id="lives">♥ ♥ ♥</span><span class="pill" id="progress">РАЗВЕДАНО 0%</span><span class="pill" id="matrix">01 КОД</span></div>
+<button id="mapButton" type="button" aria-label="Открыть карту исследованных коридоров">▦ КАРТА</button>
 <button id="pause" type="button" aria-label="Пауза">Ⅱ</button>
 <button id="junction" type="button">◈ ЗАГАДКА НА РАЗВИЛКЕ</button>
 <div id="hint" role="status" aria-live="polite"></div>
-<div class="legend" id="legend">Исследуй коридоры · Агентов можно обойти · Портал открывает переход сквозь стену</div>
+<div class="legend" id="legend">Открывай новые клетки · ▦ Карта показывает только изученное · Загадки помогают ориентироваться</div>
 <nav class="controller" aria-label="Управление в лабиринте">
 <button id="up" class="ctrl" type="button" aria-label="Вверх">↑<small>ВВЕРХ</small></button>
 <button id="left" class="ctrl" type="button" aria-label="Влево">←<small>ВЛЕВО</small></button>
@@ -107,7 +121,7 @@ button:focus-visible,select:focus-visible{outline:3px solid #ffe4a0;outline-offs
 </svg>
 <h1 id="introTitle">ЛАБИРИНТ <em>ИКС</em></h1>
 <p>Исследуй огромный лабиринт, раскрывая только ближайшие коридоры. Уклоняйся от агентов, разгадывай логические задачи на развилках, найди портал, чтобы изменить реальность на матричный код, и поднимись по спиральным виткам к выходу.</p>
-<div class="choices"><span>ГЕНЕРАЦИЯ МАРШРУТОВ</span><span>2–5 ЭТАЖЕЙ</span><span>ЗАГАДКИ + ОЧКИ</span><span>ПОРТАЛЫ</span></div>
+<div class="choices"><span>ГЕНЕРАЦИЯ МАРШРУТОВ</span><span>2–5 ЭТАЖЕЙ</span><span>ЗАГАДКИ + ОЧКИ</span><span>КАРТА ПАМЯТИ</span><span>ПОРТАЛЫ</span></div>
 <label class="mode-label" for="mode">Сложность и размер лабиринта</label>
 <select id="mode">
 <option value="explorer">Исследователь · 25×25 · 2 витка</option>
@@ -117,7 +131,16 @@ button:focus-visible,select:focus-visible{outline:3px solid #ffe4a0;outline-offs
 </select>
 <button class="start" id="start" type="button">▶ НАЧАТЬ ИССЛЕДОВАНИЕ</button>
 <button class="secondary" id="continue" type="button" hidden>↳ ПРОДОЛЖИТЬ СОХРАНЕНИЕ</button>
-<p class="small">Загадки необязательны, но правильный ответ подсветит маршрут и принесёт бонус. Фантастический лабиринт — игра для тренировки логического поиска и реакции, не клинический тест.</p>
+<p class="small">Загадки необязательны, но правильный ответ подсветит маршрут и принесёт бонус. Очки за исследование начисляются только за первое посещение клетки. Фантастический лабиринт — игра для тренировки логического поиска и реакции, не клинический тест.</p>
+</section>
+<section class="overlay" id="mapOverlay" hidden aria-labelledby="mapTitle">
+<div class="kicker">ПАМЯТЬ И ПРОСТРАНСТВЕННОЕ МЫШЛЕНИЕ</div>
+<h1 id="mapTitle">КАРТА <em>ПАМЯТИ</em></h1>
+<p>Здесь отмечено только то, что удалось исследовать. Неизведанные коридоры остаются скрыты.</p>
+<canvas id="mapCanvas" width="430" height="430" role="img" aria-label="Исследованные клетки текущего витка лабиринта и текущее положение персонажа"></canvas>
+<div id="mapStats" role="status"></div>
+<p class="small">Зелёные клетки — пройденный путь, голубые — замеченные коридоры, золотая точка — ты. Карта приостанавливает игровое время и движение агентов.</p>
+<button id="closeMap" class="start" type="button">↳ ВЕРНУТЬСЯ В ЛАБИРИНТ</button>
 </section>
 <section class="overlay" id="riddle" hidden aria-labelledby="riddleTitle">
 <div class="kicker">РАЗВИЛКА · ЛОГИЧЕСКОЕ ИСПЫТАНИЕ</div><h1 id="riddleTitle">ЗАГАДКА</h1>
