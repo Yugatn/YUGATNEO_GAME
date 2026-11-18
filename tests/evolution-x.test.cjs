@@ -62,7 +62,7 @@ test('256-cell population triggers an automatic human scene after 255 deliberate
  assert.equal(s.phase,'runner');
  assert.equal(s.runner.lane,0);
  assert.ok(s.runner.entities.length>10);
- assert.equal(s.runner.distance,0);
+ assert.ok(s.runner.distance>=0&&s.runner.distance<20,'runner advances after the transition ends');
 });
 test('invalid cell clicks never create new cells or extra points',()=>{
  const s=started(),points=s.score;
