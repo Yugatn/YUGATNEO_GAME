@@ -1,0 +1,120 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#020808">
+<meta name="description" content="MATRIX JET — скоростной реакционный аркадный полёт с видом сверху, облаками, птицами, тремя высотами и порталами. Telegram Mini App.">
+<meta property="og:title" content="YUGATNEO · MATRIX JET">
+<link rel="manifest" href="./manifest.webmanifest">
+<link rel="icon" href="./icon.svg" type="image/svg+xml">
+<title>MATRIX JET · СЮЖЕТ ИКС</title>
+<style>
+:root{color-scheme:dark;--bg:#020808;--ink:#e4fff0;--green:#75ffc0;--line:#245c4a;--panel:#051914}
+*{box-sizing:border-box}
+html,body{margin:0;width:100%;height:100%;overflow:hidden;background:var(--bg)}
+body{font:14px/1.45 system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;color:var(--ink);-webkit-user-select:none;user-select:none}
+button{font:inherit;color:inherit;touch-action:manipulation}
+button:focus-visible{outline:3px solid #f5e18b;outline-offset:2px}
+#app{position:relative;width:100%;height:100vh;height:100dvh;overflow:hidden;isolation:isolate}
+#sky{position:absolute;inset:0;width:100%;height:100%;display:block;touch-action:none}
+.hud{position:absolute;z-index:3;top:0;left:0;right:0;padding:calc(12px + env(safe-area-inset-top)) max(13px,env(safe-area-inset-right)) 0 max(13px,env(safe-area-inset-left));display:flex;gap:10px;align-items:start;justify-content:space-between;pointer-events:none}
+.brand{font-size:10px;letter-spacing:.13em;color:var(--green);font-weight:850;text-shadow:0 2px 8px #000}
+.brand strong{display:block;font-size:19px;line-height:1.2;color:#f4fff9;letter-spacing:.05em}
+.nums{display:flex;gap:13px;text-align:right;font-variant-numeric:tabular-nums}
+.num small{display:block;color:#99bdae;font-size:10px;letter-spacing:.07em;font-weight:800}
+.num strong{font-size:19px;font-weight:900;line-height:1.5;text-shadow:0 1px 6px #000}
+.status{position:absolute;z-index:3;left:13px;right:13px;top:calc(72px + env(safe-area-inset-top));display:flex;justify-content:space-between;gap:9px;pointer-events:none;color:#c8ffdf;font-size:12px;font-weight:800;text-shadow:0 2px 8px #000}
+.chips{display:flex;gap:7px;align-items:center}
+.chip{background:#063226dc;border:1px solid #327c61;border-radius:30px;padding:5px 9px;white-space:nowrap}
+#codeChip{display:none;border-color:#9effab;background:#124b2c}
+#codeChip.visible{display:inline-block}
+#pause{position:absolute;top:calc(112px + env(safe-area-inset-top));right:14px;z-index:4;background:#0b3129df;border:1px solid #518a78;border-radius:10px;padding:7px 11px;font-weight:800;font-size:12px}
+#note{position:absolute;top:25%;left:50%;transform:translateX(-50%);min-width:180px;max-width:90%;z-index:4;text-align:center;pointer-events:none;background:#06271ee3;border:1px solid #49ce9d;border-radius:13px;padding:9px 14px;font-weight:850;font-size:16px;opacity:0;transition:opacity .2s}
+#note.visible{opacity:1}
+.ability{position:absolute;z-index:4;right:13px;bottom:calc(170px + env(safe-area-inset-bottom));border:1px solid #9dffac;background:linear-gradient(125deg,#1e6145ed,#0a2e25ef);box-shadow:0 0 25px #42ffc34d;border-radius:14px;padding:13px 16px;font-weight:950;font-size:14px;display:none}
+.ability.visible{display:block}
+.ability:disabled{opacity:.4;box-shadow:none}
+.controls{position:absolute;z-index:4;left:12px;right:12px;bottom:calc(15px + env(safe-area-inset-bottom));display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:8px;align-items:stretch}
+.control{border:1px solid #428574;border-radius:16px;background:linear-gradient(160deg,#17483be8,#082923ee);min-height:75px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;font-size:21px;font-weight:900;box-shadow:0 5px 20px #0009}
+.control small{font-size:9px;color:#b8e2d4;font-weight:750;letter-spacing:.03em}
+.control.alt{border-color:#8ac9ae;background:linear-gradient(140deg,#255c46e8,#11392eef)}
+.control:active{transform:scale(.96);background:#22634c}
+.instructions{position:absolute;bottom:calc(106px + env(safe-area-inset-bottom));left:10px;right:10px;z-index:2;pointer-events:none;text-align:center;color:#b2ddca;font-size:11px;text-shadow:0 2px 6px #000}
+.overlay{position:absolute;inset:0;z-index:10;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:13px;text-align:center;overflow-y:auto;background:radial-gradient(ellipse at 50% 24%,#0d3828,#041610 45%,#010706 86%);padding:calc(25px + env(safe-area-inset-top)) 22px calc(25px + env(safe-area-inset-bottom))}
+.overlay[hidden]{display:none}
+.kicker{font-size:10px;letter-spacing:.23em;font-weight:900;color:#9dffd0}
+.hero{width:min(295px,66vw);height:min(260px,36vh);filter:drop-shadow(0 0 24px #5affb551)}
+.overlay h1{font-size:clamp(42px,12vw,80px);font-weight:1000;line-height:.91;letter-spacing:-.06em;margin:7px 0 0}
+.overlay h1 span{color:#67ffb2}
+.overlay p{max-width:430px;color:#b4d9c9;font-size:clamp(13px,3.3vw,16px);line-height:1.6;margin:0 0 8px}
+.start{border:0;border-radius:15px;background:linear-gradient(90deg,#91ffd0,#bcff90);color:#05261b;font-size:18px;font-weight:950;letter-spacing:.06em;padding:15px 32px;min-width:220px;box-shadow:0 12px 40px #64ffc52b}
+.secondary{border:1px solid #59a98a;border-radius:13px;background:#0b3028;padding:12px 24px;font-weight:800}
+.pills{display:flex;gap:8px;justify-content:center;flex-wrap:wrap;max-width:430px}
+.pills span{padding:5px 9px;border:1px solid #356e53;background:#082a20;border-radius:40px;color:#9fe8bb;font-size:11px}
+.small{font-size:11px!important;color:#83bca4!important;line-height:1.5!important}
+#result{font-size:19px;font-weight:900;color:#baffd2}
+@media(max-width:370px){.brand strong{font-size:16px}.nums{gap:8px}.num strong{font-size:16px}.control{min-height:66px}.control small{font-size:8px}}
+@media(max-height:610px){.overlay{justify-content:flex-start;gap:7px}.hero{height:110px}.overlay h1{font-size:39px}.overlay p{font-size:12px}.control{min-height:54px}.ability{bottom:83px}.instructions{bottom:78px}}
+@media(prefers-reduced-motion:reduce){#note{transition:none}}
+</style>
+<script src="https://telegram.org/js/telegram-web-app.js"></script>
+<script defer src="./engine.js"></script>
+<script defer src="./game.js"></script>
+</head>
+<body>
+<div id="app">
+<canvas id="sky" role="img" aria-label="Скоростной аркадный полёт с видом сверху: самолёт, облака, птицы, матричные порталы" tabindex="0"></canvas>
+<header class="hud">
+  <div class="brand">YUGATNEO / STORY X<strong>MATRIX JET</strong></div>
+  <div class="nums">
+    <div class="num"><small>ОЧКИ</small><strong id="score">0</strong></div>
+    <div class="num"><small>РЕКОРД</small><strong id="best">0</strong></div>
+  </div>
+</header>
+<div class="status"><div class="chips"><span class="chip" id="altitude">◈ СРЕДНЕ</span><span class="chip" id="lives">♥ ♥ ♥</span></div><span class="chip" id="codeChip">01 МАТРИЦА</span></div>
+<button id="pause" type="button" aria-label="Пауза">Ⅱ</button>
+<div id="note" role="status" aria-live="polite"></div>
+<button id="phase" class="ability" type="button">✦ ПРОХОД СКВОЗЬ · <span id="charges">0</span></button>
+<div class="instructions">Проводи самолёт пальцем · Вверх/вниз — высота · Портал = суперспособность</div>
+<nav class="controls" aria-label="Управление самолётом">
+  <button class="control" id="left" type="button" aria-label="Влево">←<small>ВЛЕВО</small></button>
+  <button class="control alt" id="up" type="button" aria-label="Выше">↑<small>ВЫШЕ</small></button>
+  <button class="control alt" id="down" type="button" aria-label="Ниже">↓<small>НИЖЕ</small></button>
+  <button class="control" id="right" type="button" aria-label="Вправо">→<small>ВПРАВО</small></button>
+</nav>
+<section class="overlay" id="intro" aria-labelledby="introTitle">
+  <div class="kicker">СЮЖЕТ ИКС · ИЗМЕРЕНИЕ РЕАКЦИИ</div>
+  <svg class="hero" viewBox="0 0 300 245" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+    <defs><linearGradient id="metal" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#e6fff1"/><stop offset=".52" stop-color="#4bb99b"/><stop offset="1" stop-color="#12554b"/></linearGradient></defs>
+    <g fill="none" stroke="#4affaa" opacity=".3"><path d="M30 0v245M95 0v245M160 0v245M225 0v245M285 0v245M0 55h300M0 119h300M0 182h300"/></g>
+    <path d="M150 6L175 84 188 111 274 160 274 191 180 166 172 216 187 234 187 240 150 227 113 240 113 234 128 216 120 166 26 191 26 160 112 111 125 84Z" fill="url(#metal)" stroke="#9cffe0" stroke-width="4"/>
+    <path d="M150 23L164 91 160 169 150 199 140 169 136 91Z" fill="#082b31"/>
+    <path d="M135 91L165 91 158 136 142 136Z" fill="#12242c" stroke="#b2ffe3" stroke-width="2"/>
+    <path d="M72 166L124 140 119 161 50 184ZM228 166L176 140 181 161 250 184Z" fill="#11453e"/>
+    <path d="M115 211L149 201 185 211" fill="none" stroke="#aaffce" stroke-width="3"/>
+    <g fill="#78ffc9"><circle cx="64" cy="40" r="3"/><circle cx="251" cy="77" r="2"/><circle cx="37" cy="222" r="2"/></g>
+  </svg>
+  <h1 id="introTitle">MATRIX<br><span>JET</span></h1>
+  <p>Высокоскоростной полёт. Обходи грозовые облака и стаи птиц, меняй высоту и собирай световые порталы. После портала мир становится матричным кодом, а самолёт получает способность проходить сквозь опасности.</p>
+  <div class="pills"><span>ВИД СВЕРХУ</span><span>3 ВЫСОТЫ</span><span>ПОСТОЯННЫЙ РАЗГОН</span><span>ЛИЧНЫЙ РЕКОРД</span></div>
+  <button class="start" type="button" id="start">▶ НАЧАТЬ ПОЛЁТ</button>
+  <p class="small">Перетаскивай самолёт горизонтально, касайся краёв либо используй стрелки. Меняй эшелон кнопками ↑ ↓ или вертикальным свайпом.</p>
+</section>
+<section class="overlay" id="paused" hidden aria-labelledby="pauseTitle">
+  <div class="kicker">ВРЕМЯ ОСТАНОВЛЕНО</div>
+  <h1 id="pauseTitle">ПАУЗА</h1>
+  <p>Скорость не увеличивается, пока ты отдыхаешь. Продолжи полёт, когда будешь готов.</p>
+  <button class="start" id="resume" type="button">▶ ПРОДОЛЖИТЬ</button>
+  <button class="secondary" id="pauseHome" type="button">НА ЗАСТАВКУ</button>
+</section>
+<section class="overlay" id="over" hidden aria-labelledby="overTitle">
+  <div class="kicker">ПОПЫТКА ЗАВЕРШЕНА</div><h1 id="overTitle">НОВЫЙ<br><span>ВЫЛЕТ</span></h1>
+  <p id="reason">Попробуй изменить высоту или траекторию.</p>
+  <div id="result"></div>
+  <button class="start" id="again" type="button">↻ ЛЕТЕТЬ СНОВА</button>
+  <button class="secondary" id="overHome" type="button">НА ЗАСТАВКУ</button>
+</section>
+</div>
+</body>
+</html>

@@ -1,0 +1,20 @@
+{
+  "name": "YUGATNEO · MATRIX JET",
+  "short_name": "MATRIX JET",
+  "lang": "ru",
+  "description": "Скоростная аркада для Telegram — облака, стаи птиц, эшелоны высоты, матричные порталы и суперспособности.",
+  "start_url": "./index.html",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#020808",
+  "theme_color": "#020808",
+  "icons": [
+    {
+      "src": "./icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}
