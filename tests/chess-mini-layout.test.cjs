@@ -9,12 +9,12 @@ const chessScript = fs.readFileSync(require.resolve('chess.js'), 'utf8');
 const originalHtml = fs.readFileSync(path.join(root,'chess-mini/index.html'),'utf8');
 const boardCss = fs.readFileSync(path.join(root,'chess-mini/board-layout.css'),'utf8');
 const puzzleScript = fs.readFileSync(path.join(root,'chess-mini/puzzles.js'),'utf8');
-const inlineScripts=[...originalHtml.matchAll(/<script(?:\\s[^>]*)?>([\\s\\S]*?)<\\/script>/g)]
+const inlineScripts=[...originalHtml.matchAll(/<script(?:\s[^>]*)?>([\s\S]*?)<\/script>/g)]
   .map(x=>x[1]).filter(x=>x.includes('let game=new Chess()'));
 if(inlineScripts.length!==1)throw Error('Expected a single Matrix Chess controller');
 const staticHtml=originalHtml
   .replace('<link rel="stylesheet" href="./board-layout.css">','<style>'+boardCss+'</style>')
-  .replace(/<script(?:\\s[^>]*)?>[\\s\\S]*?<\\/script>/g,'');
+  .replace(/<script(?:\s[^>]*)?>[\s\S]*?<\/script>/g,'');
 async function createPage(browser, width, height) {
   const page = await browser.newPage({viewport:{width,height},deviceScaleFactor:1});
   page.setDefaultTimeout(12000);
@@ -23,7 +23,7 @@ async function createPage(browser, width, height) {
   // Load the real committed HTML and CSS in memory without DNS or CDN requests.
   // The production chess.js and puzzles are injected as local JavaScript.
   await page.setContent(staticHtml,{waitUntil:'load'});
-  await page.addScriptTag({content:chessScript+'\\nwindow.Chess=Chess;'});
+  await page.addScriptTag({content:chessScript+'\nwindow.Chess=Chess;'});
   await page.addScriptTag({content:puzzleScript});
   await page.addScriptTag({content:inlineScripts[0]});
   await page.locator('#enterGame').click();
