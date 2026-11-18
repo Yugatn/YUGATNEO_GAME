@@ -26,3 +26,31 @@ jobs:
           node --check matrix-jet/sw.js
       - name: Validate 3 flight levels, portals, hazards, phase ability and touch UI
         run: node --test tests/matrix-jet.test.cjs tests/matrix-jet-ui.test.cjs
+
+  mobile-browser:
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Install browser runner
+        run: npm install --no-save --no-audit --no-fund playwright@1.55.1
+      - name: Use system Chrome or install Chromium
+        run: |
+          if command -v google-chrome >/dev/null 2>&1; then
+            echo "CHROME_BIN=$(command -v google-chrome)" >> "$GITHUB_ENV"
+          else
+            npx playwright install --with-deps chromium
+          fi
+      - name: Verify jet and UI on portrait screens
+        run: node --test tests/matrix-jet-browser.test.cjs
+      - name: Upload gameplay screenshots
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: matrix-jet-mobile-previews
+          path: test-artifacts/matrix-jet/
+          if-no-files-found: ignore
