@@ -1,0 +1,119 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#060e1c">
+<meta name="description" content="YUGATNEO · EVOLUTION X — клетка, человек, Матрица, ракета и новый мир. Интерактивная Telegram-мини-игра.">
+<meta property="og:title" content="EVOLUTION X · СЮЖЕТ ИКС">
+<meta property="og:description" content="От одной клетки до новой планеты. Делись, беги, прыгай и исследуй.">
+<link rel="manifest" href="./manifest.webmanifest">
+<link rel="icon" type="image/svg+xml" href="./icon.svg">
+<title>EVOLUTION X · YUGATNEO</title>
+<style>
+:root{color-scheme:dark;--bg:#060e1c;--mint:#86f9c2;--muted:#a8c7c9;--panel:#0b2233;--line:#3c7e80}
+*{box-sizing:border-box}
+html,body{margin:0;width:100%;height:100%;overflow:hidden;background:var(--bg)}
+body{font-family:system-ui,-apple-system,"Segoe UI",Arial,sans-serif;color:#eafff6;user-select:none;-webkit-user-select:none}
+button{font:inherit;color:inherit;touch-action:manipulation;cursor:pointer}
+button:focus-visible{outline:3px solid #ffdb84;outline-offset:3px}
+#app{position:relative;width:100%;height:100vh;height:100dvh;overflow:hidden;isolation:isolate}
+canvas{position:absolute;inset:0;width:100%;height:100%;touch-action:none;display:block}
+.top{position:absolute;top:0;left:0;right:0;padding:calc(13px + env(safe-area-inset-top)) max(14px,env(safe-area-inset-right)) 8px max(14px,env(safe-area-inset-left));z-index:2;pointer-events:none;display:flex;gap:10px;justify-content:space-between;align-items:start}
+.brand{font-size:10px;letter-spacing:.16em;font-weight:900;color:#8af5c7;text-shadow:0 2px 7px #000}
+.brand b{display:block;font-size:20px;letter-spacing:.025em;color:#edfff5}
+.metrics{display:flex;gap:14px;text-align:right;font-variant-numeric:tabular-nums}
+.metric small{display:block;color:#96babc;letter-spacing:.09em;font-size:10px;font-weight:800}
+.metric strong{font-size:17px;text-shadow:0 1px 5px #000}
+.progress{height:4px;position:absolute;top:calc(75px + env(safe-area-inset-top));left:14px;right:14px;background:#34606580;border-radius:99px;overflow:hidden;z-index:2}
+#fill{height:100%;background:linear-gradient(90deg,#4be7c9,#d8ef86);width:0%;transition:width .2s}
+.phase{position:absolute;top:calc(91px + env(safe-area-inset-top));left:14px;right:14px;z-index:2;display:flex;align-items:start;justify-content:space-between;gap:10px;pointer-events:none}
+#mission{font-size:clamp(12px,3.5vw,16px);font-weight:850;color:#d8fff2;max-width:75%;line-height:1.35;text-shadow:0 2px 7px #000}
+#planet{font-size:12px;color:#beffe0;padding:5px 9px;border:1px solid #4a826e;background:#0c2c26bc;border-radius:99px;white-space:nowrap}
+.message{position:absolute;top:23%;left:50%;transform:translateX(-50%);width:min(91%,400px);z-index:5;padding:12px 16px;text-align:center;background:#0a212fda;border:1px solid #57bcaa;border-radius:13px;font-size:17px;font-weight:800;pointer-events:none;opacity:0;transition:opacity .3s}
+.message.show{opacity:1}
+.bottom{position:absolute;bottom:calc(14px + env(safe-area-inset-bottom));left:10px;right:10px;z-index:3;display:grid;grid-template-columns:1fr 1.25fr 1fr;gap:9px}
+.control{border:1px solid #52978e;border-radius:17px;min-height:clamp(62px,12vh,85px);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;background:linear-gradient(145deg,#174f54e6,#0d253bea);box-shadow:0 5px 20px #0007;font-weight:900;font-size:clamp(14px,3.9vw,18px)}
+.control small{font-weight:650;font-size:10px;color:#b3ddd9}
+.control:active{transform:scale(.96);background:#236d69}
+.control.primary{background:linear-gradient(145deg,#1c7458,#12473f);border-color:#b3ffc4}
+#action{position:absolute;bottom:calc(117px + env(safe-area-inset-bottom));right:13px;z-index:3;padding:10px 15px;border:1px solid #e1fe9e;color:#eaffd7;border-radius:13px;font-weight:850;font-size:13px;background:#426b2de8;display:none}
+#action.visible{display:block}
+#action:disabled{opacity:.5}
+#pause{position:absolute;top:calc(143px + env(safe-area-inset-top));right:15px;z-index:3;border:1px solid #477b76;border-radius:11px;background:#0a2f39ce;color:#e9fff7;padding:8px 13px;font-weight:800;font-size:12px}
+.note{position:absolute;bottom:calc(112px + env(safe-area-inset-bottom));left:16px;right:16px;text-align:center;color:#d1fff3;text-shadow:0 2px 8px #000;font-size:11px;z-index:2;pointer-events:none}
+#cellNote{display:none}
+.overlay{position:absolute;inset:0;z-index:10;display:flex;align-items:center;justify-content:center;flex-direction:column;overflow-y:auto;gap:12px;padding:calc(25px + env(safe-area-inset-top)) 20px calc(25px + env(safe-area-inset-bottom));text-align:center;background:radial-gradient(ellipse at 50% 23%,#153d4b,#071625 49%,#020813 100%)}
+.overlay[hidden]{display:none}
+.hero{width:min(275px,65vw);height:min(240px,34vh);object-fit:contain;filter:drop-shadow(0 8px 22px #4dfabb5e)}
+.kicker{color:#97ffe0;letter-spacing:.21em;font-size:11px;font-weight:900}
+.overlay h1{font-size:clamp(38px,11vw,65px);line-height:.95;letter-spacing:-.055em;margin:8px 0;color:#eaffef}
+.overlay h1 em{font-style:normal;color:#72f7bf}
+.overlay p{max-width:440px;line-height:1.6;font-size:clamp(13px,3.3vw,16px);color:#b7d9d9;margin:1px auto 6px}
+.start{background:linear-gradient(120deg,#9affe0,#c6ff93);color:#063c31;border:0;padding:15px 32px;border-radius:15px;min-width:210px;font-weight:950;font-size:17px}
+.secondary{border:1px solid #4f8a89;background:#1a3c4b;border-radius:12px;padding:10px 21px;font-weight:800}
+.steps{display:flex;justify-content:center;gap:8px;flex-wrap:wrap;margin:5px 0 6px}
+.steps span{border:1px solid #47876f;border-radius:30px;background:#123b3e;padding:7px 10px;font-size:11px;color:#c5ffdf}
+#resume{z-index:12}
+@media(max-height:660px){.overlay{gap:7px}.hero{height:130px}.overlay h1{font-size:38px}.overlay p{font-size:12px}.bottom{bottom:7px}.control{min-height:54px}.note{bottom:85px}#action{bottom:80px}}
+@media(prefers-reduced-motion:reduce){.message,.progress #fill{transition:none}}
+</style>
+<script src="https://telegram.org/js/telegram-web-app.js"></script>
+<script defer src="./engine.js"></script>
+<script defer src="./game.js"></script>
+</head>
+<body>
+<div id="app">
+<canvas id="canvas" tabindex="0" role="img" aria-label="Поле деления клеток, затем трасса для бега и полёт между астероидами"></canvas>
+<header class="top">
+  <div class="brand">YUGATNEO · STORY X<b>EVOLUTION X</b></div>
+  <div class="metrics">
+    <div class="metric"><small>ОЧКИ</small><strong id="score">0</strong></div>
+    <div class="metric"><small>РЕКОРД</small><strong id="best">0</strong></div>
+  </div>
+</header>
+<div class="progress"><div id="fill"></div></div>
+<div class="phase"><span id="mission">Коснись первой клетки</span><span id="planet">МИР · 1</span></div>
+<button id="pause" type="button">Ⅱ ПАУЗА</button>
+<div class="message" id="message" role="status" aria-live="polite"></div>
+<div class="note" id="cellNote">Касайся каждой яркой клетки. Новые клетки станут активны после деления всех клеток текущего поколения.</div>
+<div class="bottom" id="controls">
+  <button class="control" id="left" type="button">↶ ВЛЕВО<small>ПОЛОСА</small></button>
+  <button class="control primary" id="center" type="button">↑ ПРЫЖОК<small>ЦЕНТР</small></button>
+  <button class="control" id="right" type="button">ВПРАВО ↷<small>ПОЛОСА</small></button>
+</div>
+<button id="action" type="button">✦ ИМПУЛЬС</button>
+<section class="overlay" id="intro" aria-labelledby="introTitle">
+  <div class="kicker">СЮЖЕТ ИКС · СПИРАЛЬ РАЗВИТИЯ</div>
+  <svg class="hero" viewBox="0 0 280 230" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+   <g fill="none" stroke="#43ffb4" stroke-width="2" opacity=".4">
+    <path d="M25 206C53 135 139 216 155 139S200 52 254 58"/>
+    <path d="M15 219C64 151 134 221 171 143S212 37 269 44"/>
+   </g>
+   <circle cx="72" cy="89" r="39" fill="#1c5c5f" stroke="#7dffd2" stroke-width="3"/>
+   <circle cx="61" cy="80" r="17" fill="#8aeeaf"/><circle cx="85" cy="98" r="12" fill="#53cfa7"/>
+   <path d="M115 110Q148 81 164 113" fill="none" stroke="#dcffae" stroke-width="4" stroke-linecap="round"/>
+   <path d="M149 101l16 12-17 9" fill="none" stroke="#dcffae" stroke-width="4"/>
+   <circle cx="207" cy="89" r="25" fill="#c6b18f" stroke="#eaffd2" stroke-width="3"/>
+   <path d="M185 80q20-30 44 0" fill="#14313a"/>
+   <g fill="#0b151e" stroke="#c1ffe5" stroke-width="3"><circle cx="197" cy="91" r="10"/><circle cx="220" cy="91" r="10"/></g>
+   <path d="M207 91h3" stroke="#eaffd2" stroke-width="3"/>
+   <path d="M197 121l-10 52m32-52l10 52m-27 1l-12 43m21-43l13 43" stroke="#8be6bd" stroke-width="12" stroke-linecap="round"/>
+   <path d="M230 12l24 35-23 56-20-56z" fill="#cedde5" stroke="#b1ffdb" stroke-width="2"/>
+   <path d="M230 90l-6 22 6-8 6 8z" fill="#ffbe76"/>
+  </svg>
+  <h1 id="introTitle">EVOLUTION <em>X</em></h1>
+  <p>Всё начинается с одной клетки. Касайся её и дочерних клеток, пройди путь к человеку, прыгай через препятствия, найди портал Матрицы и достигни ракеты. Затем облетай астероиды и начни новый цикл на другой планете.</p>
+  <div class="steps"><span>01 · КЛЕТКИ</span><span>02 · ЧЕЛОВЕК</span><span>03 · МАТРИЦА</span><span>04 · КОСМОС</span><span>05 · НОВЫЙ МИР</span></div>
+  <button id="start" class="start" type="button">▶ НАЧАТЬ РАЗВИТИЕ</button>
+  <p style="font-size:11px">Это фантастическая метафора развития, а не биологическая модель происхождения человека.</p>
+</section>
+<section class="overlay" id="paused" hidden aria-labelledby="pauseTitle">
+  <div class="kicker">ВРЕМЯ ОСТАНОВЛЕНО</div><h1 id="pauseTitle">ПАУЗА</h1>
+  <p>Прогресс сохраняется только на этом устройстве. Можно продолжить или вернуться в начало.</p>
+  <button id="resume" class="start" type="button">▶ ПРОДОЛЖИТЬ</button>
+  <button id="restart" class="secondary" type="button">↻ НАЧАТЬ ЗАНОВО</button>
+</section>
+</div>
+</body>
+</html>
