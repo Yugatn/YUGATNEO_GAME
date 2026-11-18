@@ -1,0 +1,20 @@
+{
+  "name": "YUGATNEO · Лабиринт Икс",
+  "short_name": "Лабиринт Икс",
+  "lang": "ru",
+  "description": "Многоярусный процедурный матричный лабиринт, логические загадки, агенты и фазовые прыжки",
+  "start_url": "./index.html",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#030b11",
+  "theme_color": "#020a0b",
+  "icons": [
+    {
+      "src": "./icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}
