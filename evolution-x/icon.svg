@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 192 192">
+<defs><radialGradient id="bg"><stop stop-color="#174f54"/><stop offset="1" stop-color="#041321"/></radialGradient></defs>
+<rect width="192" height="192" rx="38" fill="url(#bg)"/>
+<path d="M14 151C31 110 81 142 98 103S133 49 178 50" fill="none" stroke="#59efbc" stroke-width="7" stroke-linecap="round" opacity=".65"/>
+<circle cx="56" cy="69" r="30" fill="#246863" stroke="#aeffd5" stroke-width="3"/>
+<circle cx="48" cy="62" r="12" fill="#9effc0"/><circle cx="67" cy="76" r="9" fill="#6df6ae"/>
+<path d="M85 83l18-12-7 22z" fill="#eeffb3"/>
+<circle cx="135" cy="65" r="23" fill="#d4bfa1" stroke="#e7ffe1" stroke-width="2"/>
+<path d="M116 59q19-29 38 0" fill="#152b30"/>
+<g fill="#07151b" stroke="#dffff1" stroke-width="2"><circle cx="127" cy="68" r="9"/><circle cx="146" cy="68" r="9"/></g>
+<path d="M135 68h3M126 91l-11 40m31-40l11 40m-27 2l-7 41m23-41l8 41" fill="none" stroke="#9fffe0" stroke-width="10" stroke-linecap="round"/>
+<path d="M156 19l15 29-16 25-15-25z" fill="#efffed" stroke="#63dba4" stroke-width="2"/>
+</svg>
