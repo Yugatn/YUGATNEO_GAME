@@ -1,0 +1,28 @@
+name: MATRIX JET Telegram Mini App tests
+on:
+  push:
+    branches: [main, 'feature/**']
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  flight-tests:
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Install browser simulator
+        run: npm install --no-save --no-audit --no-fund jsdom@26.1.0
+      - name: Parse Mini App scripts
+        run: |
+          node --check matrix-jet/engine.js
+          node --check matrix-jet/game.js
+          node --check matrix-jet/sw.js
+      - name: Validate 3 flight levels, portals, hazards, phase ability and touch UI
+        run: node --test tests/matrix-jet.test.cjs tests/matrix-jet-ui.test.cjs
