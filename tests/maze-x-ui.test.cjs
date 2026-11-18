@@ -166,7 +166,7 @@ test('corrupted legacy save is ignored without breaking a new game',()=>{
  try{
   assert.equal(el(w,'continue').hidden,true,'no Resume for an invalid save');
   el(w,'start').click();
-  assert.equal(el(w,'intro').hidden,true); // replaced below
+  assert.equal(el(w,'intro').hidden,true);
   assert.doesNotThrow(()=>stepFrame(frames,1300));
   assert.deepEqual(errors,[]);
  }finally{w.close();}
