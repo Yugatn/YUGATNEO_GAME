@@ -17,12 +17,16 @@ function validate(raw){
  if(!raw||raw.version!==1||!E.MODES[raw.mode]||!Array.isArray(raw.floors))return null;
  const cfg=E.MODES[raw.mode],n=cfg.size;
  if(raw.floors.length!==cfg.levels||!Number.isFinite(raw.elapsed)||raw.elapsed<0)return null;
- if(!raw.player||!E.within(raw.player.x,raw.player.y,n)||!Number.isInteger(raw.floor)||raw.floor<0||raw.floor>=cfg.levels)return null;
+ if(!raw.player||!Number.isInteger(raw.player.x)||!Number.isInteger(raw.player.y)||
+  !E.within(raw.player.x,raw.player.y,n)||!Number.isInteger(raw.floor)||raw.floor<0||raw.floor>=cfg.levels)return null;
  for(const f of raw.floors){
   if(!f||f.size!==n||!Array.isArray(f.walls)||f.walls.length!==n*n||
-   !Array.isArray(f.seen)||f.seen.length!==n*n||!Array.isArray(f.agents)||!Array.isArray(f.portals))return null;
+   !Array.isArray(f.seen)||f.seen.length!==n*n||!Array.isArray(f.agents)||
+   !Array.isArray(f.portals)||!f.start||!Number.isInteger(f.start.x)||
+   !Number.isInteger(f.start.y)||!E.within(f.start.x,f.start.y,n))return null;
  }
- if(!['playing','paused','riddle'].includes(raw.phase))return null;
+ if(!['playing','paused','riddle','map'].includes(raw.phase))return null;
+ try{raw=E.upgradeSave(raw);}catch(_){return null;}
  raw.phase='paused';raw.riddle=null;raw.events=[];raw.hintPath=[];
  return raw;
 }
@@ -37,7 +41,7 @@ try{
 const tg=window.Telegram?.WebApp;
 function feel(kind='light'){try{tg?.HapticFeedback?.impactOccurred(kind);}catch(_){}}
 function save(force=false){
- if(!['playing','paused','riddle'].includes(s.phase))return;
+ if(!['playing','paused','riddle','map'].includes(s.phase))return;
  const now=performance.now();if(!force&&now-lastSave<6000)return;
  lastSave=now;
  try{localStorage.setItem(SAVE,JSON.stringify(s));}catch(_){}
@@ -63,7 +67,7 @@ function resize(){
 resize();window.addEventListener('resize',resize,{passive:true});
 window.visualViewport?.addEventListener('resize',resize,{passive:true});
 function overlays(name){
- for(const id of ['intro','paused','riddle','end'])$(id).hidden=(id!==name);
+ for(const id of ['intro','paused','riddle','end','mapOverlay'])$(id).hidden=(id!==name);
 }
 function announce(text,ms=1450){noteText=text;noteEnd=performance.now()+ms;}
 function mtime(sec){return Math.floor(sec/60)+':'+String(Math.floor(sec%60)).padStart(2,'0');}
@@ -92,6 +96,17 @@ function menu(){
 function pause(){
  if(E.pause(s)){hold=null;overlays('paused');save(true);updateHUD();}
 }
+function openMemoryMap(){
+ if(!E.openMap(s))return false;
+ hold=null;pointerStart=null;
+ overlays('mapOverlay');renderMemoryMap();save(true);updateHUD();
+ feel('light');return true;
+}
+function closeMemoryMap(){
+ if(!E.closeMap(s))return false;
+ overlays(null);prev=performance.now();save(true);updateHUD();
+ return true;
+}
 function resume(){
  if(E.start(s)){overlays(null);prev=performance.now();updateHUD();}
 }
@@ -103,7 +118,7 @@ function finish(){
  $('reason').textContent=s.phase==='completed'?
   'Ты прошёл все спиральные этажи и достиг выхода. Верная логика и внимание ведут дальше.':s.reason;
  $('timeResult').textContent=s.score.toLocaleString('ru-RU')+' очков · '+mtime(s.elapsed)+
-  ' · '+s.steps+' шагов · '+s.riddlesSolved+' загадок · '+s.portals+' порталов'+
+  ' · '+s.steps+' шагов · '+s.uniqueSteps+' новых клеток · '+s.riddlesSolved+' загадок · '+s.portals+' порталов'+
   (s.phase==='completed'?' · БОНУС ЗА СКОРОСТЬ +'+s.timeBonus:'');
  overlays('end');feel('heavy');updateHUD();
 }
@@ -146,6 +161,8 @@ for(const id of ['up','down','left','right']){
  btn.addEventListener('click',e=>{if(e.detail===0)touchAction(id);});
 }
 $('phase').addEventListener('click',()=>touchAction('phase'));
+$('mapButton').addEventListener('click',openMemoryMap);
+$('closeMap').addEventListener('click',closeMemoryMap);
 $('start').addEventListener('click',()=>startGame($('mode').value));
 $('continue').addEventListener('click',resumeSaved);
 $('pause').addEventListener('click',()=>s.phase==='paused'?resume():pause());
@@ -178,12 +195,16 @@ $('junction').addEventListener('click',()=>{
 $('skip').addEventListener('click',()=>{if(E.skipRiddle(s)){overlays(null);updateHUD();save(true);}});
 const keyDirs={ArrowUp:'up',KeyW:'up',ArrowRight:'right',KeyD:'right',ArrowDown:'down',KeyS:'down',ArrowLeft:'left',KeyA:'left'};
 window.addEventListener('keydown',e=>{
- if(keyDirs[e.code]||['Space','KeyF','Escape','KeyP','Enter'].includes(e.code))e.preventDefault();
+ if(keyDirs[e.code]||['Space','KeyF','Escape','KeyP','Enter','KeyM'].includes(e.code))e.preventDefault();
  if(e.repeat)return;
  if(keyDirs[e.code]&&s.phase==='playing'){
   hold=keyDirs[e.code];holdAt=performance.now()+160;inputMove(hold);
  }else if(e.code==='Space'||e.code==='KeyF'){touchAction('phase');}
- else if(e.code==='Escape'||e.code==='KeyP'){s.phase==='paused'?resume():pause();}
+ else if(e.code==='KeyM'){s.phase==='map'?closeMemoryMap():openMemoryMap();}
+ else if(e.code==='Escape'||e.code==='KeyP'){
+  if(s.phase==='map')closeMemoryMap();
+  else s.phase==='paused'?resume():pause();
+ }
  else if(e.code==='Enter'&&s.phase==='ready')startGame($('mode').value);
 });
 window.addEventListener('keyup',e=>{if(hold===keyDirs[e.code])hold=null;});
@@ -206,6 +227,7 @@ function updateHUD(){
  $('floor').textContent='ВИТОК '+(s.floor+1)+'/'+E.MODES[s.mode].levels;
  $('lives').textContent='♥ '.repeat(s.lives).trim()||'—';
  const f=s.floors[s.floor];$('progress').textContent='ИЗУЧЕНО '+Math.floor(f.visited/(f.size*f.size)*100)+'%';
+ $('mapButton').disabled=s.phase!=='playing';
  $('matrix').classList.toggle('on',s.matrix);
  $('phase').disabled=!s.matrix||s.charges<=0||s.phase!=='playing';
  $('phase').style.borderColor=s.phaseArmed?'#ffe9a0':'';
@@ -214,6 +236,59 @@ function updateHUD(){
  const visible=performance.now()<noteEnd&&s.phase==='playing';
  $('hint').textContent=visible?noteText:'';
  $('hint').classList.toggle('visible',visible);
+}
+function renderMemoryMap(){
+ const mcanvas=$('mapCanvas'),mc=mcanvas.getContext('2d');
+ if(!mc)return;
+ const rect=mcanvas.getBoundingClientRect();
+ const side=Math.max(180,Math.min(430,rect.width||Math.min(W-42,430)));
+ const pixelRatio=Math.min(2,window.devicePixelRatio||1);
+ mcanvas.width=Math.round(side*pixelRatio);
+ mcanvas.height=Math.round(side*pixelRatio);
+ mc.setTransform(pixelRatio,0,0,pixelRatio,0,0);
+ mc.fillStyle='#020e14';mc.fillRect(0,0,side,side);
+ const f=s.floors[s.floor],n=f.size,margin=11,cell=(side-margin*2)/n;
+ const pad=(x,y)=>({x:margin+x*cell,y:margin+y*cell});
+ for(let y=0;y<n;y++)for(let x=0;x<n;x++){
+  const k=E.ix(x,y,n);
+  if(!f.seen[k])continue; // No spoilers: undiscovered tiles and walls remain unknown.
+  const p=pad(x,y);
+  mc.fillStyle=f.walked?.[k]?'#1f8a6c':'#24545e';
+  mc.fillRect(p.x,p.y,Math.max(1,cell),Math.max(1,cell));
+  const mask=f.walls[k],edge='#a1d7c1';
+  mc.strokeStyle=edge;mc.lineWidth=Math.max(.65,cell*.14);
+  mc.beginPath();
+  if(mask&1){mc.moveTo(p.x,p.y);mc.lineTo(p.x+cell,p.y);}
+  if(mask&2){mc.moveTo(p.x+cell,p.y);mc.lineTo(p.x+cell,p.y+cell);}
+  if(mask&4){mc.moveTo(p.x,p.y+cell);mc.lineTo(p.x+cell,p.y+cell);}
+  if(mask&8){mc.moveTo(p.x,p.y);mc.lineTo(p.x,p.y+cell);}
+  mc.stroke();
+ }
+ for(const p of f.portals){
+  if(p.taken||!f.seen[E.ix(p.x,p.y,n)])continue;
+  const c=pad(p.x+.5,p.y+.5);
+  mc.fillStyle='#8df7c0';mc.beginPath();mc.arc(c.x,c.y,Math.max(2,cell*.4),0,Math.PI*2);mc.fill();
+ }
+ const dest=f.stair||f.exit;
+ if(dest&&f.seen[E.ix(dest.x,dest.y,n)]){
+  const c=pad(dest.x+.5,dest.y+.5);
+  mc.fillStyle='#ffdb8b';mc.beginPath();
+  mc.arc(c.x,c.y,Math.max(2.5,cell*.52),0,Math.PI*2);mc.fill();
+ }
+ // Agent positions become visible on the memory map only when already close.
+ for(const a of f.agents){
+  if(Math.abs(a.x-s.player.x)+Math.abs(a.y-s.player.y)>3)continue;
+  if(!f.seen[E.ix(a.x,a.y,n)])continue;
+  const c=pad(a.x+.5,a.y+.5);
+  mc.fillStyle='#ff839c';mc.beginPath();mc.arc(c.x,c.y,Math.max(2.2,cell*.48),0,Math.PI*2);mc.fill();
+ }
+ const player=pad(s.player.x+.5,s.player.y+.5);
+ mc.fillStyle='#ffe29f';mc.beginPath();mc.arc(player.x,player.y,Math.max(3,cell*.65),0,Math.PI*2);mc.fill();
+ mc.strokeStyle='#fff9d6';mc.lineWidth=1.5;mc.stroke();
+ const percent=Math.floor(f.visited/(n*n)*100);
+ $('mapStats').textContent='ВИТОК '+(s.floor+1)+'/'+E.MODES[s.mode].levels+
+  ' · Открыто '+f.visited+' из '+(n*n)+' клеток ('+percent+'%)'+
+  ' · Пройдено новых клеток: '+s.uniqueSteps;
 }
 function fill(top,bottom){
  const g=ctx.createLinearGradient(0,0,0,H);g.addColorStop(0,top);g.addColorStop(1,bottom);
@@ -289,6 +364,10 @@ function draw(){
   ctx.globalAlpha=near>6.5?Math.max(0,.9-(near-6.5)*.37):1;
   ctx.fillStyle=tileColor(s.floor,near,seen);
   ctx.fillRect(p.x-t*.5,p.y-t*.5,t+.7,t+.7);
+  if(seen&&f.walked&&f.walked[i]&&near>.8&&near<6.2){
+   ctx.fillStyle=s.matrix?'#72ffab77':'#72c9b888';
+   ctx.beginPath();ctx.arc(p.x,p.y,Math.max(1.8,t*.075),0,Math.PI*2);ctx.fill();
+  }
   if(near>7.3){ctx.globalAlpha=1;continue;}
   if(s.matrix&&seen&&((x*7+y*11)%6===0)){
    ctx.fillStyle='#43b98733';ctx.textAlign='center';ctx.font='bold '+Math.max(9,t*.31)+'px monospace';

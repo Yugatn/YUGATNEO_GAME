@@ -217,3 +217,68 @@ test('Telegram Mini App files include all controls and no personal-data dependen
  const manifest=JSON.parse(fs.readFileSync(path.join(dir,'manifest.webmanifest'),'utf8'));
  assert.equal(manifest.start_url,'./index.html');assert.equal(manifest.scope,'./');
 });
+
+test('revisiting a corridor cannot generate unlimited exploration points',()=>{
+ const s=newGame('explorer',477);emptyAgents(s);
+ const from={...s.player};
+ const d=E.openDirs(s.floors[0],from.x,from.y)[0];
+ const reverse=E.DIRECTIONS.find(v=>v.bit===d.reverse);
+ assert.ok(d&&reverse);
+ s.moveCooldown=0;assert.ok(E.move(s,d.id));
+ const firstScore=s.score;
+ assert.equal(s.uniqueSteps,1);
+ for(let i=0;i<50;i++){
+  s.moveCooldown=0;assert.ok(E.move(s,reverse.id));
+  s.moveCooldown=0;assert.ok(E.move(s,d.id));
+ }
+ assert.equal(s.steps,101,'all real moves are still tracked');
+ assert.equal(s.uniqueSteps,1,'only first visit is rewarded');
+ assert.equal(s.score,firstScore,'walking back and forth does not farm points');
+});
+test('memory map pauses both timer and agents, and never alters maze topology',()=>{
+ const s=newGame('navigator',228);const before=s.elapsed;
+ const snapshot=s.floors.map(f=>f.walls.slice());
+ assert.ok(E.openMap(s));
+ assert.equal(s.phase,'map');
+ assert.equal(E.openMap(s),false);
+ assert.deepEqual(E.step(s,600),[]);
+ assert.equal(E.move(s,'right'),false);
+ assert.equal(E.askRiddle(s),null);
+ assert.equal(s.elapsed,before);
+ assert.deepEqual(s.floors.map(f=>f.walls),snapshot);
+ assert.ok(E.closeMap(s));
+ assert.equal(s.phase,'playing');
+ assert.equal(E.closeMap(s),false);
+ E.step(s,1/60);assert.ok(s.elapsed>before);
+});
+test('old saved campaigns keep prior scores and acquire safe explored-path history',()=>{
+ const legacy=E.create('explorer',553);
+ legacy.steps=100;legacy.bonus=45;legacy.score=845;
+ for(const f of legacy.floors)delete f.walked;
+ delete legacy.uniqueSteps;delete legacy.legacyPoints;delete legacy.lastEscapeAt;
+ const restored=E.upgradeSave(legacy);
+ assert.equal(restored.legacyPoints,800);
+ assert.equal(restored.uniqueSteps,0);
+ assert.equal(restored.floors[0].walked[E.ix(1,1,25)],1);
+ assert.equal(E.score(restored),845);
+ assert.equal(E.start(restored),true);
+ const d=E.openDirs(restored.floors[0],1,1)[0];
+ restored.moveCooldown=0;assert.ok(E.move(restored,d.id));
+ assert.equal(restored.score,853,'newly discovered cells add points without losing old progress');
+ assert.equal(restored.floors[1].walked[E.ix(1,1,25)],1);
+});
+test('agent evasion bonus has a cooldown to prevent short-range score farming',()=>{
+ const s=newGame('explorer',99),f=s.floors[0];
+ f.agents=[{id:'farm',x:24,y:24,clock:999}];
+ s.nearAgent=true;E.step(s,.02);
+ const first=s.bonus;assert.ok(first>0);assert.equal(s.agentsDodged,1);
+ f.agents[0].x=s.player.x;f.agents[0].y=s.player.y;
+ s.safeTimer=100;E.step(s,.02);
+ f.agents[0].x=24;f.agents[0].y=24;E.step(s,.02);
+ assert.equal(s.bonus,first);
+ assert.equal(s.agentsDodged,1);
+ s.elapsed=13;f.agents[0].x=s.player.x;f.agents[0].y=s.player.y;
+ E.step(s,.02);
+ f.agents[0].x=24;f.agents[0].y=24;E.step(s,.02);
+ assert.equal(s.agentsDodged,2);
+});

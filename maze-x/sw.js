@@ -1,6 +1,6 @@
 /* LABYRINTH X: isolated offline shell. No Telegram identity cached. */
 'use strict';
-const CACHE='yugatneo-maze-x-v1',PREFIX='yugatneo-maze-x-';
+const CACHE='yugatneo-maze-x-v2',PREFIX='yugatneo-maze-x-';
 const ASSETS=['./','./index.html','./engine.js','./game.js','./icon.svg','./manifest.webmanifest'];
 self.addEventListener('install',event=>event.waitUntil((async()=>{
  const cache=await caches.open(CACHE);await cache.addAll(ASSETS);await self.skipWaiting();

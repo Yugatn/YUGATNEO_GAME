@@ -108,3 +108,40 @@ test('real browser allows moving, solving a fork riddle and crossing a wall via 
   }finally{await page.close();}
  }finally{await browser.close();}
 });
+
+test('optional explored-only memory map renders in Chromium and pauses agents',async()=>{
+ const browser=await chromium.launch({headless:true,executablePath:process.env.CHROME_BIN||undefined,
+  args:['--no-sandbox']});
+ try{
+  const {page,errors}=await launch(browser,390,844,'master');
+  try{
+   await page.locator('#mapButton').click();
+   assert.equal(await page.locator('#mapOverlay').isVisible(),true);
+   // Capture time *after* the click: the preceding animation frame can
+   // legitimately advance elapsed time before the map opens.
+   const elapsed=await page.evaluate(()=>window.__mazeState.elapsed);
+   assert.match(await page.locator('#mapStats').textContent(),/Открыто/);
+   const stats=await page.evaluate(()=>{
+    const s=window.__mazeState;
+    const map=document.getElementById('mapCanvas');
+    const data=map.getContext('2d').getImageData(
+      Math.floor(map.width*.5),Math.floor(map.height*.5),1,1).data;
+    return {phase:s.phase,known:s.floors[s.floor].visited,total:s.floors[s.floor].size**2,
+      pixel:[...data],width:map.width,height:map.height};
+   });
+   assert.equal(stats.phase,'map');
+   assert.ok(stats.known>0&&stats.known<stats.total*.02,
+    'opening map must not reveal unseen rooms on a 65×65 floor');
+   assert.ok(stats.width>140&&stats.height>140,'memory map needs drawable dimensions');
+   await page.waitForTimeout(150);
+   assert.equal(await page.evaluate(()=>window.__mazeState.elapsed),elapsed,
+    'timer and enemy simulation are frozen on memory map');
+   fs.mkdirSync(path.resolve(__dirname,'../test-artifacts/maze-x'),{recursive:true});
+   await page.screenshot({path:path.resolve(__dirname,'../test-artifacts/maze-x/memory-map-390x844.png')});
+   await page.locator('#closeMap').click();
+   assert.equal(await page.locator('#mapOverlay').isVisible(),false);
+   assert.equal(await page.evaluate(()=>window.__mazeState.phase),'playing');
+   assert.deepEqual(errors,[]);
+  }finally{await page.close();}
+ }finally{await browser.close();}
+});
