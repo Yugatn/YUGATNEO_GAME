@@ -115,9 +115,11 @@ test('optional explored-only memory map renders in Chromium and pauses agents',a
  try{
   const {page,errors}=await launch(browser,390,844,'master');
   try{
-   const elapsed=await page.evaluate(()=>window.__mazeState.elapsed);
    await page.locator('#mapButton').click();
    assert.equal(await page.locator('#mapOverlay').isVisible(),true);
+   // Capture time *after* the click: the preceding animation frame can
+   // legitimately advance elapsed time before the map opens.
+   const elapsed=await page.evaluate(()=>window.__mazeState.elapsed);
    assert.match(await page.locator('#mapStats').textContent(),/Открыто/);
    const stats=await page.evaluate(()=>{
     const s=window.__mazeState;
