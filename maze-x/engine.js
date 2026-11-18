@@ -243,6 +243,11 @@ function answerRiddle(s,answerIndex){
  score(s);
  return {correct,explanation:r.why,hint:correct?s.hintPath.slice():[],reward:correct?140*MODES[s.mode].mult:0};
 }
+function skipRiddle(s){
+ if(s.phase!=='riddle'||!s.riddle)return false;
+ s.floors[s.floor].answered[s.riddle.key]=true;
+ s.riddle=null;s.phase='playing';s.events=['skipped'];return true;
+}
 function agentStep(s,agent){
  const f=s.floors[s.floor],dx=Math.abs(agent.x-s.player.x),dy=Math.abs(agent.y-s.player.y);
  const dirs=openDirs(f,agent.x,agent.y);if(!dirs.length)return;
@@ -289,7 +294,7 @@ function progress(s){
  };
 }
 const api={MODES,DIRECTIONS,RIDDLES,create,start,pause,move,armPhase,phaseThrough,step,
- riddleOffer,askRiddle,answerRiddle,shortestHint,search,openDirs,progress,score,
+ riddleOffer,askRiddle,answerRiddle,skipRiddle,shortestHint,search,openDirs,progress,score,
  atJunction,ix,within,nearAgent};
 if(typeof module!=='undefined'&&module.exports)module.exports=api;
 else root.LabyrinthX=api;
