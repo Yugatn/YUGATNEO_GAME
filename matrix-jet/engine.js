@@ -61,8 +61,10 @@ function spawnObstacle(s){
  s.entities.push(e);return e;
 }
 function spawnPortal(s){
- const e={id:++s.nextId,kind:'portal',x:.16+rand(s)*.68,y:-.16,
-  altitude:Math.floor(rand(s)*3),r:.075,resolved:false,hit:false};
+ // Spawn within a reachable corridor, occasionally requesting an altitude change.
+ const e={id:++s.nextId,kind:'portal',x:clamp(s.targetX+(rand(s)-.5)*.24,.16,.84),y:-.16,
+  altitude:rand(s)<.72?s.altitude:Math.floor(rand(s)*3),
+  r:.075,resolved:false,hit:false};
  s.entities.push(e);return e;
 }
 function collide(s,e){
