@@ -130,3 +130,24 @@
 @media (prefers-reduced-motion: reduce) {
   button { transition: none; }
 }
+
+/* Short Telegram WebViews and landscape phones: the intro's centered
+   grid hid the Start button outside the viewport. Allow scrolling. */
+@media (max-height: 540px) {
+  .intro {
+    display: block;
+    overflow-y: auto;
+    overflow-x: hidden;
+    -webkit-overflow-scrolling: touch;
+    overscroll-behavior: contain;
+    padding: 12px 16px max(22px, env(safe-area-inset-bottom));
+    text-align: center;
+  }
+  .intro-inner { max-width: 480px; margin: 0 auto; }
+  .intro .eye { font-size: clamp(26px, 9vh, 48px); margin: 0 0 4px; }
+  .intro h2 { font-size: clamp(24px, 8vh, 38px); margin: 4px 0; }
+  .intro p { line-height: 1.35; font-size: 12px; margin: 5px 0; }
+  .intro .primary { margin: 8px auto; padding: 11px 25px; font-size: 15px; }
+  .modal { overflow-y: auto; align-items: start; }
+  .modal-card { margin: auto; max-height: calc(100dvh - 24px); overflow-y: auto; }
+}
