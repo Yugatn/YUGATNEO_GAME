@@ -168,7 +168,9 @@ $('junction').addEventListener('click',()=>{
    if(!result)return;
    $('explanation').textContent=result.explanation;
    overlays(null);
-   handleEvents(s.events.slice());updateHUD();save(true);
+   handleEvents(s.events.slice());
+   announce((result.correct?'ВЕРНО! ':'ПОЧЕМУ НЕВЕРНО: ')+result.explanation,3400);
+   updateHUD();save(true);
   });
   list.appendChild(button);
  });
