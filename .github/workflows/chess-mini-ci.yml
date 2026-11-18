@@ -27,7 +27,8 @@ jobs:
         run: node --test tests/chess-mini.test.cjs tests/chess-mini-ui.test.cjs
 
   visual-layout:
-    runs-on: ubuntu-latest
+    # Playwright 1.55 Chromium image supports Ubuntu 24.04, not GitHub's Ubuntu 26.04 latest.
+    runs-on: ubuntu-24.04
     steps:
       - name: Checkout
         uses: actions/checkout@v4
