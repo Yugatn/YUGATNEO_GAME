@@ -18,7 +18,7 @@ function create(seed){
   version:1,phase:'ready',seed:Number.isInteger(seed)?seed>>>0:2026,
   elapsed:0, distance:0, speed:C.START_SPEED, score:0, bonus:0, bestCombo:0,combo:0,
   avoided:0, nearMisses:0, portals:0, passedThrough:0, hits:0,
-  x:.5,targetX:.5, altitude:1, smoothAltitude:1,altitudeCooldown:0,
+  x:.5,targetX:.5, aspect:.50, altitude:1, smoothAltitude:1,altitudeCooldown:0,
   matrix:false, charges:0,phaseTime:0,invulnerable:0,lives:C.MAX_LIVES,
   entities:[],nextId:0,spawnIn:1.15,nextPortalAt:C.PORTAL_FIRST,
   events:[],reason:''
@@ -71,7 +71,7 @@ function collide(s,e){
  const planeRadius=.040;
  return s.altitude===e.altitude &&
   horizontal < (planeRadius+e.r)*.85 &&
-  vertical < (planeRadius+e.r)*.89;
+  vertical < (planeRadius+e.r)*.89*clamp(s.aspect||.5,.25,1);
 }
 function updateScore(s){
  s.score=Math.floor(s.distance*.48)+s.bonus;
