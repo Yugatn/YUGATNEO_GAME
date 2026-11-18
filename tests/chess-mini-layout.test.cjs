@@ -5,38 +5,27 @@ const fs = require('node:fs');
 const path = require('node:path');
 const {chromium} = require('playwright');
 const root = path.resolve(__dirname, '..');
-const base = 'https://matrix-chess.local/chess-mini/';
 const chessScript = fs.readFileSync(require.resolve('chess.js'), 'utf8');
-const resources = {
-  'index.html': ['text/html', 'chess-mini/index.html'],
-  'board-layout.css': ['text/css', 'chess-mini/board-layout.css'],
-  'puzzles.js': ['application/javascript', 'chess-mini/puzzles.js'],
-  'sw.js': ['application/javascript', 'chess-mini/sw.js'],
-  'icon.svg': ['image/svg+xml', 'chess-mini/icon.svg'],
-  'manifest.webmanifest': ['application/manifest+json', 'chess-mini/manifest.webmanifest'],
-};
+const originalHtml = fs.readFileSync(path.join(root,'chess-mini/index.html'),'utf8');
+const boardCss = fs.readFileSync(path.join(root,'chess-mini/board-layout.css'),'utf8');
+const puzzleScript = fs.readFileSync(path.join(root,'chess-mini/puzzles.js'),'utf8');
+const inlineScripts=[...originalHtml.matchAll(/<script(?:\\s[^>]*)?>([\\s\\S]*?)<\\/script>/g)]
+  .map(x=>x[1]).filter(x=>x.includes('let game=new Chess()'));
+if(inlineScripts.length!==1)throw Error('Expected a single Matrix Chess controller');
+const staticHtml=originalHtml
+  .replace('<link rel="stylesheet" href="./board-layout.css">','<style>'+boardCss+'</style>')
+  .replace(/<script(?:\\s[^>]*)?>[\\s\\S]*?<\\/script>/g,'');
 async function createPage(browser, width, height) {
   const page = await browser.newPage({viewport:{width,height},deviceScaleFactor:1});
+  page.setDefaultTimeout(12000);
   const issues = [];
   page.on('pageerror', err => issues.push(err.message));
-  // No live network or personal Telegram data is required in these tests.
-  await page.route('**/*', route => {
-    const url = route.request().url();
-    if (url.startsWith(base)) {
-      let name=url.slice(base.length).split('?')[0] || 'index.html';
-      const hit=resources[name];
-      if (!hit) return route.fulfill({status:404,body:'not found'});
-      return route.fulfill({status:200,contentType:hit[0],body:fs.readFileSync(path.join(root,hit[1]))});
-    }
-    if (url.includes('cdnjs.cloudflare.com/ajax/libs/chess.js/')) {
-      return route.fulfill({status:200,contentType:'application/javascript',body:chessScript+'\nwindow.Chess=Chess;'});
-    }
-    if (url.includes('telegram.org/js/telegram-web-app.js')) {
-      return route.fulfill({status:200,contentType:'application/javascript',body:'window.Telegram={WebApp:{ready(){},expand(){}}};'});
-    }
-    return route.abort();
-  });
-  await page.goto(base, {waitUntil:'load'});
+  // Load the real committed HTML and CSS in memory without DNS or CDN requests.
+  // The production chess.js and puzzles are injected as local JavaScript.
+  await page.setContent(staticHtml,{waitUntil:'load'});
+  await page.addScriptTag({content:chessScript+'\\nwindow.Chess=Chess;'});
+  await page.addScriptTag({content:puzzleScript});
+  await page.addScriptTag({content:inlineScripts[0]});
   await page.locator('#enterGame').click();
   await page.locator('#board .square').first().waitFor();
   return {page,issues};
