@@ -82,7 +82,7 @@ async function geometry(page) {
  });
 }
 test('responsive 8×8 board survives mobile, tablet, landscape and desktop viewports',async()=>{
- const browser=await chromium.launch({headless:true,args:['--no-sandbox']});
+ const browser=await chromium.launch({headless:true,executablePath:process.env.CHROME_BIN||undefined,args:['--no-sandbox']});
  try{
    const screens=[[320,640],[375,812],[390,844],[430,932],[768,1024],[844,390],[1280,800]];
    fs.mkdirSync(path.join(root,'test-artifacts','chess-mini'),{recursive:true});
@@ -101,7 +101,7 @@ test('responsive 8×8 board survives mobile, tablet, landscape and desktop viewp
  }finally{await browser.close();}
 });
 test('responsive board supports move, flip, hint, puzzle and board palette changes',async()=>{
- const browser=await chromium.launch({headless:true,args:['--no-sandbox']});
+ const browser=await chromium.launch({headless:true,executablePath:process.env.CHROME_BIN||undefined,args:['--no-sandbox']});
  try{
   const {page,issues}=await createPage(browser,390,844);
   try{
