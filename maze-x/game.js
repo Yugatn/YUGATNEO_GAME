@@ -17,13 +17,16 @@ function validate(raw){
  if(!raw||raw.version!==1||!E.MODES[raw.mode]||!Array.isArray(raw.floors))return null;
  const cfg=E.MODES[raw.mode],n=cfg.size;
  if(raw.floors.length!==cfg.levels||!Number.isFinite(raw.elapsed)||raw.elapsed<0)return null;
- if(!raw.player||!E.within(raw.player.x,raw.player.y,n)||!Number.isInteger(raw.floor)||raw.floor<0||raw.floor>=cfg.levels)return null;
+ if(!raw.player||!Number.isInteger(raw.player.x)||!Number.isInteger(raw.player.y)||
+  !E.within(raw.player.x,raw.player.y,n)||!Number.isInteger(raw.floor)||raw.floor<0||raw.floor>=cfg.levels)return null;
  for(const f of raw.floors){
   if(!f||f.size!==n||!Array.isArray(f.walls)||f.walls.length!==n*n||
-   !Array.isArray(f.seen)||f.seen.length!==n*n||!Array.isArray(f.agents)||!Array.isArray(f.portals))return null;
+   !Array.isArray(f.seen)||f.seen.length!==n*n||!Array.isArray(f.agents)||
+   !Array.isArray(f.portals)||!f.start||!Number.isInteger(f.start.x)||
+   !Number.isInteger(f.start.y)||!E.within(f.start.x,f.start.y,n))return null;
  }
  if(!['playing','paused','riddle','map'].includes(raw.phase))return null;
- raw=E.upgradeSave(raw);
+ try{raw=E.upgradeSave(raw);}catch(_){return null;}
  raw.phase='paused';raw.riddle=null;raw.events=[];raw.hintPath=[];
  return raw;
 }
