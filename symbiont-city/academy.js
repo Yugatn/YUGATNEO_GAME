@@ -101,6 +101,20 @@ const TRACKS=[
     },question:'Какие источники информации о здоровье заслуживают доверия?',source:'who'}
   ]}
 ];
+const AGE_QUESTIONS=Object.freeze({
+ 6:'Назови, что мог почувствовать каждый персонаж.',
+ 7:'Как сказать другу о своём решении добрыми словами?',
+ 8:'Назови два варианта и чем они различаются.',
+ 9:'Как проверить, что тебе понятны слова другого?',
+ 10:'Какая информация помогла бы выбрать план?',
+ 11:'Что будет, если ты ошибёшься, и как исправить действие?',
+ 12:'Какие аргументы есть за и против решения?',
+ 13:'Где заканчивается твоя свобода и начинается граница другого?',
+ 14:'Как отличить собственный вывод от давления группы?',
+ 15:'Какие факты заслуживают проверки перед выбором?',
+ 16:'Какие последствия возможны сегодня и через месяц?',
+ 17:'Какие новые доказательства заставили бы тебя поменять мнение?'
+});
 const ALL=TRACKS.flatMap(t=>t.scenarios.map(s=>s.id));
 function band(age){const n=Number(age);if(!Number.isInteger(n)||n<0||n>110)return null;
  return n<=2?'caregiver':n<=8?'child':n<=12?'preteen':n<=17?'teen':'adult';}
@@ -108,10 +122,12 @@ function view(id,age){
  const category=band(age);if(!category)return null;
  const t=TRACKS.find(t=>t.scenarios.some(x=>x.id===id));if(!t)return null;
  const sc=t.scenarios.find(x=>x.id===id),v=sc.health?sc.variants[category==='caregiver'?'child':category]:sc;
- const a=category==='caregiver'?'Для взрослого: разыграйте спокойную сценку с игрушками без экрана.':category==='child'?
-  'Поиграйте и обсудите вопрос вместе со взрослым.':category==='preteen'?
-  'Обсудите два довода и проверьте последствия.':category==='teen'?
-  'Разделите факт, мнение и собственные границы.':'Проверьте аргументы и возможные исключения.';
+ const a=AGE_QUESTIONS[Number(age)]||
+  (category==='caregiver'?'Для взрослого: разыграйте спокойную сценку с игрушками без экрана.':
+  category==='child'?'Поиграйте и обсудите вопрос вместе со взрослым.':
+  category==='preteen'?'Обсудите два довода и проверьте последствия.':
+  category==='teen'?'Разделите факт, мнение и собственные границы.':
+  'Проверьте аргументы и возможные исключения.');
  return {id:sc.id,title:sc.title,track:t.id,trackTitle:t.title,icon:t.icon,
   category,caregiver:category==='caregiver',agePrompt:a,framing:t.framing,
   situation:v.situation,choices:category==='caregiver'?[]:v.choices.slice(),
