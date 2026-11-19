@@ -1,0 +1,33 @@
+/* Classical virtual-pet world: autonomous wandering, habitats and five species */
+.habitat{cursor:crosshair;touch-action:manipulation;transition:background 1.5s ease}
+.habitat .walker{position:absolute;z-index:4;left:50%;top:57%;width:min(38%,205px);aspect-ratio:240/250;transform:translate(-50%,-50%);transition:left 2.8s ease-in-out,top 2.8s ease-in-out;pointer-events:none;will-change:left,top}
+.habitat .walker[data-stage="0"]{width:min(32%,170px)}
+.habitat .walker[data-stage="2"]{width:min(42%,225px)}
+.walker .pet,.walker .pet.tiny,.walker .pet.elder{width:100%;height:100%}
+.walker.west .pet svg{transform:scaleX(-1)}
+.walker.paused .pet{animation:bob 6s ease-in-out infinite}
+.habitat .walker .pet svg{transition:transform .2s ease-out}
+.habitat .star{opacity:0;transition:opacity 1.2s}
+.habitat.night .star{opacity:.95}
+.habitat.night .cloud{opacity:.08}
+.habitat .sunmoon{position:absolute;right:14%;top:11%;z-index:0;width:55px;height:55px;border-radius:50%;background:#fff0ae;box-shadow:0 0 35px #ffde816a;transition:background 1s,transform 1s,box-shadow 1s;pointer-events:none}
+.habitat.night .sunmoon{background:#e8ecff;box-shadow:0 0 35px #d5dff585;transform:translateY(10px) scale(.82)}
+.habitat .sunmoon:after{content:"";position:absolute;right:-7px;top:-7px;width:52px;height:52px;border-radius:50%;background:#1a2542;opacity:0;transition:opacity 1s}
+.habitat.night .sunmoon:after{opacity:1}
+.habitat .tree{position:absolute;bottom:20%;font-size:clamp(43px,7vw,70px);filter:drop-shadow(0 7px 4px #164a4540);pointer-events:none;z-index:2}
+.habitat .tree.a{left:5%}.habitat .tree.b{right:5%;bottom:18%;font-size:clamp(34px,6vw,60px)}
+.habitat .flower{position:absolute;bottom:10%;font-size:23px;z-index:2;opacity:.85;pointer-events:none}.habitat .flower.a{left:25%}.habitat .flower.b{right:27%;bottom:14%}
+.habitat .cloud{z-index:0}
+.worldhint{position:absolute;bottom:10px;left:12px;right:12px;z-index:6;text-align:center;color:#eefcff;font-size:12px;text-shadow:0 1px 5px #163d48;background:#17344355;padding:5px 10px;border-radius:30px;pointer-events:none}
+.world-controls{display:flex;gap:9px;flex-wrap:wrap;align-items:center;justify-content:center;margin:6px 0 10px}
+.world-controls button{border-radius:12px;background:#294762;color:#edfcff;border:1px solid #5d8196;padding:8px 12px;font-size:13px}
+.world-controls button[aria-pressed="true"]{background:#a9e9d9;color:#113740;border-color:#a9e9d9}
+.world-controls .world-state{font-size:12px;color:#cbe9ef}
+.species-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:9px;margin:10px 0 16px}
+.species-choice{display:flex;align-items:center;gap:9px;min-width:0;text-align:left;border:2px solid #4e607b;background:#24334e;color:#edfaff;border-radius:13px;padding:8px;font-size:13px}
+.species-choice[aria-pressed="true"]{border-color:#9cead4;background:#255450}
+.species-choice .animal{font-size:26px;line-height:1}.species-choice strong{display:block;white-space:normal;font-size:13px}.species-choice small{display:block;color:#c7d9e6;font-size:11px}
+.dialog-card{max-height:min(95vh,850px);overflow:auto}
+.selecthint{font-size:12px!important;margin-top:0}
+@media(max-width:390px){.species-grid{gap:6px}.species-choice{padding:7px;gap:5px}.species-choice .animal{font-size:22px}.species-choice strong{font-size:12px}}
+@media(prefers-reduced-motion:reduce){.habitat .walker{transition:none}.walker .pet{animation:none!important}}
