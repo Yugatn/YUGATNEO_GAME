@@ -25,7 +25,7 @@ jobs:
           node --check symbiont-city/engine.js
           node --check symbiont-city/game.js
           node --check symbiont-city/decisions.js
-          node --check symbiont-city/decisions-ui.js
+          node --check symbiont-city/lab-ui.js
           node --check symbiont-city/sw.js
       - name: All 0-110 age and full-game scenario tests
         run: node --test tests/symbiont-city.test.cjs tests/symbiont-city-ui.test.cjs tests/symbiont-city-decisions.test.cjs tests/symbiont-city-decisions-ui.test.cjs
