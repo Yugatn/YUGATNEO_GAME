@@ -44,3 +44,6 @@
 @media(max-width:680px){.academy-grid{grid-template-columns:1fr}.academy-track p{min-height:0}.academy-heading,.spiral-entry{flex-direction:column}.spiral-entry button{width:100%}.spiral-canvas{height:min(39vh,400px);min-height:180px}.spiral-status{font-size:11px}}
 @media(max-width:360px){.spiral-canvas{height:min(34vh,350px)}.spiral-controls{grid-template-rows:42px 42px}}
 @media(prefers-reduced-motion:reduce){.academy-card,.academy-answer{transition:none}}
+
+/* A hidden panel must never occupy screen space, even with author-level display rules. */
+.spiral-canvas[hidden],.spiral-controls[hidden],#spiralPhase[hidden],#spiralHint[hidden],#spiralIntro[hidden]{display:none!important}
