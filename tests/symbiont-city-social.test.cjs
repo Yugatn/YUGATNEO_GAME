@@ -63,6 +63,8 @@ test('civic material compares three peaceful options without rewarding a politic
  const infant=G.civicView('feedback',1);
  assert.equal(infant.caregiver,true);assert.deepEqual(infant.approaches,[]);
  assert.match(G.civicView('metaphor',25).note,/авторская метафора/);
+ assert.match(G.civicView('metaphor',25).prompt,/революцию/);
+ assert.doesNotMatch(G.civicView('metaphor',12).prompt,/революц/i);
  assert.equal(G.consider('feedback',2,1),null);
 });
 test('service records save only anonymous aggregates and reject corrupt data',()=>{
