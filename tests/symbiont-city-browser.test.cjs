@@ -8,10 +8,12 @@ const css=fs.readFileSync(path.join(root,'style.css'),'utf8');
 const labCSS=fs.readFileSync(path.join(root,'lab.css'),'utf8');
 const workshopsCSS=fs.readFileSync(path.join(root,'workshops.css'),'utf8');
 const routeCSS=fs.readFileSync(path.join(root,'help-route.css'),'utf8');
+const academyCSS=fs.readFileSync(path.join(root,'academy.css'),'utf8');
 const html=original.replace('<link rel="stylesheet" href="./style.css">','<style>'+css+'</style>')
  .replace('<link rel="stylesheet" href="./lab.css">','<style>'+labCSS+'</style>')
  .replace('<link rel="stylesheet" href="./workshops.css">','<style>'+workshopsCSS+'</style>')
  .replace('<link rel="stylesheet" href="./help-route.css">','<style>'+routeCSS+'</style>')
+ .replace('<link rel="stylesheet" href="./academy.css">','<style>'+academyCSS+'</style>')
  .replace(/<script[^>]*src="[^"]+"[^>]*><\/script>/g,'');
 const content=fs.readFileSync(path.join(root,'content.js'),'utf8');
 const engine=fs.readFileSync(path.join(root,'engine.js'),'utf8');
@@ -22,6 +24,10 @@ const workshops=fs.readFileSync(path.join(root,'workshops.js'),'utf8');
 const workshopsUI=fs.readFileSync(path.join(root,'workshops-ui.js'),'utf8');
 const helpRoute=fs.readFileSync(path.join(root,'help-route.js'),'utf8');
 const helpRouteUI=fs.readFileSync(path.join(root,'help-route-ui.js'),'utf8');
+const academy=fs.readFileSync(path.join(root,'academy.js'),'utf8');
+const academyUI=fs.readFileSync(path.join(root,'academy-ui.js'),'utf8');
+const spiral=fs.readFileSync(path.join(root,'spiral-runner.js'),'utf8');
+const spiralUI=fs.readFileSync(path.join(root,'spiral-runner-ui.js'),'utf8');
 async function open(browser,width,height){
  const page=await browser.newPage({viewport:{width,height},deviceScaleFactor:1});
  const errors=[];
@@ -44,6 +50,10 @@ async function open(browser,width,height){
  await page.addScriptTag({content:workshopsUI});
  await page.addScriptTag({content:helpRoute});
  await page.addScriptTag({content:helpRouteUI});
+ await page.addScriptTag({content:academy});
+ await page.addScriptTag({content:academyUI});
+ await page.addScriptTag({content:spiral});
+ await page.addScriptTag({content:spiralUI});
  await page.evaluate(()=>{
   document.getElementById('districtList').addEventListener('click',()=>window.__districtClicks=(window.__districtClicks||0)+1);
  });
@@ -266,5 +276,49 @@ test('help route gameplay stays visible on portrait and desktop, with a reachabl
       '../test-artifacts/symbiont-city/help-route-'+w+'x'+h+'.png')});
    }finally{await page.close();}
   }
+ }finally{await browser.close();}
+});
+
+test('new Academy works on small phones and gives a clear explanation without horizontal overflow',async()=>{
+ const browser=await chromium.launch({headless:true,executablePath:process.env.CHROME_BIN||undefined,args:['--no-sandbox']});
+ try{
+  for(const [w,h] of [[320,700],[390,844],[1280,850]]){
+   const {page,errors}=await open(browser,w,h);
+   try{
+    assert.equal(await page.locator('[data-academy-id]').count(),12);
+    const bounds=await page.evaluate(()=>{
+     const r=document.getElementById('academySection').getBoundingClientRect();
+     return {left:r.left,right:r.right,overflow:document.documentElement.scrollWidth-innerWidth};
+    });
+    assert.ok(bounds.left>=0&&bounds.right<=w+2&&bounds.overflow<=3,
+     'academy fits '+w+'px: '+JSON.stringify(bounds));
+    await page.locator('[data-academy-id="friend"]').click();
+    assert.equal(await page.locator('#academyOverlay').isVisible(),true);
+    await page.locator('#academyNext').click();
+    assert.equal(await page.locator('[data-academy-answer]').count(),3);
+    await page.locator('[data-academy-answer="1"]').click();
+    assert.match(await page.locator('#academyBody').textContent(),/слушай|разрешени/);
+    assert.match(await page.locator('#academyCount').textContent(),/1 \/ 12/);
+    assert.deepEqual(errors,[]);
+   }finally{await page.close();}
+  }
+ }finally{await browser.close();}
+});
+test('new Spiral Runner renders a runner in fog of war and supports phone arrow controls',async()=>{
+ const browser=await chromium.launch({headless:true,executablePath:process.env.CHROME_BIN||undefined,args:['--no-sandbox']});
+ try{
+  const {page,errors}=await open(browser,390,844);
+  try{
+   await page.locator('#spiralStart').click();
+   assert.equal(await page.locator('#spiralOverlay').isVisible(),true);
+   const r=await page.locator('#spiralCanvas').boundingBox();
+   assert.ok(r&&r.width>200&&r.x+r.width<=391&&r.height>150,JSON.stringify(r));
+   assert.equal(await page.locator('[data-spiral-direction]').count(),4);
+   await page.locator('#spiralHint').click();
+   assert.match(await page.locator('#spiralStatus').textContent(),/Подсказка/);
+   await page.locator('#spiralDone').click();
+   assert.equal(await page.locator('#spiralOverlay').isVisible(),false);
+   assert.deepEqual(errors,[]);
+  }finally{await page.close();}
  }finally{await browser.close();}
 });

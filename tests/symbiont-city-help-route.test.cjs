@@ -147,7 +147,7 @@ test('game is wired into Telegram Mini App and PWA with no user account access',
   assert.ok(html.includes('./'+name));
   assert.ok(sw.includes("'./"+name+"'"));
  }
- assert.ok(sw.includes('yugatneo-symbiont-city-v5'));
+ assert.ok(sw.includes('yugatneo-symbiont-city-v6'));
  assert.ok(ui.includes('symbiont-city:export'));
  assert.ok(ui.includes('symbiont-city:cleared'));
  assert.ok(!ui.includes('initDataUnsafe'));
