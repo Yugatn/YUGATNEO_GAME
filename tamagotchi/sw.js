@@ -1,5 +1,5 @@
-const CACHE = 'yugatneo-symbiont-v1';
-const SHELL = ['./','./index.html','./manifest.json','./icon.svg'];
+const CACHE = 'yugatneo-symbiont-v2';
+const SHELL = ['./','./index.html','./manifest.json','./icon.svg','./world.js','./world.css'];
 self.addEventListener('install', event => {
   event.waitUntil(caches.open(CACHE).then(cache => cache.addAll(SHELL)).then(() => self.skipWaiting()));
 });
