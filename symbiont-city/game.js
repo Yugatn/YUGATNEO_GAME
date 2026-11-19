@@ -391,6 +391,7 @@ $('clear').addEventListener('click',()=>{
  if(window.confirm('Удалить местный прогресс города и очки? Это действие необратимо.')){
   const age=state.age,challenge=state.challenge;
   state=E.initial(age);E.setChallenge(state,challenge);save();refresh();
+  document.dispatchEvent(new Event('symbiont-city:cleared'));
   notify('Местный игровой прогресс очищен.');
  }
 });
@@ -398,6 +399,7 @@ $('export').addEventListener('click',()=>{
  const data={game:'SYMBIONT CITY',version:1,exportedAt:new Date().toISOString(),
   age:state.age,challenge:state.challenge,progress:E.progress(state),
   completed:state.completed,skillPoints:state.skillPoints};
+ document.dispatchEvent(new CustomEvent('symbiont-city:export',{detail:data}));
  const blob=new Blob([JSON.stringify(data,null,2)],{type:'application/json'});
  const url=URL.createObjectURL(blob);
  const link=document.createElement('a');link.href=url;link.download='symbiont-city-progress.json';
