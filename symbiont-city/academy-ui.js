@@ -7,6 +7,12 @@ const safe=x=>String(x??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'
 let state;
 try{state=A.restore(JSON.parse(localStorage.getItem(KEY)||'null'));}catch(_){state=A.initial();}
 let current=null,step='brief',answer=null,opener=null;
+let deckTarget='friend',deckIndex=0;
+function updateDeck(){
+ $('academyDeckQuestion').textContent=A.question(deckTarget,age(),deckIndex);
+ for(const b of document.querySelectorAll('[data-deck-target]'))
+  b.setAttribute('aria-pressed',String(b.dataset.deckTarget===deckTarget));
+}
 function age(){const n=Number($('age').value);return Number.isInteger(n)&&n>=0&&n<=110?n:8;}
 function save(){try{localStorage.setItem(KEY,JSON.stringify(state));}catch(_){}}
 function update(){
@@ -80,6 +86,15 @@ $('academyBack').addEventListener('click',()=>{if(!current)return;
  step=step==='result'?'choice':'brief';render();
 });
 $('academyClose').addEventListener('click',close);
+document.querySelector('.academy-deck-picker').addEventListener('click',e=>{
+ const b=e.target.closest('[data-deck-target]');
+ if(!b||!A.QUESTION_DECK[b.dataset.deckTarget])return;
+ deckTarget=b.dataset.deckTarget;deckIndex=0;updateDeck();
+});
+$('academyDeckNext').addEventListener('click',()=>{
+ deckIndex++;updateDeck();
+});
+$('age').addEventListener('change',updateDeck);
 document.addEventListener('keydown',e=>{
  if(e.key==='Escape'&&!$('academyOverlay').hidden){
   e.preventDefault();e.stopImmediatePropagation();close();
@@ -93,5 +108,5 @@ document.addEventListener('symbiont-city:cleared',()=>{
 document.addEventListener('symbiont-city:export',e=>{
  if(e.detail)e.detail.academy={completed:Object.keys(state.completed).filter(id=>A.ids.includes(id)),total:A.ids.length};
 });
-update();
+update();updateDeck();
 })();
