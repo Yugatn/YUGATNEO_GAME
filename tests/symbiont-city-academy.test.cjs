@@ -168,3 +168,15 @@ test('academy and runner are registered in PWA and never read Telegram identity'
   assert.ok(!source.includes('fetch('));
  }
 });
+
+test('supportive question deck includes consent, helpfulness and respects ages 0–2',()=>{
+ for(const target of ['friend','family','self']){
+  assert.ok(A.QUESTION_DECK[target].length>=5);
+  assert.equal(A.question(target,1,0).includes('Взрослому'),true);
+  assert.ok(A.question(target,6,1));
+  assert.notEqual(A.question(target,8,0),A.question(target,8,1));
+ }
+ assert.match(A.question('friend',8,0),/выслушаю/);
+ assert.match(A.question('family',12,0),/могу помочь/);
+ assert.equal(A.question('unknown',13,0),null);
+});
