@@ -19,7 +19,8 @@ button{font:inherit;cursor:pointer;border:1px solid var(--line);border-radius:12
 .layout{grid-template-columns:minmax(0,1fr) minmax(290px,340px);gap:clamp(16px,2.4vw,28px)}
 .board-wrap{width:100%;max-width:720px;min-width:0}
 .board{width:100%;aspect-ratio:1/1;grid-template-rows:repeat(8,minmax(0,1fr))}
-.square{aspect-ratio:1/1}
+.square{aspect-ratio:auto;min-width:0;min-height:0;max-width:100%;max-height:100%;align-self:stretch;justify-self:stretch}
+.board{grid-auto-flow:row;grid-auto-rows:minmax(0,1fr);align-content:stretch;justify-content:stretch}
 @media(max-width:760px){
  .app{padding:12px clamp(8px,2.5vw,16px)}
  .layout{grid-template-columns:minmax(0,1fr);gap:16px}
@@ -64,6 +65,21 @@ button{font:inherit;cursor:pointer;border:1px solid var(--line);border-radius:12
 (function(){
 'use strict';
 const $=id=>document.getElementById(id);
+/* Keep the board's outer dimensions exactly square even when grid content or
+   browser-specific button sizing would otherwise distort the 8x8 grid. */
+const boardElement=$('board');
+function sizeChessboard(){
+  const width=boardElement.getBoundingClientRect().width;
+  if(width>0) boardElement.style.height=width+'px';
+}
+if(typeof ResizeObserver!=='undefined'){
+  const boardResizeObserver=new ResizeObserver(sizeChessboard);
+  boardResizeObserver.observe(boardElement.parentElement);
+}else{
+  window.addEventListener('resize',sizeChessboard);
+}
+sizeChessboard();
+
 if(typeof Chess==='undefined'){ $('statusTitle').textContent='Не удалось загрузить движок';$('statusBanner').textContent='Проверь подключение к интернету и обнови страницу.';return;}
 let game=new Chess(),selected=null,legal=[],flipped=false,lastMove=null,pendingPromotion=null,installPrompt=null;let clockBase=300,remaining={w:300,b:300},clockRunning=false,lastTick=0,timerHandle=null;let aiMode=false,aiThinking=false,aiTimer=null,timeExpired=false;
 const symbols={wk:'♔',wq:'♕',wr:'♖',wb:'♗',wn:'♘',wp:'♙',bk:'♚',bq:'♛',br:'♜',bb:'♝',bn:'♞',bp:'♟'};
