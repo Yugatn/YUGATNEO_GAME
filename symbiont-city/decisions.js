@@ -148,8 +148,10 @@ function view(id,age){
   intro:sc.intro[band==='caregiver'?'young':band],
   evidence:sc.evidence.slice(),reflect:sc.reflect,caregiver:band==='caregiver',
   cooperative:band==='young',
-  options:sc.options.slice(0,band==='young'||band==='caregiver'?2:3).map((o,i)=>({
-   index:i,text:o.text,effects:outEffects(o.effects),reason:o.reason,follow:o.follow
+  options:(band==='young'||band==='caregiver'?
+   (sc.id==='generator'||sc.id==='rumor'?[0,2]:[0,1]):[0,1,2]).map(i=>({
+   index:i,text:sc.options[i].text,effects:outEffects(sc.options[i].effects),
+   reason:sc.options[i].reason,follow:sc.options[i].follow
   }))};
 }
 function choice(state,id,index){
