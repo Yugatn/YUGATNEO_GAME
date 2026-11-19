@@ -16,6 +16,7 @@ catch(_){}
 try{adult=H.restore(JSON.parse(localStorage.getItem(ADULT_KEY)||'null'));}
 catch(_){}
 let active=null,opener=null;
+let lastAge=null;
 function age(){
  const a=Number($('age').value);
  return Number.isInteger(a)&&a>=0&&a<=110?a:8;
@@ -177,8 +178,13 @@ $('socialRestart').addEventListener('click',()=>{
 });
 $('socialClose').addEventListener('click',close);
 $('age').addEventListener('change',()=>{
+ const next=age();
+ // Native number fields can emit an extra change on blur during pointerdown.
+ // Do not rebuild the card that is about to receive pointerup/click.
+ if(next===lastAge)return;
+ lastAge=next;
  refresh();
- if(active&&active.type==='adult'&&age()<18)close();
+ if(active&&active.type==='adult'&&next<18)close();
 });
 document.addEventListener('keydown',e=>{
  if(e.key==='Escape'&&!$('socialOverlay').hidden){
@@ -196,5 +202,5 @@ document.addEventListener('symbiont-city:export',e=>{
  e.detail.adultCare={completed:H.ids.filter(id=>adult.completed[id]),total:H.ids.length};
 });
 window.SymbiontSocialUI={open,close,refresh};
-cards();refresh();
+lastAge=age();cards();refresh();
 })();
