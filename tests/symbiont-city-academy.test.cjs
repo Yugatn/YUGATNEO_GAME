@@ -38,6 +38,15 @@ test('the age gates protect ages 0–2 and keep reproductive information age-app
  assert.equal(A.band(-1),null);
  assert.equal(A.band(111),null);
 });
+test('each age from 6 through 17 receives a distinct reflection scaffold',()=>{
+ const seen=new Set();
+ for(let age=6;age<=17;age++){
+  const prompt=A.view('friend',age).agePrompt;
+  assert.ok(prompt.length>20);
+  seen.add(prompt);
+ }
+ assert.equal(seen.size,12);
+});
 test('choices record only completion flags and no health details or journal answers',()=>{
  const s=A.initial();
  const q=A.view('friend',12);
