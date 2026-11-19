@@ -9,11 +9,13 @@ const labCSS=fs.readFileSync(path.join(root,'lab.css'),'utf8');
 const workshopsCSS=fs.readFileSync(path.join(root,'workshops.css'),'utf8');
 const routeCSS=fs.readFileSync(path.join(root,'help-route.css'),'utf8');
 const academyCSS=fs.readFileSync(path.join(root,'academy.css'),'utf8');
+const socialCSS=fs.readFileSync(path.join(root,'social.css'),'utf8');
 const html=original.replace('<link rel="stylesheet" href="./style.css">','<style>'+css+'</style>')
  .replace('<link rel="stylesheet" href="./lab.css">','<style>'+labCSS+'</style>')
  .replace('<link rel="stylesheet" href="./workshops.css">','<style>'+workshopsCSS+'</style>')
  .replace('<link rel="stylesheet" href="./help-route.css">','<style>'+routeCSS+'</style>')
  .replace('<link rel="stylesheet" href="./academy.css">','<style>'+academyCSS+'</style>')
+ .replace('<link rel="stylesheet" href="./social.css">','<style>'+socialCSS+'</style>')
  .replace(/<script[^>]*src="[^"]+"[^>]*><\/script>/g,'');
 const content=fs.readFileSync(path.join(root,'content.js'),'utf8');
 const engine=fs.readFileSync(path.join(root,'engine.js'),'utf8');
@@ -28,6 +30,9 @@ const academy=fs.readFileSync(path.join(root,'academy.js'),'utf8');
 const academyUI=fs.readFileSync(path.join(root,'academy-ui.js'),'utf8');
 const spiral=fs.readFileSync(path.join(root,'spiral-runner.js'),'utf8');
 const spiralUI=fs.readFileSync(path.join(root,'spiral-runner-ui.js'),'utf8');
+const commonGood=fs.readFileSync(path.join(root,'common-good.js'),'utf8');
+const adultCare=fs.readFileSync(path.join(root,'adult-care.js'),'utf8');
+const socialUI=fs.readFileSync(path.join(root,'social-ui.js'),'utf8');
 async function open(browser,width,height){
  const page=await browser.newPage({viewport:{width,height},deviceScaleFactor:1});
  const errors=[];
@@ -54,6 +59,9 @@ async function open(browser,width,height){
  await page.addScriptTag({content:academyUI});
  await page.addScriptTag({content:spiral});
  await page.addScriptTag({content:spiralUI});
+ await page.addScriptTag({content:commonGood});
+ await page.addScriptTag({content:adultCare});
+ await page.addScriptTag({content:socialUI});
  await page.evaluate(()=>{
   document.getElementById('districtList').addEventListener('click',()=>window.__districtClicks=(window.__districtClicks||0)+1);
  });
@@ -318,6 +326,59 @@ test('new Spiral Runner renders a runner in fog of war and supports phone arrow 
    assert.match(await page.locator('#spiralStatus').textContent(),/Подсказка/);
    await page.locator('#spiralDone').click();
    assert.equal(await page.locator('#spiralOverlay').isVisible(),false);
+   assert.deepEqual(errors,[]);
+  }finally{await page.close();}
+ }finally{await browser.close();}
+});
+
+test('city social interdependence mini-game is interactive without overflow on phone and desktop',async()=>{
+ const browser=await chromium.launch({headless:true,executablePath:process.env.CHROME_BIN||undefined,args:['--no-sandbox']});
+ try{
+  fs.mkdirSync(path.resolve(__dirname,'../test-artifacts/symbiont-city'),{recursive:true});
+  for(const [w,h] of [[320,700],[390,844],[768,1024],[1280,850]]){
+   const {page,errors}=await open(browser,w,h);
+   try{
+    assert.equal(await page.locator('[data-social-scene]').count(),3);
+    assert.equal(await page.locator('[data-civic-id]').count(),3);
+    const bounds=await page.evaluate(()=>{
+     const r=document.getElementById('socialSection').getBoundingClientRect();
+     return {x:r.x,right:r.right,overflow:document.documentElement.scrollWidth-innerWidth};
+    });
+    assert.ok(bounds.x>=0&&bounds.right<=w+2&&bounds.overflow<=3,
+      'social city fits '+w+': '+JSON.stringify(bounds));
+    await page.locator('[data-social-scene="water"]').click();
+    assert.equal(await page.locator('[data-repair-id]').count(),7);
+    const before=await page.locator('.social-statline').textContent();
+    await page.locator('[data-repair-id="water"]').click();
+    const after=await page.locator('.social-statline').textContent();
+    assert.notEqual(before,after);
+    await page.locator('#socialFinish').click();
+    assert.match(await page.locator('#socialRecord').textContent(),/1 попыток/);
+    assert.deepEqual(errors,[]);
+    if(w<=390)await page.screenshot({path:path.resolve(__dirname,
+      '../test-artifacts/symbiont-city/social-city-'+w+'x'+h+'.png')});
+   }finally{await page.close();}
+  }
+ }finally{await browser.close();}
+});
+test('18+ family education is age-locked, evidence-linked and private in Chromium',async()=>{
+ const browser=await chromium.launch({headless:true,executablePath:process.env.CHROME_BIN||undefined,args:['--no-sandbox']});
+ try{
+  const {page,errors}=await open(browser,390,844);
+  try{
+   assert.equal(await page.locator('#adultCards').isVisible(),false);
+   await page.locator('#age').fill('17');await page.locator('#age').dispatchEvent('change');
+   assert.equal(await page.locator('#adultCards').isVisible(),false);
+   await page.locator('#age').fill('18');await page.locator('#age').dispatchEvent('change');
+   assert.equal(await page.locator('[data-adult-id]').count(),5);
+   await page.locator('[data-adult-id="phone"]').click();
+   assert.equal(await page.locator('#socialOverlay').isVisible(),true);
+   await page.locator('[data-adult-choice="1"]').click();
+   assert.match(await page.locator('#socialBody').textContent(),/Разбор/);
+   assert.match(await page.locator('#adultCount').textContent(),/1 \/ 5/);
+   await page.locator('#age').fill('12');await page.locator('#age').dispatchEvent('change');
+   assert.equal(await page.locator('#socialOverlay').isVisible(),false);
+   assert.equal(await page.locator('#adultCards').isVisible(),false);
    assert.deepEqual(errors,[]);
   }finally{await page.close();}
  }finally{await browser.close();}

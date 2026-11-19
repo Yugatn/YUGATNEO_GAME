@@ -34,9 +34,12 @@ jobs:
           node --check symbiont-city/academy-ui.js
           node --check symbiont-city/spiral-runner.js
           node --check symbiont-city/spiral-runner-ui.js
+          node --check symbiont-city/common-good.js
+          node --check symbiont-city/adult-care.js
+          node --check symbiont-city/social-ui.js
           node --check symbiont-city/sw.js
       - name: All 0-110 age and full-game scenario tests
-        run: node --test tests/symbiont-city.test.cjs tests/symbiont-city-ui.test.cjs tests/symbiont-city-lab.test.cjs tests/symbiont-city-decisions.test.cjs tests/symbiont-city-decisions-ui.test.cjs tests/symbiont-city-workshops.test.cjs tests/symbiont-city-workshops-ui.test.cjs tests/symbiont-city-help-route.test.cjs tests/symbiont-city-help-route-ui.test.cjs tests/symbiont-city-academy.test.cjs tests/symbiont-city-academy-ui.test.cjs
+        run: node --test tests/symbiont-city.test.cjs tests/symbiont-city-ui.test.cjs tests/symbiont-city-lab.test.cjs tests/symbiont-city-decisions.test.cjs tests/symbiont-city-decisions-ui.test.cjs tests/symbiont-city-workshops.test.cjs tests/symbiont-city-workshops-ui.test.cjs tests/symbiont-city-help-route.test.cjs tests/symbiont-city-help-route-ui.test.cjs tests/symbiont-city-academy.test.cjs tests/symbiont-city-academy-ui.test.cjs tests/symbiont-city-social.test.cjs tests/symbiont-city-social-ui.test.cjs
 
   responsive-browser:
     runs-on: ubuntu-24.04
