@@ -1,0 +1,92 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#081b27">
+<meta name="description" content="СИМБИОНТ: Город решений — сюжетная игра о сотрудничестве, эмоциях, критическом мышлении и творчестве с адаптацией для каждого возраста 6–11 лет.">
+<meta property="og:title" content="СИМБИОНТ · Город решений">
+<title>СИМБИОНТ · Город решений</title>
+<link rel="icon" type="image/svg+xml" href="./icon.svg">
+<link rel="manifest" href="./manifest.webmanifest">
+<link rel="stylesheet" href="./style.css">
+<script src="https://telegram.org/js/telegram-web-app.js"></script>
+<script defer src="./content.js"></script>
+<script defer src="./engine.js"></script>
+<script defer src="./game.js"></script>
+</head>
+<body>
+<div id="app">
+<header class="masthead">
+ <div class="logo" aria-hidden="true">✧</div>
+ <div class="brand"><span>YUGATNEO · СЮЖЕТ ИКС</span><strong>СИМБИОНТ</strong><small>ГОРОД РЕШЕНИЙ</small></div>
+ <div class="head-actions"><span class="score" aria-label="Заработанные игровые очки">✦ <b id="points">0</b></span><button id="aboutBtn" type="button" class="icon-btn" aria-label="Об игре и приватности">ⓘ</button></div>
+</header>
+<main class="container">
+ <section class="intro-strip" aria-label="Добро пожаловать">
+  <div class="intro-copy"><div class="eyebrow">СТРОЙ МИР, РАЗВИВАЯ НАВЫКИ</div>
+   <h1>Каждое решение <em>меняет город</em></h1>
+   <p>Слушай, исследуй, строй, договаривайся. Здесь важнее любознательность и помощь, чем спешка и победа над другими.</p>
+  </div>
+  <div class="profile" aria-label="Настройка игры">
+   <label for="age">Возраст игрока</label>
+   <div class="age-line"><select id="age" aria-label="Выбери возраст от шести до одиннадцати лет">
+      <option value="6">6 лет</option><option value="7">7 лет</option><option value="8" selected>8 лет</option><option value="9">9 лет</option><option value="10">10 лет</option><option value="11">11 лет</option>
+     </select>
+     <select id="challenge" aria-label="Уровень поддержки">
+      <option value="gentle">С поддержкой</option><option value="auto" selected>По возрасту</option><option value="stretch">С вызовом</option>
+     </select></div>
+   <p id="ageDescription" class="profile-text" aria-live="polite"></p>
+  </div>
+ </section>
+ <section class="dashboard">
+  <div class="map-panel">
+   <div class="panel-head"><div><div class="eyebrow">ИНТЕРАКТИВНАЯ ВСЕЛЕННАЯ</div><h2>Карта города</h2></div><span id="cityLevel" class="count-label">0 / 14 миссий</span></div>
+   <canvas id="cityCanvas" width="800" height="610" tabindex="0" role="img" aria-label="Интерактивная карта семи районов; нажми на район, чтобы открыть его миссию"></canvas>
+   <div class="map-foot"><span><i class="dot complete"></i> Восстановлено</span><span><i class="dot new"></i> Доступно</span><span>✧ Нажми на здание</span></div>
+   <div class="meter" role="progressbar" aria-label="Восстановление города" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0" id="cityMeter"><div id="cityFill"></div></div>
+   <div class="story-card" id="cityStory" aria-live="polite">Город ждёт первого решения. Выбирай район и помогай жителям.</div>
+  </div>
+  <aside class="districts">
+   <div class="panel-head"><div><div class="eyebrow">7 ПУТЕЙ РАЗВИТИЯ</div><h2>Выбери район</h2></div><span class="count-label" id="districtProgress">0 / 7</span></div>
+   <div id="districtList" class="district-list" aria-label="Миссии районов"></div>
+  </aside>
+ </section>
+ <section class="bottom-grid">
+  <div class="info-panel"><div class="panel-head"><div><div class="eyebrow">МОИ ПУТИ</div><h2>Навыки в игре</h2></div></div>
+   <div id="skillBars" class="skill-bars"></div>
+   <p class="fine">Это игровой прогресс по выполненным заданиям, а не психологический диагноз или оценка личности.</p>
+  </div>
+  <div class="info-panel"><div class="panel-head"><div><div class="eyebrow">В ТВОЁМ ТЕМПЕ</div><h2>Достижения</h2></div></div>
+   <div id="achievements" class="achievements"></div>
+   <div class="save-actions"><button id="export" class="small-button" type="button">Сохранить копию результата</button><button id="clear" class="small-button muted" type="button">Очистить прогресс</button></div>
+   <p class="fine">Очки остаются только в этом браузере. Нет чата, покупок, рекламы и регистрации. Задания можно проходить повторно.</p>
+  </div>
+ </section>
+ <footer>Сюжет Икс · Игра развивает практику размышлений, но не заменяет обучение и общение в реальной жизни. <button type="button" id="sourceInfo">Методика и источники</button></footer>
+</main>
+<section id="missionOverlay" class="overlay" hidden aria-modal="true" role="dialog" aria-labelledby="missionTitle">
+ <div class="mission-shell">
+  <div class="mission-top"><div><div id="missionDistrict" class="eyebrow"></div><h2 id="missionTitle"></h2></div><button class="close" id="missionClose" type="button" aria-label="Вернуться в город">✕</button></div>
+  <div class="mission-progress"><span id="missionStepLabel">Ситуация</span><div class="dots"><i id="dot1"></i><i id="dot2"></i><i id="dot3"></i></div></div>
+  <div id="missionBody" class="mission-body" aria-live="polite"></div>
+  <div class="mission-footer"><button id="missionBack" class="button ghost" type="button">← Назад в город</button><button id="missionNext" class="button primary" type="button">Продолжить →</button></div>
+ </div>
+</section>
+<section id="infoOverlay" class="overlay" hidden aria-modal="true" role="dialog" aria-labelledby="infoTitle">
+ <div class="mission-shell info-shell">
+  <div class="mission-top"><h2 id="infoTitle">О методике и приватности</h2><button class="close" id="infoClose" type="button" aria-label="Закрыть">✕</button></div>
+  <div class="mission-body prose">
+   <p>«СИМБИОНТ: Город решений» — художественная обучающая игра. Она помогает упражняться в обсуждении эмоций, логическом поиске, сотрудничестве и планировании. <strong>Она не диагностирует интеллект, личность или психическое здоровье и не гарантирует перенос результатов в реальную жизнь.</strong></p>
+   <p>Уровни 6–11 лет отличаются длиной текста, числом условий, количеством элементов в памяти и необходимой самостоятельностью. Возраст здесь — ориентир интерфейса. Для индивидуальных различий можно выбрать «С поддержкой» или «С вызовом».</p>
+   <p>В основу положены направления социально-эмоционального обучения CASEL, классификация OECD и исследования исполнительных функций в младшем школьном возрасте. Игровые задания и уровни сложности разработаны специально для этого проекта.</p>
+   <p>Личные данные Telegram не запрашиваются; игра не сохраняет имена, сообщения, возрастную дату рождения или рефлексивные ответы. Локальный прогресс можно удалить и экспортировать. Для совместной игры по сети и синхронизации между устройствами нужен отдельный защищённый сервер: здесь это не заявлено.</p>
+   <p class="sources"><a href="https://casel.org/fundamentals-of-sel/what-is-the-casel-framework/" target="_blank" rel="noopener noreferrer">CASEL: социально-эмоциональные компетенции</a><a href="https://www.oecd.org/en/topics/social-and-emotional-skills.html" target="_blank" rel="noopener noreferrer">OECD: социальные и эмоциональные навыки</a><a href="https://pmc.ncbi.nlm.nih.gov/articles/PMC8385409/" target="_blank" rel="noopener noreferrer">Исследование: исполнительные функции 6–12 лет</a></p>
+  </div>
+  <div class="mission-footer"><button class="button primary" id="infoDone" type="button">Вернуться в игру</button></div>
+ </div>
+</section>
+<div id="toast" class="toast" role="status" aria-live="polite"></div>
+</div>
+</body>
+</html>
