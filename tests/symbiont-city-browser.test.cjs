@@ -26,6 +26,9 @@ async function open(browser,width,height){
  await page.addScriptTag({content});
  await page.addScriptTag({content:engine});
  await page.addScriptTag({content:controller});
+ await page.evaluate(()=>{
+  document.getElementById('districtList').addEventListener('click',()=>window.__districtClicks=(window.__districtClicks||0)+1);
+ });
  await page.waitForTimeout(100);
  return {page,errors};
 }
@@ -63,9 +66,17 @@ test('a 6-year-old, teen and adult get different scenario wording and a real mis
     await page.locator('#age').dispatchEvent('change');
     await page.locator('[data-district="dialogue"]').click();
     const opened=await page.locator('#missionOverlay').isVisible();
+    const debug=await page.evaluate(()=>({
+     hidden:document.getElementById('missionOverlay').hidden,
+     title:document.getElementById('missionTitle').textContent,
+     body:document.getElementById('missionBody').textContent.slice(0,80),
+     story:document.getElementById('cityStory').textContent,
+     districtClicks:window.__districtClicks||0,
+     overlayStyle:getComputedStyle(document.getElementById('missionOverlay')).display,
+    }));
     assert.ok(opened,'dialogue mission should open at age '+age+
       '; errors='+errors.join(' | ')+
-      '; title='+(await page.locator('#missionTitle').textContent()));
+      '; debug='+JSON.stringify(debug));
     texts.push(await page.locator('#missionBody').textContent());
     await page.locator('#missionClose').click();
    }
