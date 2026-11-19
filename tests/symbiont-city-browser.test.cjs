@@ -370,6 +370,14 @@ test('adult health modules cannot be opened or seen by children and unlock at 18
    assert.equal(await page.locator('#adultHealthSection').isVisible(),true);
    assert.equal(await page.locator('[data-health-id]').count(),4);
    await page.locator('[data-health-id="screens"]').click();
+   const observed=await page.evaluate(()=>({
+    age:document.getElementById('age').value,
+    overlayHidden:document.getElementById('systemsOverlay').hidden,
+    nextHidden:document.getElementById('systemsNext').hidden,
+    nextDisplay:getComputedStyle(document.getElementById('systemsNext')).display,
+    overlayDisplay:getComputedStyle(document.getElementById('systemsOverlay')).display
+   }));
+   assert.equal(await page.locator('#systemsOverlay').isVisible(),true,JSON.stringify(observed));
    await page.locator('#systemsNext').click();
    await page.locator('[data-systems-choice="0"]').click();
    assert.match(await page.locator('#systemsBody').textContent(),/не означает/);
