@@ -115,6 +115,37 @@ const AGE_QUESTIONS=Object.freeze({
  16:'Какие последствия возможны сегодня и через месяц?',
  17:'Какие новые доказательства заставили бы тебя поменять мнение?'
 });
+const QUESTION_DECK=Object.freeze({
+ friend:[
+  'Хочешь, я просто выслушаю?',
+  'Что тебе сейчас больше всего помогло бы?',
+  'Какой маленький шаг ты сам хотел бы попробовать?',
+  'Каким своим успехом ты гордишься?',
+  'Нужна помощь или тебе комфортнее действовать самому?'
+ ],
+ family:[
+  'Как я могу помочь тебе сегодня, если ты хочешь?',
+  'Что хорошего сегодня получилось?',
+  'Есть ли дело, которое мы можем сделать вместе?',
+  'Хочешь рассказать, что тебя порадовало?',
+  'Чем я могу облегчить наше общее дело?'
+ ],
+ self:[
+  'Что я сейчас чувствую и в чём нуждаюсь?',
+  'Какой маленький шаг мне по силам?',
+  'Что я могу проверить, прежде чем сделать вывод?',
+  'Какой отдых или помощь мне сейчас подходят?',
+  'За что я могу поблагодарить себя сегодня?'
+ ]
+});
+function question(target,age,index=0){
+ const category=band(age);
+ if(!category||!QUESTION_DECK[target])return null;
+ if(category==='caregiver')return 'Взрослому: проговорите добрые вопросы вслух без требования отвечать.';
+ const pool=QUESTION_DECK[target];
+ const i=Number.isInteger(index)?((index%pool.length)+pool.length)%pool.length:0;
+ return pool[i];
+}
 const ALL=TRACKS.flatMap(t=>t.scenarios.map(s=>s.id));
 function band(age){const n=Number(age);if(!Number.isInteger(n)||n<0||n>110)return null;
  return n<=2?'caregiver':n<=8?'child':n<=12?'preteen':n<=17?'teen':'adult';}
@@ -152,7 +183,7 @@ function result(state,id,age,index){
  return {helpful,lesson:sc.lesson,question:sc.question,source:sc.source,
   done:Object.keys(state.completed).filter(id=>ALL.includes(id)).length,total:ALL.length};
 }
-const api={TRACKS,SOURCES,band,view,initial,restore,result,ids:ALL};
+const api={TRACKS,SOURCES,QUESTION_DECK,question,band,view,initial,restore,result,ids:ALL};
 if(typeof module!=='undefined'&&module.exports)module.exports=api;
 else root.SymbiontAcademy=api;
 })(typeof globalThis!=='undefined'?globalThis:this);
