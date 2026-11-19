@@ -70,7 +70,17 @@ test('route cannot finish before collecting supplies; afterwards goal completes'
  for(const age of [3,6,10,15,30,75]){
   const s=G.create(age,'auto',2027+age);
   assert.ok(s.supplies.length>=2);
+  // Regular puzzles put supplies along the shortest route.
+  // Move one supply to a still-reachable side corridor to check the
+  // "return for supplies" branch without changing the playable default.
   const end=s.destination;
+  const direct=G.search(s,s.player,end).path;
+  const directKeys=new Set(direct.map(p=>p.x+','+p.y));
+  let side=null;
+  for(let y=0;y<s.size&&!side;y++)for(let x=0;x<s.size;x++)
+    if(!directKeys.has(x+','+y)){side={x,y};break;}
+  assert.ok(side,'there must be a side corridor');
+  s.supplies[0]={...s.supplies[0],x:side.x,y:side.y};
   walk(s,end);
   assert.equal(s.status,'playing','goal alone cannot finish unless supplies collected');
   for(const p of s.supplies.filter(p=>!s.collected.includes(p.id)))walk(s,p);
