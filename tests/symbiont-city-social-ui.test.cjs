@@ -96,6 +96,11 @@ test('adult-only academy is locked below 18 and can render validated health info
   age(w,17);assert.equal(el(w,'adultCards').hidden,true);
   age(w,18);assert.equal(el(w,'adultCards').hidden,false);
   assert.equal(w.document.querySelectorAll('[data-adult-id]').length,5);
+  const firstCard=w.document.querySelector('[data-adult-id="phone"]');
+  // Blur can fire a duplicate age change while the user taps a card.
+  el(w,'age').dispatchEvent(new w.Event('change'));
+  assert.equal(w.document.querySelector('[data-adult-id="phone"]'),firstCard,
+   'duplicate change must not replace a clickable card during pointerdown');
   click(w,'[data-adult-id="phone"]');
   assert.match(el(w,'socialBody').textContent,/уведомления/);
   click(w,'[data-adult-choice="1"]');
