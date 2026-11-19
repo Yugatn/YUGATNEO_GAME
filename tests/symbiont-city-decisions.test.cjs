@@ -27,7 +27,7 @@ test('age profiles protect age 0–2, offer simpler cooperative play and richer 
   assert.ok(view);
   assert.equal(view.caregiver,a<=2);
   assert.equal(view.cooperative,a>=3&&a<=8);
-  assert.equal(view.options.length,a<=8?2:3);
+  assert.equal(view.options.length,a<=2?0:a<=8?2:3);
  }
  assert.match(L.view('generator',5).intro,/генератор/);
  assert.match(L.view('generator',12).intro,/больница/);
@@ -93,11 +93,11 @@ test('restore accepts only known scenarios and valid choices, not corrupted save
 });
 test('old main-game progress is untouched; lab uses a distinct storage key',()=>{
  const html=fs.readFileSync(path.join(dir,'index.html'),'utf8');
- const ui=fs.readFileSync(path.join(dir,'decisions-ui.js'),'utf8');
+ const ui=fs.readFileSync(path.join(dir,'lab-ui.js'),'utf8');
  const game=fs.readFileSync(path.join(dir,'game.js'),'utf8');
  assert.ok(html.includes('src="./game.js"'));
  assert.ok(html.includes('src="./decisions.js"'));
- assert.ok(html.includes('src="./decisions-ui.js"'));
+ assert.ok(html.includes('src="./lab-ui.js"'));
  assert.ok(ui.includes('yugatneo.symbiont-city.lab.v1'));
  assert.ok(game.includes('yugatneo.symbiont-city.progress.v1'));
  assert.ok(!ui.includes('initDataUnsafe'));
@@ -107,7 +107,7 @@ test('decision lab is included in PWA and existing export and reset actions',()=
  const sw=fs.readFileSync(path.join(dir,'sw.js'),'utf8');
  const game=fs.readFileSync(path.join(dir,'game.js'),'utf8');
  assert.ok(sw.includes('yugatneo-symbiont-city-v2'));
- for(const file of ['decisions.js','decisions-ui.js','decisions.css'])
+ for(const file of ['decisions.js','lab-ui.js','lab.css'])
   assert.ok(sw.includes("'./"+file+"'"));
  assert.ok(game.includes("symbiont-city:cleared"));
  assert.ok(game.includes("symbiont-city:export"));
