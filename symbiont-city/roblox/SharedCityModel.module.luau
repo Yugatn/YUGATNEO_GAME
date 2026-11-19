@@ -1,4 +1,4 @@
---!strict
+--!nonstrict
 -- SYMBIONT CITY v7: Shared City / example pure Roblox Luau ModuleScript.
 -- Does not create Roblox places, DataStores, RemoteEvents or a published experience.
 -- All values are fictional game scores; no political or health profile is stored.
