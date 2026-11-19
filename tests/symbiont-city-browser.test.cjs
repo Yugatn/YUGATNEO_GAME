@@ -9,11 +9,13 @@ const labCSS=fs.readFileSync(path.join(root,'lab.css'),'utf8');
 const workshopsCSS=fs.readFileSync(path.join(root,'workshops.css'),'utf8');
 const routeCSS=fs.readFileSync(path.join(root,'help-route.css'),'utf8');
 const academyCSS=fs.readFileSync(path.join(root,'academy.css'),'utf8');
+const systemsCSS=fs.readFileSync(path.join(root,'social-health.css'),'utf8');
 const html=original.replace('<link rel="stylesheet" href="./style.css">','<style>'+css+'</style>')
  .replace('<link rel="stylesheet" href="./lab.css">','<style>'+labCSS+'</style>')
  .replace('<link rel="stylesheet" href="./workshops.css">','<style>'+workshopsCSS+'</style>')
  .replace('<link rel="stylesheet" href="./help-route.css">','<style>'+routeCSS+'</style>')
  .replace('<link rel="stylesheet" href="./academy.css">','<style>'+academyCSS+'</style>')
+ .replace('<link rel="stylesheet" href="./social-health.css">','<style>'+systemsCSS+'</style>')
  .replace(/<script[^>]*src="[^"]+"[^>]*><\/script>/g,'');
 const content=fs.readFileSync(path.join(root,'content.js'),'utf8');
 const engine=fs.readFileSync(path.join(root,'engine.js'),'utf8');
@@ -28,6 +30,9 @@ const academy=fs.readFileSync(path.join(root,'academy.js'),'utf8');
 const academyUI=fs.readFileSync(path.join(root,'academy-ui.js'),'utf8');
 const spiral=fs.readFileSync(path.join(root,'spiral-runner.js'),'utf8');
 const spiralUI=fs.readFileSync(path.join(root,'spiral-runner-ui.js'),'utf8');
+const social=fs.readFileSync(path.join(root,'social-organism.js'),'utf8');
+const adult=fs.readFileSync(path.join(root,'adult-health.js'),'utf8');
+const systemsUI=fs.readFileSync(path.join(root,'social-health-ui.js'),'utf8');
 async function open(browser,width,height){
  const page=await browser.newPage({viewport:{width,height},deviceScaleFactor:1});
  const errors=[];
@@ -54,6 +59,9 @@ async function open(browser,width,height){
  await page.addScriptTag({content:academyUI});
  await page.addScriptTag({content:spiral});
  await page.addScriptTag({content:spiralUI});
+ await page.addScriptTag({content:social});
+ await page.addScriptTag({content:adult});
+ await page.addScriptTag({content:systemsUI});
  await page.evaluate(()=>{
   document.getElementById('districtList').addEventListener('click',()=>window.__districtClicks=(window.__districtClicks||0)+1);
  });
@@ -318,6 +326,61 @@ test('new Spiral Runner renders a runner in fog of war and supports phone arrow 
    assert.match(await page.locator('#spiralStatus').textContent(),/Подсказка/);
    await page.locator('#spiralDone').click();
    assert.equal(await page.locator('#spiralOverlay').isVisible(),false);
+   assert.deepEqual(errors,[]);
+  }finally{await page.close();}
+ }finally{await browser.close();}
+});
+
+test('social organism simulation renders on mobile and can revise peaceful public solutions',async()=>{
+ const browser=await chromium.launch({headless:true,executablePath:process.env.CHROME_BIN||undefined,args:['--no-sandbox']});
+ try{
+  for(const [w,h] of [[320,700],[390,844],[1280,850]]){
+   const {page,errors}=await open(browser,w,h);
+   try{
+    assert.equal(await page.locator('[data-system-id]').count(),3);
+    const geom=await page.evaluate(()=>{
+     const r=document.getElementById('socialSection').getBoundingClientRect();
+     return {left:r.left,right:r.right,overflow:document.documentElement.scrollWidth-innerWidth};
+    });
+    assert.ok(geom.left>=0&&geom.right<=w+2&&geom.overflow<=3,JSON.stringify(geom));
+    await page.locator('[data-system-id="feedback"]').click();
+    assert.equal(await page.locator('#systemsOverlay').isVisible(),true);
+    await page.locator('#systemsNext').click();
+    assert.equal(await page.locator('[data-systems-choice]').count(),3);
+    await page.locator('[data-systems-choice="1"]').click();
+    assert.match(await page.locator('#socialCount').textContent(),/1 \/ 3/);
+    assert.match(await page.locator('#systemsBody').textContent(),/Мирная|мирная/);
+    assert.deepEqual(errors,[]);
+   }finally{await page.close();}
+  }
+ }finally{await browser.close();}
+});
+test('adult health modules cannot be opened or seen by children and unlock at 18',async()=>{
+ const browser=await chromium.launch({headless:true,executablePath:process.env.CHROME_BIN||undefined,args:['--no-sandbox']});
+ try{
+  const {page,errors}=await open(browser,390,844);
+  try{
+   assert.equal(await page.locator('#adultHealthSection').isVisible(),false);
+   assert.equal(await page.locator('[data-health-id]').count(),0);
+   await page.locator('#age').fill('17');
+   await page.locator('#age').dispatchEvent('change');
+   assert.equal(await page.locator('#adultHealthSection').isVisible(),false);
+   await page.locator('#age').fill('18');
+   await page.locator('#age').dispatchEvent('change');
+   assert.equal(await page.locator('#adultHealthSection').isVisible(),true);
+   assert.equal(await page.locator('[data-health-id]').count(),4);
+   await page.locator('[data-health-id="screens"]').click();
+   const observed=await page.evaluate(()=>({
+    age:document.getElementById('age').value,
+    overlayHidden:document.getElementById('systemsOverlay').hidden,
+    nextHidden:document.getElementById('systemsNext').hidden,
+    nextDisplay:getComputedStyle(document.getElementById('systemsNext')).display,
+    overlayDisplay:getComputedStyle(document.getElementById('systemsOverlay')).display
+   }));
+   assert.equal(await page.locator('#systemsOverlay').isVisible(),true,JSON.stringify(observed));
+   await page.locator('#systemsNext').click();
+   await page.locator('[data-systems-choice="0"]').click();
+   assert.match(await page.locator('#systemsBody').textContent(),/не означает/);
    assert.deepEqual(errors,[]);
   }finally{await page.close();}
  }finally{await browser.close();}

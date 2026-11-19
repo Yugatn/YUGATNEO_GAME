@@ -14,6 +14,7 @@
 <link rel="stylesheet" href="./workshops.css">
 <link rel="stylesheet" href="./help-route.css">
 <link rel="stylesheet" href="./academy.css">
+<link rel="stylesheet" href="./social-health.css">
 <script src="https://telegram.org/js/telegram-web-app.js"></script>
 <script defer src="./content.js"></script>
 <script defer src="./engine.js"></script>
@@ -28,6 +29,9 @@
 <script defer src="./academy-ui.js"></script>
 <script defer src="./spiral-runner.js"></script>
 <script defer src="./spiral-runner-ui.js"></script>
+<script defer src="./social-organism.js"></script>
+<script defer src="./adult-health.js"></script>
+<script defer src="./social-health-ui.js"></script>
 </head>
 <body>
 <div id="app">
@@ -105,6 +109,25 @@
    <p class="academy-trust">Поиграйте в диалог: сначала спроси «Можно задать вопрос?», затем слушай, не перебивая. Родитель не обязан открывать личные переживания, ребёнок не отвечает за настроение взрослого.</p>
   </div>
   <p class="academy-trust">Взгляды «Амбивалентного Солипсизма» представлены как философская позиция автора, а не научный факт. Психообразовательные задания не заменяют психотерапию; медицинские — консультацию врача. Для 0–2 лет предусмотрены только совместные занятия взрослого вне экрана. Ответы игрока и сведения о здоровье не сохраняются.</p>
+ </section>
+ <section class="systems-section" id="socialSection" aria-labelledby="socialHeading">
+   <div class="systems-heading"><div><div class="eyebrow">ВЗАИМОЗАВИСИМОСТЬ · ГРАЖДАНСКАЯ ГРАМОТНОСТЬ · СОТРУДНИЧЕСТВО</div>
+    <h2 id="socialHeading">🌍 Социальный организм</h2>
+    <p>Три сюжетных испытания об общей инфраструктуре, справедливой помощи и праве людей участвовать в решениях. Сравни мирные способы исправления общественных проблем и исследуй их последствия. Метафора общества как центральной нервной системы — авторская философская модель Югатна, а не научный факт.</p></div>
+    <span id="socialCount" class="counter">0 / 3 проектов</span>
+   </div>
+   <div id="socialMeters" class="systems-meters" aria-label="Условные показатели города"></div>
+   <div id="socialCards" class="systems-grid" aria-label="Игры о взаимной помощи и общественных проблемах"></div>
+   <p class="fine">Модель не оценивает политические убеждения, не предлагает партиям или движениям поддержку и не требует соглашаться с автором. Цифры условные; сравнивайте альтернативы вместе.</p>
+ </section>
+ <section class="systems-section" id="adultHealthSection" aria-labelledby="adultHealthHeading" hidden>
+   <div class="systems-heading"><div><div class="eyebrow">ОТДЕЛЬНЫЙ РЕЖИМ ДЛЯ ВЗРОСЛЫХ · 18+</div>
+    <h2 id="adultHealthHeading">🌱 Осознанное родительство</h2>
+    <p>Четыре игровые ситуации об отказе от алкоголя, прекращении курения, репродуктивном благополучии, использовании смартфона во время общения с ребёнком и поддерживающем семейном примере. Источники — ВОЗ, CDC и научные обзоры.</p></div>
+    <span id="adultHealthCount" class="counter">0 / 4 тем</span>
+   </div>
+   <div id="adultHealthCards" class="systems-grid" aria-label="Образовательные взрослые задания о здоровье"></div>
+   <p class="fine">Программа не спрашивает об употреблении веществ, медицинских состояниях или опыте родительства. Воздержание от алкоголя и табака устраняет соответствующее воздействие, а лечение зависимости лучше обсуждать с врачом. Использование телефона рядом с ребёнком само по себе не означает неизбежной зависимости.</p>
  </section>
  <section class="workshop-section" aria-labelledby="workshopsHeading" id="workshopsSection">
   <div class="workshop-heading">
@@ -224,6 +247,16 @@
    <button id="spiralHint" type="button">◈ Подсказка</button></div>
   <div class="mission-footer"><button id="spiralAgain" class="button ghost" type="button">↻ Новый лабиринт</button>
    <button id="spiralDone" class="button primary" type="button">Вернуться в город</button></div>
+ </div>
+</section>
+<section id="systemsOverlay" class="overlay" role="dialog" aria-modal="true" aria-labelledby="systemsTitle" hidden>
+ <div class="mission-shell systems-dialog">
+  <div class="mission-top"><div><div class="eyebrow" id="systemsSubtitle">ИССЛЕДОВАНИЕ</div><h2 id="systemsTitle">Ситуация</h2></div>
+   <button type="button" class="close" id="systemsClose" aria-label="Закрыть ситуацию">✕</button></div>
+  <div class="mission-progress"><span id="systemsStep">1 / 3 · Ситуация</span></div>
+  <div id="systemsBody" class="mission-body" aria-live="polite"></div>
+  <div class="mission-footer"><button type="button" class="button ghost" id="systemsBack">← Назад</button>
+   <button type="button" class="button primary" id="systemsNext">Продолжить →</button></div>
  </div>
 </section>
 <section id="infoOverlay" class="overlay" hidden aria-modal="true" role="dialog" aria-labelledby="infoTitle">

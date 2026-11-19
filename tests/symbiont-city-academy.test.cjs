@@ -161,7 +161,7 @@ test('academy and runner are registered in PWA and never read Telegram identity'
   'spiralStart','spiralOverlay','spiralCanvas','spiralControls','spiralPhase','spiralDone']){
   assert.ok(html.includes('id="'+id+'"'),id);
  }
- assert.ok(sw.includes('yugatneo-symbiont-city-v6'));
+ assert.ok(sw.includes('yugatneo-symbiont-city-v7'));
  for(const name of ['academy-ui.js','spiral-runner-ui.js']){
   const source=fs.readFileSync(path.join(root,name),'utf8');
   assert.ok(!source.includes('initDataUnsafe'));
