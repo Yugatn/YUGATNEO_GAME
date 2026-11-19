@@ -45,7 +45,7 @@ test('attention target can be found across all rounds, then village restoration 
  const {w,errors}=setup();
  try{
   tap(w,'[data-workshop="attention"]');
-  for(let round=0;round<3;round++){
+  for(let round=0;round<G.settings(8).rounds;round++){
    const target=w.document.querySelector('.workshop-target strong').textContent;
    const tiles=[...el(w,'workshopBody').querySelectorAll('[data-attention]')];
    assert.ok(tiles.length>=4);
@@ -83,7 +83,7 @@ test('memory mismatch stays visible until a deliberate close with no time pressu
   assert.equal(el(w,'workshopBody').querySelectorAll('.is-hidden').length,
    el(w,'workshopBody').querySelectorAll('[data-memory]').length-1);
   tap(w,'[data-memory="1"]');
-  if(el(w,'workshopHide').isConnected){
+  if(w.document.getElementById('workshopHide')){
    const faces=[...el(w,'workshopBody').querySelectorAll('.workshop-tile')]
     .filter(x=>!x.classList.contains('is-hidden'));
    assert.equal(faces.length,2);
