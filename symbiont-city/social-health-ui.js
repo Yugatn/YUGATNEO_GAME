@@ -15,6 +15,7 @@ const age=()=>Number($('age').value);
 const adult=()=>H.isAdult(age());
 function persist(key,data){try{localStorage.setItem(key,JSON.stringify(data));}catch(_){}}
 function progress(){
+ $('socialSection').hidden=Number.isInteger(age())&&age()<=2;
  $('socialCount').textContent=Object.keys(social.decisions).length+' / '+S.scenarios.length+' проектов';
  const m=S.metrics(social);
  $('socialMeters').innerHTML=S.axes.map(k=>
@@ -37,7 +38,7 @@ function progress(){
 }
 function open(kind,selected,button){
  if(kind==='health'&&!adult())return;
- const obj=kind==='social'?S.scenarios.find(s=>s.id===selected):H.lessons.find(l=>l.id===selected);
+ const obj=kind==='social'?S.view(selected,age()):H.lessons.find(l=>l.id===selected);
  if(!obj)return;
  mode=kind;id=selected;stage='brief';choice=null;lastFocus=button;
  $('systemsOverlay').hidden=false;
@@ -53,7 +54,8 @@ function close(){
 }
 function show(){
  if(!mode)return;
- const obj=mode==='social'?S.scenarios.find(s=>s.id===id):H.lessons.find(l=>l.id===id);
+ const obj=mode==='social'?S.view(id,age()):H.lessons.find(l=>l.id===id);
+ if(!obj){close();return;}
  const body=$('systemsBody'),back=$('systemsBack'),next=$('systemsNext');
  back.hidden=stage==='brief';next.hidden=stage==='choose';
  next.textContent=stage==='review'?'Вернуться в город':'Продолжить →';
@@ -62,7 +64,7 @@ function show(){
   body.innerHTML='<p class="systems-story">'+escape(obj.description||obj.situation)+'</p>'+
    (mode==='social'?'<ul class="systems-facts">'+obj.facts.map(f=>'<li>'+escape(f)+'</li>').join('')+'</ul>':
     '<p class="systems-notice">Модуль предназначен совершеннолетним. Он не собирает сведения об употреблении веществ, состоянии здоровья или беременности.</p>')+
-   (mode==='social'?'<p class="systems-notice">'+escape(S.interpretation)+'</p>':'');
+   (mode==='social'?'<p class="systems-notice">'+escape(obj.agePrompt)+' '+escape(S.interpretation)+'</p>':'');
  }else if(stage==='choose'){
   body.innerHTML='<h3>Какое решение ты выберешь?</h3><div class="systems-options">'+obj.options.map((o,i)=>
    '<button type="button" class="systems-choice" data-systems-choice="'+i+'"><b>'+(i+1)+'</b><span>'+escape(o.text||o)+'</span></button>').join('')+
