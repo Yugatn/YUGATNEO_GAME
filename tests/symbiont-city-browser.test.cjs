@@ -5,11 +5,15 @@ const {chromium}=require('playwright');
 const root=path.resolve(__dirname,'../symbiont-city');
 const original=fs.readFileSync(path.join(root,'index.html'),'utf8');
 const css=fs.readFileSync(path.join(root,'style.css'),'utf8');
+const labCSS=fs.readFileSync(path.join(root,'lab.css'),'utf8');
 const html=original.replace('<link rel="stylesheet" href="./style.css">','<style>'+css+'</style>')
+ .replace('<link rel="stylesheet" href="./lab.css">','<style>'+labCSS+'</style>')
  .replace(/<script[^>]*src="[^"]+"[^>]*><\/script>/g,'');
 const content=fs.readFileSync(path.join(root,'content.js'),'utf8');
 const engine=fs.readFileSync(path.join(root,'engine.js'),'utf8');
 const controller=fs.readFileSync(path.join(root,'game.js'),'utf8');
+const decisions=fs.readFileSync(path.join(root,'decisions.js'),'utf8');
+const labUI=fs.readFileSync(path.join(root,'lab-ui.js'),'utf8');
 async function open(browser,width,height){
  const page=await browser.newPage({viewport:{width,height},deviceScaleFactor:1});
  const errors=[];
@@ -26,6 +30,8 @@ async function open(browser,width,height){
  await page.addScriptTag({content});
  await page.addScriptTag({content:engine});
  await page.addScriptTag({content:controller});
+ await page.addScriptTag({content:decisions});
+ await page.addScriptTag({content:labUI});
  await page.evaluate(()=>{
   document.getElementById('districtList').addEventListener('click',()=>window.__districtClicks=(window.__districtClicks||0)+1);
  });
@@ -106,6 +112,69 @@ test('0–2 mode offers adult offline play, no score; changing age never changes
    assert.match(await page.locator('#missionBody').textContent(),/экранная игра не предназначена/);
    assert.equal(await page.locator('#missionBody [data-choice]').count(),0);
    assert.equal((await page.locator('#points').textContent()).trim(),'0');
+   assert.deepEqual(errors,[]);
+  }finally{await page.close();}
+ }finally{await browser.close();}
+});
+
+test('the family decision lab is responsive and children can complete an actual simulation',async()=>{
+ const browser=await chromium.launch({headless:true,executablePath:process.env.CHROME_BIN||undefined,args:['--no-sandbox']});
+ try{
+  fs.mkdirSync(path.resolve(__dirname,'../test-artifacts/symbiont-city'),{recursive:true});
+  for(const [w,h] of [[320,700],[390,844],[768,1024],[1280,850]]){
+   const {page,errors}=await open(browser,w,h);
+   try{
+    assert.equal(await page.locator('[data-lab-id]').count(),5);
+    assert.match(await page.locator('#labCount').textContent(),/0 \/ 5/);
+    const bounds=await page.evaluate(()=>{
+      const r=document.getElementById('labSection').getBoundingClientRect();
+      return {left:r.left,right:r.right,overflow:document.documentElement.scrollWidth-innerWidth};
+    });
+    assert.ok(bounds.left>=0&&bounds.right<=w+2&&bounds.overflow<=2,
+      'decision laboratory fits width '+w);
+    await page.locator('[data-lab-id="rumor"]').click();
+    assert.ok(await page.locator('#labOverlay').isVisible());
+    await page.locator('#labNext').click();
+    assert.match(await page.locator('#labBody').textContent(),/источника|источник|официаль/);
+    await page.locator('#labNext').click();
+    assert.equal(await page.locator('#labBody [data-lab-option]').count(),2);
+    await page.locator('#labBody [data-lab-option="2"]').click();
+    assert.match(await page.locator('#labBody').textContent(),/Игровые последствия/);
+    assert.match(await page.locator('#labCount').textContent(),/1 \/ 5/);
+    await page.locator('#labNext').click();
+    assert.match(await page.locator('#labBody').textContent(),/Рефлексия/);
+    assert.deepEqual(errors,[],'browser does not throw on '+w);
+    if(w<=390)await page.screenshot({path:path.resolve(__dirname,
+      '../test-artifacts/symbiont-city/lab-'+w+'x'+h+'.png')});
+   }finally{await page.close();}
+  }
+ }finally{await browser.close();}
+});
+test('parent and child can vote separately, agree jointly, and revise without score farming',async()=>{
+ const browser=await chromium.launch({headless:true,executablePath:process.env.CHROME_BIN||undefined,args:['--no-sandbox']});
+ try{
+  const {page,errors}=await open(browser,390,844);
+  try{
+   await page.locator('#age').fill('4');
+   await page.locator('#age').dispatchEvent('change');
+   assert.equal(await page.locator('#labTogether').isChecked(),true);
+   await page.locator('[data-lab-id="bridge"]').click();
+   await page.locator('#labNext').click();
+   await page.locator('#labNext').click();
+   await page.locator('#labBody [data-lab-option="0"]').click();
+   assert.match(await page.locator('#labBody').textContent(),/Второй участник/);
+   await page.locator('#labBody [data-lab-option="1"]').click();
+   assert.match(await page.locator('#labBody').textContent(),/Сравните два выбора/);
+   await page.locator('#labBody [data-lab-option="1"]').click();
+   assert.match(await page.locator('#labCount').textContent(),/1 \/ 5/);
+   const before=await page.locator('#labMeters').textContent();
+   await page.locator('#labClose').click();
+   await page.locator('[data-lab-id="bridge"]').click();
+   await page.locator('#labNext').click();
+   await page.locator('#labNext').click();
+   for(let i=0;i<3;i++)await page.locator('#labBody [data-lab-option="1"]').click();
+   assert.equal(await page.locator('#labMeters').textContent(),before);
+   assert.match(await page.locator('#cityLevel').textContent(),/0 \/ 14/);
    assert.deepEqual(errors,[]);
   }finally{await page.close();}
  }finally{await browser.close();}
