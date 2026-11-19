@@ -118,7 +118,8 @@ function missionView(state,mission){
   kind,situation:alternate||mission.situation[ix],reflect:mission.reflect,takeaway:mission.takeaway,
   age,skill:DATA.districts.find(x=>x.id===mission.district).skill};
  if(kind==='dialogue'){
-  const entries=age.effective<=6?mission.choices.slice(0,2):age.effective<=8?mission.choices.slice(0,3):mission.choices;
+  const optionCount=age.effective<=6?2:age.effective<=8?3:age.profile.options;
+  const entries=mission.choices.slice(0,optionCount);
   data.choices=entries.map(([label,quality,feedback])=>({label,quality,feedback}));
  }
  if(kind==='sequence'){
@@ -132,7 +133,7 @@ function missionView(state,mission){
   const count=age.profile.options;data.sources=mission.sources.slice(0,count).map(([label,reliable,feedback])=>({label,reliable,feedback}));
  }
  if(kind==='design'){
-  const count=age.effective<=5?2:age.effective<=7?3:4;
+  const count=age.effective<=5?2:age.effective<=7?3:age.profile.options;
   data.parts=mission.parts.slice(0,count).map(([label,suitable,feedback])=>({label,suitable,feedback}));
  }
  if(kind==='perspectives'){
