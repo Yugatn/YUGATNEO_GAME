@@ -62,6 +62,10 @@ test('a 6-year-old, teen and adult get different scenario wording and a real mis
     await page.locator('#age').fill(String(age));
     await page.locator('#age').dispatchEvent('change');
     await page.locator('[data-district="dialogue"]').click();
+    const opened=await page.locator('#missionOverlay').isVisible();
+    assert.ok(opened,'dialogue mission should open at age '+age+
+      '; errors='+errors.join(' | ')+
+      '; title='+(await page.locator('#missionTitle').textContent()));
     texts.push(await page.locator('#missionBody').textContent());
     await page.locator('#missionClose').click();
    }
@@ -86,6 +90,8 @@ test('0–2 mode offers adult offline play, no score; changing age never changes
   try{
    await page.locator('#age').fill('2');await page.locator('#age').dispatchEvent('change');
    await page.locator('[data-district="library"]').click();
+   assert.ok(await page.locator('#missionOverlay').isVisible(),
+      'caregiver dialogue must open: '+errors.join(' | '));
    assert.match(await page.locator('#missionBody').textContent(),/экранная игра не предназначена/);
    assert.equal(await page.locator('#missionBody [data-choice]').count(),0);
    assert.equal((await page.locator('#points').textContent()).trim(),'0');
