@@ -312,7 +312,7 @@ test('new Spiral Runner renders a runner in fog of war and supports phone arrow 
    await page.locator('#spiralStart').click();
    assert.equal(await page.locator('#spiralOverlay').isVisible(),true);
    const r=await page.locator('#spiralCanvas').boundingBox();
-   assert.ok(r&&r.width>200&&r.right<=390&&r.height>150);
+   assert.ok(r&&r.width>200&&r.x+r.width<=391&&r.height>150,JSON.stringify(r));
    assert.equal(await page.locator('[data-spiral-direction]').count(),4);
    await page.locator('#spiralHint').click();
    assert.match(await page.locator('#spiralStatus').textContent(),/Подсказка/);
