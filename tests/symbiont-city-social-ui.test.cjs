@@ -41,9 +41,9 @@ test('all three resource episodes and civic comparisons are interactive from the
   click(w,'[data-social-scene="water"]');
   assert.equal(el(w,'socialOverlay').hidden,false);
   assert.equal(w.document.querySelectorAll('[data-repair-id]').length,7);
-  assert.match(el(w,'socialBody').textContent,/Ресурсных действий: 3/);
+  assert.match(el(w,'socialBody').textContent,/Ресурсных действий: 4/);
   click(w,'[data-repair-id="water"]');
-  assert.match(el(w,'socialBody').textContent,/Ресурсных действий: 2/);
+  assert.match(el(w,'socialBody').textContent,/Ресурсных действий: 3/);
   click(w,'#socialFinish');
   assert.match(el(w,'socialRecord').textContent,/1 попыток/);
   assert.match(el(w,'socialBody').textContent,/Средний показатель/);
@@ -57,9 +57,9 @@ test('resources do not stack rewards after repeated return or restart',()=>{
   click(w,'[data-social-scene="signal"]');click(w,'#socialFinish');
   const first=JSON.parse(w.localStorage.getItem('yugatneo.symbiont-city.common-good.v1')).played;
   click(w,'#socialFinish');click(w,'[data-social-scene="signal"]');
-  assert.match(el(w,'socialBody').textContent,/Ресурсных действий: 3/);
+  assert.match(el(w,'socialBody').textContent,/Ресурсных действий: 4/);
   assert.equal(JSON.parse(w.localStorage.getItem('yugatneo.symbiont-city.common-good.v1')).played,first);
-  click(w,'#socialRestart');assert.match(el(w,'socialBody').textContent,/Ресурсных действий: 3/);
+  click(w,'#socialRestart');assert.match(el(w,'socialBody').textContent,/Ресурсных действий: 4/);
   assert.deepEqual(errors,[]);
  }finally{w.close();}
 });
