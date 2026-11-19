@@ -146,6 +146,7 @@ function close(){
 }
 $('spiralStart').addEventListener('click',open);
 $('spiralClose').addEventListener('click',close);
+$('spiralDone').addEventListener('click',close);
 $('spiralAgain').addEventListener('click',start);
 $('spiralPhase').addEventListener('click',()=>{
  if(!s)return;
