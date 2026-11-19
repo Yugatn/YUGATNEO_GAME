@@ -186,5 +186,7 @@ function reset(){
 }
 function exportData(){return {version:1,choices:{...state.choices},metrics:L.metrics(state),completed:L.progress(state).done};}
 window.SymbiontCityLabUI={reset,exportData,progress,open};
+document.addEventListener('symbiont-city:cleared',reset);
+document.addEventListener('symbiont-city:export',e=>{if(e.detail)e.detail.lab=exportData();});
 syncAge();progress();
 })();
