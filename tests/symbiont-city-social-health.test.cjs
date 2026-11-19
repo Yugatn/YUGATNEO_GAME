@@ -59,7 +59,7 @@ test('health education covers pregnancy alcohol, smoking, phone attention, famil
   assert.ok(l.source.startsWith('https://'));
   assert.ok(l.answer>=0&&l.answer<3);
  }
- assert.match(H.lessons[0].explanation,/безопасный уровень не установлен/i);
+ assert.match(H.lessons[0].explanation,/не установлен безопасный уровень/i);
  assert.match(H.lessons[1].explanation,/дым/);
  assert.match(H.lessons[2].explanation,/не означает.*обязательно/i);
 });
