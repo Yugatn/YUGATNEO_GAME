@@ -97,3 +97,17 @@ test('public HTML includes accessible civic and age-gated health modules and PWA
  assert.ok(!ui.includes('fetch('));
  assert.ok(ui.includes("if(kind==='health'&&!adult())return"));
 });
+
+test('civic story language adapts to children without requiring an ideological belief',()=>{
+ assert.equal(S.view('water',2),null);
+ assert.equal(S.view('water',111),null);
+ for(let age=3;age<=110;age++){
+  const v=S.view('feedback',age);
+  assert.ok(v&&v.agePrompt);
+  assert.equal(v.options.length,3);
+  if(age<=8)assert.match(v.description,/школы|дорожка/);
+  else assert.match(v.description,/учреждение|учреждени/);
+ }
+ assert.match(S.view('network',6).description,/школа|клиника/i);
+ assert.match(S.interpretation,/не нейробиологический факт/);
+});
