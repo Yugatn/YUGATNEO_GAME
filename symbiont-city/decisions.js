@@ -174,7 +174,7 @@ function view(id,age){
   evidence:sc.evidence.slice(0,band==='caregiver'?1:2),reflect:sc.reflect,
   lens:ageLens(age),caregiver:band==='caregiver',
   cooperative:band==='young',rounds:band==='caregiver'?0:band==='young'?2:3,
-  options:(band==='young'||band==='caregiver'?
+  options:(band==='caregiver'?[]:band==='young'?
    (sc.id==='generator'||sc.id==='rumor'?[0,2]:[0,1]):[0,1,2]).map(i=>({
    index:i,text:sc.options[i].text,effects:outEffects(sc.options[i].effects),
    reason:sc.options[i].reason,follow:sc.options[i].follow
