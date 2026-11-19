@@ -20,6 +20,28 @@ const scenarios=[
 {text:'Открыть обмен материалами между учреждениями и регулярную отчётность',effect:[10,15,15,-12],why:'Координация и прозрачность повышают способность системы помогать многим участникам.'}
 ],question:'Какое благо невозможно сохранить в одиночку, если рядом разрушается инфраструктура?'}
 ];
+const CHILD_VIEWS={
+ water:{description:'Во дворе нужна чистая вода, а рядом тоже ждут помощи. Как помочь соседям?',
+  options:['Починить воду только у себя','Попросить взрослых и соседей составить общий план','Найти временную помощь и узнать причину поломки']},
+ feedback:{description:'Возле школы опасная дорожка, а ответственные взрослые пока не исправили её. Как рассказать о проблеме и помочь?',
+  options:['Вместе со взрослыми собрать факты и направить обращение',
+   'Обсудить с учителями и соседями безопасную общую инициативу','Ничего не делать']},
+ network:{description:'Школа, столовая и клиника ждут важные посылки. Материалов мало. Как распределить?',
+  options:['Всё отдать одному зданию','Спросить, кому помощь нужнее, и поделиться','Помочь зданиям обмениваться ресурсами']}
+};
+function view(id,age){
+ const n=Number(age);
+ if(!Number.isInteger(n)||n<3||n>110)return null;
+ const s=scenarios.find(x=>x.id===id);if(!s)return null;
+ const child=n<=8?CHILD_VIEWS[id]:null;
+ return {...s,description:child?child.description:s.description,
+  options:s.options.map((o,i)=>({...o,text:child?child.options[i]:o.text})),
+  agePrompt:n<=5?'Поиграйте вместе со взрослым и обсудите чувства героев.':
+   n<=8?'Выбери вариант и объясни, кому он помогает.':
+   n<=12?'Сравни последствия для разных жителей.':
+   n<=17?'Проверь аргументы, права и возможные риски.':
+   'Сопоставь прозрачность, эффективность и защиту прав.'};
+}
 const BASE={wellbeing:55,trust:55,participation:55,resources:70};
 function init(){return {version:1,decisions:{}};}
 function restore(obj){
@@ -43,7 +65,7 @@ function choose(state,id,index){
  const before=metrics(state);state.decisions[id]=index;const after=metrics(state);
  return {chosen:s.options[index],before,after,completed:Object.keys(state.decisions).length};
 }
-const api={axes,scenarios,BASE,init,restore,metrics,choose,interpretation:'Авторская метафора: общество как центральная нервная система. Это образ для исследования связей, не нейробиологический факт.'};
+const api={axes,scenarios,CHILD_VIEWS,view,BASE,init,restore,metrics,choose,interpretation:'Авторская метафора: общество как центральная нервная система. Это образ для исследования связей, не нейробиологический факт.'};
 if(typeof module!=='undefined'&&module.exports)module.exports=api;
 else root.SymbiontSocialOrganism=api;
 })(typeof globalThis!=='undefined'?globalThis:this);
