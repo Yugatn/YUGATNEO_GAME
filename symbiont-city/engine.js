@@ -5,7 +5,7 @@
 'use strict';
 const DATA=(typeof module!=='undefined'&&module.exports)?require('./content.js'):root.SymbiontCityContent;
 if(!DATA)throw Error('SymbiontCityContent not loaded');
-const MIN_AGE=6,MAX_AGE=11;
+const MIN_AGE=0,MAX_AGE=110;
 const keyOrder=['garden','bridge','library','workshop','dialogue','tower','cave'];
 const clamp=(v,min,max)=>Math.max(min,Math.min(max,v));
 function ageProfile(age,challenge='auto'){
@@ -13,7 +13,20 @@ function ageProfile(age,challenge='auto'){
  const clean=Number.isInteger(requested)?clamp(requested,MIN_AGE,MAX_AGE):8;
  const delta=challenge==='gentle'?-1:challenge==='stretch'?1:0;
  const effective=clamp(clean+delta,MIN_AGE,MAX_AGE);
- return {age:clean,effective,challenge,profile:DATA.ages[effective]};
+ let source,stage;
+ if(effective<=5){source=DATA.earlyProfiles[effective];stage='early';}
+ else if(effective<=11){source=DATA.ages[effective];stage='school';}
+ else if(effective<=17){source=DATA.teenProfiles[effective];stage='teen';}
+ else{
+  const band=DATA.adultProfiles.find(p=>effective>=p.min&&effective<=p.max)||
+    DATA.adultProfiles[DATA.adultProfiles.length-1];
+  stage=effective>=60?'senior':'adult';
+  source={label:band.label,sentences:4,options:4,
+   sequence:5,memory:6,budget:10,voices:2,scaffold:'Выбирай решения в своём темпе. Трудность можно менять независимо от возраста.',
+   focus:band.focus};
+ }
+ return {age:clean,effective,challenge,stage,
+  coPlayOnly:clean<=2,coPlay:clean>=3&&clean<=5,profile:source};
 }
 function initial(age=8){
  const a=ageProfile(age);
@@ -23,7 +36,7 @@ function initial(age=8){
 }
 function isValidState(state){
  if(!state||state.version!==1||typeof state.completed!=='object'||!state.completed||Array.isArray(state.completed))return false;
- if(!Number.isInteger(state.age)||state.age<6||state.age>11)return false;
+ if(!Number.isInteger(state.age)||state.age<MIN_AGE||state.age>MAX_AGE)return false;
  if(!['auto','gentle','stretch'].includes(state.challenge))return false;
  if(!Number.isFinite(state.points)||state.points<0||state.points>1000000)return false;
  if(!state.skillPoints||typeof state.skillPoints!=='object')return false;
@@ -90,9 +103,11 @@ function progress(state){
 }
 function missionView(state,mission){
  const age=ageProfile(state.age,state.challenge);
- const ix=age.effective-MIN_AGE,kind=mission.kind;
+ const ix=clamp(age.effective-6,0,5),kind=mission.kind;
+ const variants=DATA.lifeContexts[mission.id];
+ const alternate=age.stage==='teen'?variants?.teen:age.stage==='adult'?variants?.adult:age.stage==='senior'?variants?.senior:null;
  const data={id:mission.id,district:mission.district,title:mission.title,
-  kind,situation:mission.situation[ix],reflect:mission.reflect,takeaway:mission.takeaway,
+  kind,situation:alternate||mission.situation[ix],reflect:mission.reflect,takeaway:mission.takeaway,
   age,skill:DATA.districts.find(x=>x.id===mission.district).skill};
  if(kind==='dialogue'){
   const entries=age.effective<=6?mission.choices.slice(0,2):age.effective<=8?mission.choices.slice(0,3):mission.choices;
@@ -109,12 +124,13 @@ function missionView(state,mission){
   const count=age.profile.options;data.sources=mission.sources.slice(0,count).map(([label,reliable,feedback])=>({label,reliable,feedback}));
  }
  if(kind==='design'){
-  const count=age.effective<=7?3:4;
+  const count=age.effective<=5?2:age.effective<=7?3:4;
   data.parts=mission.parts.slice(0,count).map(([label,suitable,feedback])=>({label,suitable,feedback}));
  }
  if(kind==='perspectives'){
-  const count=age.effective<=7?3:4;
-  data.perspectives=mission.perspectives.slice(0,count).map(([label,useful])=>({label,useful}));
+  const count=age.effective<=5?2:age.effective<=7?3:4;
+  data.perspectives=(age.effective<=5?
+   mission.perspectives.filter(item=>item[1]):mission.perspectives).slice(0,count).map(([label,useful])=>({label,useful}));
  }
  if(kind==='resources'){
   const total=age.profile.budget;
