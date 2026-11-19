@@ -6,14 +6,18 @@ const root=path.resolve(__dirname,'../symbiont-city');
 const original=fs.readFileSync(path.join(root,'index.html'),'utf8');
 const css=fs.readFileSync(path.join(root,'style.css'),'utf8');
 const labCSS=fs.readFileSync(path.join(root,'lab.css'),'utf8');
+const workshopsCSS=fs.readFileSync(path.join(root,'workshops.css'),'utf8');
 const html=original.replace('<link rel="stylesheet" href="./style.css">','<style>'+css+'</style>')
  .replace('<link rel="stylesheet" href="./lab.css">','<style>'+labCSS+'</style>')
+ .replace('<link rel="stylesheet" href="./workshops.css">','<style>'+workshopsCSS+'</style>')
  .replace(/<script[^>]*src="[^"]+"[^>]*><\/script>/g,'');
 const content=fs.readFileSync(path.join(root,'content.js'),'utf8');
 const engine=fs.readFileSync(path.join(root,'engine.js'),'utf8');
 const controller=fs.readFileSync(path.join(root,'game.js'),'utf8');
 const decisions=fs.readFileSync(path.join(root,'decisions.js'),'utf8');
 const labUI=fs.readFileSync(path.join(root,'lab-ui.js'),'utf8');
+const workshops=fs.readFileSync(path.join(root,'workshops.js'),'utf8');
+const workshopsUI=fs.readFileSync(path.join(root,'workshops-ui.js'),'utf8');
 async function open(browser,width,height){
  const page=await browser.newPage({viewport:{width,height},deviceScaleFactor:1});
  const errors=[];
@@ -32,6 +36,8 @@ async function open(browser,width,height){
  await page.addScriptTag({content:controller});
  await page.addScriptTag({content:decisions});
  await page.addScriptTag({content:labUI});
+ await page.addScriptTag({content:workshops});
+ await page.addScriptTag({content:workshopsUI});
  await page.evaluate(()=>{
   document.getElementById('districtList').addEventListener('click',()=>window.__districtClicks=(window.__districtClicks||0)+1);
  });
@@ -174,6 +180,57 @@ test('parent and child can vote separately, agree jointly, and revise without sc
    await page.locator('#labNext').click();
    for(let i=0;i<3;i++)await page.locator('#labBody [data-lab-option="1"]').click();
    assert.equal(await page.locator('#labMeters').textContent(),before);
+   assert.match(await page.locator('#cityLevel').textContent(),/0 \/ 14/);
+   assert.deepEqual(errors,[]);
+  }finally{await page.close();}
+ }finally{await browser.close();}
+});
+
+test('three real skill workshops fit 320px phones and desktop without horizontal overflow',async()=>{
+ const browser=await chromium.launch({headless:true,executablePath:process.env.CHROME_BIN||undefined,args:['--no-sandbox']});
+ try{
+  for(const [w,h] of [[320,700],[390,844],[768,1024],[1280,850]]){
+   const {page,errors}=await open(browser,w,h);
+   try{
+    assert.equal(await page.locator('[data-workshop]').count(),3);
+    const bounds=await page.evaluate(()=>{
+     const r=document.getElementById('workshopsSection').getBoundingClientRect();
+     return {left:r.left,right:r.right,overflow:document.documentElement.scrollWidth-innerWidth};
+    });
+    assert.ok(bounds.left>=0&&bounds.right<=w+2&&bounds.overflow<=2,
+     'workshop layout must fit width '+w+': '+JSON.stringify(bounds));
+    await page.locator('[data-workshop="memory"]').click();
+    assert.equal(await page.locator('#workshopOverlay').isVisible(),true);
+    assert.ok(await page.locator('[data-memory]').count()>=6);
+    await page.locator('#workshopClose').click();
+    assert.equal(await page.locator('#workshopOverlay').isVisible(),false);
+    assert.deepEqual(errors,[],'no browser error at '+w);
+    if(w<=390)await page.screenshot({path:path.resolve(__dirname,
+     '../test-artifacts/symbiont-city/workshops-'+w+'x'+h+'.png'),fullPage:true});
+   }finally{await page.close();}
+  }
+ }finally{await browser.close();}
+});
+test('complete real visual search, build a bridge, and preserve existing city progress in Chromium',async()=>{
+ const browser=await chromium.launch({headless:true,executablePath:process.env.CHROME_BIN||undefined,args:['--no-sandbox']});
+ try{
+  const {page,errors}=await open(browser,390,844);
+  try{
+   await page.locator('[data-workshop="attention"]').click();
+   for(let round=0;round<4;round++){
+    const target=await page.locator('.workshop-target strong').textContent();
+    const index=await page.locator('[data-attention]').evaluateAll((nodes,t)=>
+      nodes.find(x=>x.textContent===t)?.getAttribute('data-attention'),target);
+    assert.ok(index!==undefined);
+    await page.locator('[data-attention="'+index+'"]').click();
+   }
+   assert.match(await page.locator('#workshopsProgress').textContent(),/1 \/ 3/);
+   assert.match(await page.locator('#workshopBody').textContent(),/Мастерская восстановлена/);
+   await page.locator('#workshopDone').click();
+   await page.locator('[data-workshop="bridge"]').click();
+   for(const part of ['survey','supports','deck','test'])
+     await page.locator('[data-build="'+part+'"]').click();
+   assert.match(await page.locator('#workshopsProgress').textContent(),/2 \/ 3/);
    assert.match(await page.locator('#cityLevel').textContent(),/0 \/ 14/);
    assert.deepEqual(errors,[]);
   }finally{await page.close();}
