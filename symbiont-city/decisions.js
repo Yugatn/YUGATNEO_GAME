@@ -111,11 +111,36 @@ const scenarios=[
   ],reflect:'Что поможет признать эмоции, не обвиняя другого человека?'}
 ];
 const IDS=scenarios.map(s=>s.id);
+const AGE_LENSES={
+  3:'Обсуди это с близким взрослым: кого нужно сначала выслушать?',
+  4:'Покажи пальцем, кому нужна помощь, и расскажи почему.',
+  5:'Назови два возможных действия, обсуди их со взрослым.',
+  6:'Что произойдёт сначала и как это заметить?',
+  7:'У кого какая задача и как договориться об очереди?',
+  8:'Могут ли два участника видеть ситуацию по-разному?',
+  9:'Какую информацию нужно проверить до решения?',
+  10:'Как действия одной группы изменят жизнь другой?',
+  11:'Какие аргументы говорят за и против твоего плана?',
+  12:'Что случится, если первоначальная гипотеза неверна?',
+  13:'Как не поддаться давлению группы?',
+  14:'Какие права и границы нужно учитывать?',
+  15:'Что является фактом, а что предположением?',
+  16:'Какие последствия проявятся через месяц?',
+  17:'Какие условия заставят тебя изменить решение?'
+};
+function ageLens(age){
+ const n=Number(age);
+ if(Number.isInteger(n)&&AGE_LENSES[n])return AGE_LENSES[n];
+ if(n<=2)return 'Взрослый: разыграйте ситуацию игрушками без экрана и прислушайтесь к ребёнку.';
+ if(n<40)return 'Какие данные подтвердят, что решение сработало?';
+ if(n<60)return 'Как соединить опыт разных участников и проверить результат?';
+ return 'Каким опытом можно поделиться и что стоит пересмотреть?';
+}
 const outEffects=(v)=>Object.fromEntries(METRICS.map((k,i)=>[k,v[i]]));
 function ageBand(age){
  const n=Number(age);
  if(!Number.isInteger(n)||n<0||n>110)return 'school';
- return n<=2?'caregiver':n<=8?'young':n<=17?'school':'adult';
+ return n<=2?'caregiver':n<=8?'young':n<=12?'school':n<=17?'teen':'adult';
 }
 function initial(){return {version:1,choices:{},read:{},revision:0};}
 function isValid(raw){
@@ -145,18 +170,23 @@ function view(id,age){
  if(!sc)return null;
  const band=ageBand(age);
  return {id:sc.id,area:sc.area,icon:sc.icon,title:sc.title,skill:sc.skill,
-  intro:sc.intro[band==='caregiver'?'young':band],
-  evidence:sc.evidence.slice(),reflect:sc.reflect,caregiver:band==='caregiver',
-  cooperative:band==='young',
+  intro:sc.intro[band==='caregiver'?'young':band==='teen'?'school':band],
+  evidence:sc.evidence.slice(0,band==='caregiver'?1:2),reflect:sc.reflect,
+  lens:ageLens(age),caregiver:band==='caregiver',
+  cooperative:band==='young',rounds:band==='caregiver'?0:band==='young'?2:3,
   options:(band==='young'||band==='caregiver'?
    (sc.id==='generator'||sc.id==='rumor'?[0,2]:[0,1]):[0,1,2]).map(i=>({
    index:i,text:sc.options[i].text,effects:outEffects(sc.options[i].effects),
    reason:sc.options[i].reason,follow:sc.options[i].follow
   }))};
 }
-function choice(state,id,index){
+function choice(state,id,index,age){
  const sc=scenarios.find(x=>x.id===id);
  if(!sc||!Number.isInteger(index)||index<0||index>=sc.options.length)return null;
+ if(age!==undefined){
+  const v=view(id,age);
+  if(v.caregiver||!v.options.some(o=>o.index===index))return null;
+ }
  const previous=state.choices[id];
  const before=metrics(state);
  // Revisions replace effects rather than stacking rewards.
@@ -167,7 +197,7 @@ function choice(state,id,index){
   scenario:id,option:index,reason:sc.options[index].reason,follow:sc.options[index].follow,
   delta,after,progress:progress(state)};
 }
-const api={METRICS,START,scenarios,ageBand,initial,isValid,restore,metrics,progress,view,choice};
+const api={METRICS,START,scenarios,AGE_LENSES,ageBand,ageLens,initial,isValid,restore,metrics,progress,view,choice};
 if(typeof module!=='undefined'&&module.exports)module.exports=api;
 else root.SymbiontCityLab=api;
 })(typeof globalThis!=='undefined'?globalThis:this);
