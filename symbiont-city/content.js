@@ -15,7 +15,7 @@ const ages={
  * rather than norms about what all people of an age can do. */
 const earlyProfiles={
   0:{label:'Для взрослого с малышом',sentences:1,options:2,sequence:2,memory:2,budget:4,voices:2,coPlayOnly:true,scaffold:'Экранная игра для 0–2 лет не предлагается. Взрослый может использовать идеи для живого совместного общения.',focus:'Общение, совместное внимание и свободная игра вне экрана.'},
-  1:{label:'Для взрослого с малышом',sentences:1,options:2,sequence:2,memory:2,budget:4,voices:2,coPlayOnly:true,scaffold:'Вместо экранной игры общайтесь, читайте и играйте вместе вне устройства.',focus:'Откликайтесь на жесты, эмоции и инициативу ребёнка.'},
+  1:{label:'Для взрослого с малышом',sentences:1,options:2,sequence:2,memory:2,budget:4,voices:2,coPlayOnly:true,scaffold:'Взрослый: вместо экранной игры общайтесь, читайте и играйте вместе вне устройства.',focus:'Откликайтесь на жесты, эмоции и инициативу ребёнка.'},
   2:{label:'Для взрослого с малышом',sentences:1,options:2,sequence:2,memory:2,budget:4,voices:2,coPlayOnly:true,scaffold:'Рекомендована совместная офлайн-активность с взрослым вместо самостоятельной экранной игры.',focus:'Называйте чувства и наблюдайте знакомые ситуации вместе.'},
   3:{label:'Играем вместе',sentences:1,options:2,sequence:2,memory:2,budget:4,voices:2,coPlay:true,scaffold:'Взрослый читает и помогает выбрать. Нужны короткие игровые эпизоды.',focus:'Называть чувства и находить простые способы помочь.'},
   4:{label:'Замечаю и помогаю',sentences:1,options:2,sequence:2,memory:2,budget:4,voices:2,coPlay:true,scaffold:'Пробуйте решения и обсуждайте их вместе, без спешки.',focus:'Чувства, простые правила и последовательности из двух действий.'},
