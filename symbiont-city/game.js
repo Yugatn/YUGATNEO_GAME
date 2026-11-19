@@ -152,28 +152,6 @@ function animate(t){
  if(t-lastDraw>48){drawCity(t);lastDraw=t;}
  requestAnimationFrame(animate);
 }
-function selectDistrict(id){
- const district=D.districts.find(d=>d.id===id);
- if(!district)return;
- selectedDistrict=id;target={x:district.pos[0],y:district.pos[1]};
- haptic();refresh();
- const profile=E.ageProfile(state.age,state.challenge);
- if(profile.coPlayOnly){
-  active={stage:'caregiver',district};
-  $('missionDistrict').textContent='ЗАНЯТИЕ ВМЕСТЕ СО ВЗРОСЛЫМ';
-  $('missionTitle').textContent=district.title;
-  $('missionOverlay').hidden=false;
-  renderMission();return;
- }
- const mission=E.currentMission(state,id),view=E.missionView(state,mission);
- const repeat=!!state.completed[mission.id];
- active={stage:'brief',district,view,challenge:E.newChallenge(view),repeat,
-   earned:null,feedback:'',choice:null};
- $('missionDistrict').textContent=district.title+' · '+district.skill;
- $('missionTitle').textContent=view.title;
- $('missionOverlay').hidden=false;
- renderMission();
-}
 function taskInstructions(view){
  const kind=view.kind;
  if(kind==='dialogue')return 'Выбери способ ответить. Потом обсуди последствия.';
