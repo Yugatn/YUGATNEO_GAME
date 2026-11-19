@@ -1,4 +1,4 @@
-const CACHE = 'yugatneo-chess-v6';
+const CACHE = 'yugatneo-chess-v7';
 const SHELL = ['./', './index.html', './manifest.json', './icon.svg'];
 const ENGINE = 'https://cdnjs.cloudflare.com/ajax/libs/chess.js/0.10.3/chess.min.js';
 self.addEventListener('install', event => {
@@ -23,7 +23,7 @@ self.addEventListener('fetch', event => {
   // The runner has its own /runner/ service worker and cache; never hijack it.
   // Each independent Mini App has its own scoped service worker.
   if (url.origin === self.location.origin &&
-    ['runner/','matrix-sprint/','runner-x/','chess-mini/','evolution-x/','matrix-jet/','maze-x/','symbiont-city/'].some(dir =>
+    ['runner/','matrix-sprint/','runner-x/','chess-mini/','tamagotchi/','evolution-x/','matrix-jet/','maze-x/','symbiont-city/'].some(dir =>
       url.pathname.startsWith(new URL('./'+dir, self.registration.scope).pathname))) return;
   if (url.origin === self.location.origin) {
     event.respondWith((async () => {
