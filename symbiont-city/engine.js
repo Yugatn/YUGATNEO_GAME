@@ -12,17 +12,25 @@ function ageProfile(age,challenge='auto'){
  const requested=Number(age);
  const clean=Number.isInteger(requested)?clamp(requested,MIN_AGE,MAX_AGE):8;
  const delta=challenge==='gentle'?-1:challenge==='stretch'?1:0;
- const effective=clamp(clean+delta,MIN_AGE,MAX_AGE);
- let source,stage;
- if(effective<=5){source=DATA.earlyProfiles[effective];stage='early';}
- else if(effective<=11){source=DATA.ages[effective];stage='school';}
- else if(effective<=17){source=DATA.teenProfiles[effective];stage='teen';}
+ // Adapt task complexity, but never use toddler guidance for a preschooler
+ // or teen examples for an adult merely because support was selected.
+ const bounds=clean<=2?[0,2]:clean<=5?[3,5]:
+  clean<=11?[6,11]:clean<=17?[12,17]:[18,110];
+ const effective=clamp(clean+delta,bounds[0],bounds[1]);
+ const stage=clean<=5?'early':clean<=11?'school':clean<=17?'teen':clean<60?'adult':'senior';
+ let source;
+ if(effective<=5)source=DATA.earlyProfiles[effective];
+ else if(effective<=11)source=DATA.ages[effective];
+ else if(effective<=17)source=DATA.teenProfiles[effective];
  else{
-  const band=DATA.adultProfiles.find(p=>effective>=p.min&&effective<=p.max)||
-    DATA.adultProfiles[DATA.adultProfiles.length-1];
-  stage=effective>=60?'senior':'adult';
-  source={label:band.label,sentences:4,options:4,
-   sequence:5,memory:6,budget:10,voices:2,scaffold:'Выбирай решения в своём темпе. Трудность можно менять независимо от возраста.',
+  const band=DATA.adultProfiles.find(p=>clean>=p.min&&clean<=p.max)||
+   DATA.adultProfiles[DATA.adultProfiles.length-1];
+  source={label:band.label,sentences:4,
+   options:challenge==='gentle'?3:4,
+   sequence:challenge==='gentle'?3:5,
+   memory:challenge==='gentle'?4:challenge==='stretch'?6:5,
+   budget:challenge==='gentle'?7:challenge==='stretch'?10:8,
+   voices:2,scaffold:'Выбирай решения в своём темпе. Трудность можно менять независимо от возраста.',
    focus:band.focus};
  }
  return {age:clean,effective,challenge,stage,
