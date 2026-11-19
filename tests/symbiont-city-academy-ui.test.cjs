@@ -111,8 +111,8 @@ test('export includes aggregate Academy and Runner achievements and clear remove
   click(w,'#academyNext');click(w,'[data-academy-answer="0"]');
   const payload={};
   w.document.dispatchEvent(new w.CustomEvent('symbiont-city:export',{detail:payload}));
-  assert.deepEqual(payload.academy.completed,['small-plus']);
-  assert.deepEqual(payload.spiralRunner,{best:0,wins:0});
+  assert.deepEqual(Array.from(payload.academy.completed),['small-plus']);
+  assert.deepEqual(JSON.parse(JSON.stringify(payload.spiralRunner)),{best:0,wins:0});
   w.document.dispatchEvent(new w.Event('symbiont-city:cleared'));
   assert.equal(w.localStorage.getItem('yugatneo.symbiont-city.academy.v1'),null);
   assert.match(el(w,'academyCount').textContent,/0 \/ 12/);
