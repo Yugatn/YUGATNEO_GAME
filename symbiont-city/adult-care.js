@@ -5,7 +5,7 @@
 'use strict';
 const SOURCES=Object.freeze({
  preconception:'https://www.acog.org/clinical/clinical-guidance/committee-opinion/articles/2019/01/prepregnancy-counseling',
- who:'https://www.who.int/publications/i/item/9789240110991',
+ who:'https://www.ncbi.nlm.nih.gov/books/NBK620411/',
  nic:'https://www.nichd.nih.gov/health/topics/factsheets/preconceptioncare',
  screen:'https://pmc.ncbi.nlm.nih.gov/articles/PMC12053794/',
  aap:'https://publications.aap.org/pediatrics/article/doi/10.1542/peds.2025-075321/206128/Digital-Ecosystems-Children-and-adolescents'
