@@ -13,6 +13,7 @@
 <link rel="stylesheet" href="./lab.css">
 <link rel="stylesheet" href="./workshops.css">
 <link rel="stylesheet" href="./help-route.css">
+<link rel="stylesheet" href="./academy.css">
 <script src="https://telegram.org/js/telegram-web-app.js"></script>
 <script defer src="./content.js"></script>
 <script defer src="./engine.js"></script>
@@ -23,6 +24,10 @@
 <script defer src="./workshops-ui.js"></script>
 <script defer src="./help-route.js"></script>
 <script defer src="./help-route-ui.js"></script>
+<script defer src="./academy.js"></script>
+<script defer src="./academy-ui.js"></script>
+<script defer src="./spiral-runner.js"></script>
+<script defer src="./spiral-runner-ui.js"></script>
 </head>
 <body>
 <div id="app">
@@ -79,6 +84,16 @@
   <div class="lab-cards" id="labCards" aria-label="Сюжетные ситуации для развития гибких навыков"></div>
   <p class="fine">Показатели — условная игровая модель последствий, а не оценка реальных людей, психических качеств или моральных убеждений. За скорость ответа штрафов нет.</p>
  </section>
+ <section class="academy-section" aria-labelledby="academyHeading" id="academySection">
+  <div class="academy-heading">
+   <div><div class="eyebrow">АВТОРСКАЯ ФИЛОСОФИЯ · ДИАЛОГ · БЕЗОПАСНОСТЬ</div>
+    <h2 id="academyHeading">Академия вопросов и развития</h2>
+    <p>12 небольших игровых ситуаций: законы «Амбивалентного Солипсизма», поддерживающие вопросы друзьям и родителям, критическое мышление, границы тела и достоверные сведения о репродуктивном здоровье. Содержание адаптируется под возраст.</p></div>
+   <span class="academy-count" id="academyCount">0 / 12 заданий</span>
+  </div>
+  <div class="academy-grid" id="academyCards" aria-label="Выбор образовательных игровых миссий"></div>
+  <p class="academy-trust">Взгляды «Амбивалентного Солипсизма» представлены как философская позиция автора, а не научный факт. Психообразовательные задания не заменяют психотерапию; медицинские — консультацию врача. Для 0–2 лет предусмотрены только совместные занятия взрослого вне экрана. Ответы игрока и сведения о здоровье не сохраняются.</p>
+ </section>
  <section class="workshop-section" aria-labelledby="workshopsHeading" id="workshopsSection">
   <div class="workshop-heading">
    <div><div class="eyebrow">ИГРАЙ · ИССЛЕДУЙ · ПРОБУЙ СНОВА</div>
@@ -95,6 +110,14 @@
     <small id="routeProgress">Новый маршрут доступен</small>
    </div>
    <button type="button" class="button primary" id="routeStart">▶ Войти в лабиринт</button>
+  </div>
+  <div class="spiral-section" aria-labelledby="spiralSectionTitle">
+   <div class="spiral-entry"><div><div class="eyebrow">НОВОЕ · АРКАДА И ПРОСТРАНСТВЕННОЕ МЫШЛЕНИЕ</div>
+    <h2 id="spiralSectionTitle">Спиральный забег</h2>
+    <p>Бегущий исследователь в круглых очках, большие лабиринты, несколько этажей, агенты, порталы и матричный код. Камера показывает лишь часть пути. Сложность растёт с возрастом, спешить необязательно.</p>
+    <small id="spiralRecord">Рекорд пока не установлен</small></div>
+    <button class="button primary" id="spiralStart" type="button">▶ Начать забег</button>
+   </div>
   </div>
   <div class="workshop-hint">Для 3–5 лет — совместное прохождение со взрослым. Для 0–2 лет — идеи живых игр без экрана. Возраст и сложность берутся из настроек выше; успехи оцениваются только внутри игры.</div>
  </section>
@@ -159,6 +182,36 @@
    <button type="button" class="button ghost" id="routeAgain">↻ Новый лабиринт</button>
    <button type="button" class="button primary" id="routeDone">Вернуться в город</button>
   </div>
+ </div>
+</section>
+<section id="academyOverlay" class="overlay" hidden role="dialog" aria-modal="true" aria-labelledby="academyTitle">
+ <div class="mission-shell academy-dialog">
+  <div class="mission-top"><div><div class="eyebrow" id="academyArea">АКАДЕМИЯ</div><h2 id="academyTitle">Миссия</h2></div>
+   <button id="academyClose" type="button" class="close" aria-label="Закрыть урок">✕</button></div>
+  <div class="mission-progress"><span id="academyStep">1 / 3 · Ситуация</span></div>
+  <div id="academyBody" class="mission-body" aria-live="polite"></div>
+  <div class="mission-footer"><button id="academyBack" class="button ghost" type="button">← Назад</button>
+   <button id="academyNext" class="button primary" type="button">Продолжить →</button></div>
+ </div>
+</section>
+<section id="spiralOverlay" class="overlay" hidden role="dialog" aria-modal="true" aria-labelledby="spiralTitle">
+ <div class="mission-shell spiral-dialog">
+  <div class="mission-top"><div><div class="eyebrow">МАТРИЦА · ЛАБИРИНТЫ ПО ВОЗРАСТУ</div><h2 id="spiralTitle">Спиральный забег</h2></div>
+   <button id="spiralClose" type="button" class="close" aria-label="Закрыть лабиринт">✕</button></div>
+  <div class="spiral-status"><span id="spiralFloor">ВИТОК 1</span><span id="spiralLives">♥♥♥</span><span id="spiralScore">ОЧКИ 0</span></div>
+  <div id="spiralIntro" class="academy-notice" hidden></div>
+  <canvas id="spiralCanvas" class="spiral-canvas" role="img" aria-label="Подвижная камера лабиринта, бегущий человечек и агенты" tabindex="0"></canvas>
+  <div id="spiralStatus" class="spiral-message" role="status" aria-live="polite"></div>
+  <div id="spiralControls" class="spiral-controls" aria-label="Управление лабиринтом">
+   <button type="button" class="spiral-direction" data-spiral-direction="up" aria-label="Вверх">↑</button>
+   <button type="button" class="spiral-direction" data-spiral-direction="left" aria-label="Влево">←</button>
+   <button type="button" class="spiral-direction" data-spiral-direction="down" aria-label="Вниз">↓</button>
+   <button type="button" class="spiral-direction" data-spiral-direction="right" aria-label="Вправо">→</button>
+  </div>
+  <div class="spiral-actions"><button id="spiralPhase" type="button">✦ ФАЗА · <span id="spiralCharges">0 зарядов</span></button>
+   <button id="spiralHint" type="button">◈ Подсказка</button></div>
+  <div class="mission-footer"><button id="spiralAgain" class="button ghost" type="button">↻ Новый лабиринт</button>
+   <button id="spiralDone" class="button primary" type="button">Вернуться в город</button></div>
  </div>
 </section>
 <section id="infoOverlay" class="overlay" hidden aria-modal="true" role="dialog" aria-labelledby="infoTitle">
