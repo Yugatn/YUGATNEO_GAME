@@ -21,15 +21,17 @@ function progress(){
  $('socialMeters').innerHTML=S.axes.map(k=>
   '<div class="systems-meter"><div><strong>'+labels[k]+'</strong><span>'+m[k]+'/100</span></div>'+
   '<div class="systems-track" role="progressbar" aria-label="'+labels[k]+'" aria-valuemin="0" aria-valuemax="100" aria-valuenow="'+m[k]+'"><i style="width:'+m[k]+'%"></i></div></div>').join('');
- $('socialCards').innerHTML=S.scenarios.map(x=>'<button type="button" data-system-id="'+x.id+
+ const socialMarkup=S.scenarios.map(x=>'<button type="button" data-system-id="'+x.id+
   '" class="systems-card"><span class="systems-emoji">'+x.icon+'</span><strong>'+escape(x.title)+'</strong>'+
   '<small>'+(Number.isInteger(social.decisions[x.id])?'↻ Сравнить и пересмотреть':'▶ Исследовать')+'</small></button>').join('');
+ if($('socialCards').innerHTML!==socialMarkup)$('socialCards').innerHTML=socialMarkup;
  $('adultHealthSection').hidden=!adult();
  if(adult()){
   $('adultHealthCount').textContent=Object.keys(health.completed).length+' / '+H.lessons.length+' тем';
-  $('adultHealthCards').innerHTML=H.lessons.map(x=>
+  const healthMarkup=H.lessons.map(x=>
    '<button type="button" class="systems-card" data-health-id="'+x.id+'"><span class="systems-emoji">'+x.icon+
    '</span><strong>'+escape(x.title)+'</strong><small>'+(health.completed[x.id]?'✓ Разобрано':'▶ Исследовать')+'</small></button>').join('');
+  if($('adultHealthCards').innerHTML!==healthMarkup)$('adultHealthCards').innerHTML=healthMarkup;
  }else{
   $('adultHealthCards').textContent='';
   $('adultHealthCount').textContent='Только 18+';
