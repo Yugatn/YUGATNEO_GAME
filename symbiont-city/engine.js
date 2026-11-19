@@ -167,8 +167,11 @@ function answerChoice(c,view,index){
  c.chosen=index;
  const item=items[index];
  if(view.kind==='dialogue'){
-  c.quality=item.quality;c.feedback=item.feedback;c.done=true;
-  return {complete:true,feedback:item.feedback,quality:item.quality};
+  c.quality=c.attempts===1?item.quality:Math.min(item.quality,2);
+  c.feedback=item.feedback;
+  c.done=item.quality>=2;
+  if(!c.done)c.feedback+=' Можно попробовать другой ответ без штрафа.';
+  return {complete:c.done,feedback:c.feedback,quality:c.quality};
  }
  c.feedback=item.feedback;
  if(item.reliable){c.done=true;c.quality=c.attempts===1?3:2;}
