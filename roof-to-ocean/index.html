@@ -128,13 +128,18 @@
     approach:{name:'Вход в девятиэтажку',num:1,duration:3.35,tip:'Герой добегает до подъезда'},
     stairs:{name:'Подъём: 9 этажей',num:1,duration:14.4,tip:'Поднимайся к выходу на крышу'},
     roofs:{name:'Паркур по крышам',num:2,duration:5860,tip:'Пробел / ↑ — прыжок. В портале — двойной прыжок'},
+    roofDescent:{name:'Прыжок с крыши на дорогу',num:2,duration:2.7,tip:'Герой приземляется и продолжает путь по городу'},
     street:{name:'Городской забег',num:3,duration:5910,tip:'Перепрыгивай препятствия — не задевай прохожих и животных'},
+    airportArrival:{name:'Аэропорт: посадка на самолёт',num:3,duration:4.0,tip:'Забег к самолёту'},
     flight:{name:'Полёт над облаками',num:4,duration:5150,tip:'↑ и ↓ — менять высоту, избегая грозовых облаков, птиц и шаров'},
+    planeExit:{name:'Посадка и выход из самолёта',num:4,duration:4.1,tip:'Герой бежит к мотоциклу'},
     bike:{name:'Мотогонка к берегу',num:5,duration:5730,tip:'← и → — менять полосу и обходить машины'},
+    beachArrival:{name:'Пляж: пересадка на сёрф',num:5,duration:3.7,tip:'Спустись с мотоцикла и возьми доску'},
     surf:{name:'Сёрфинг через океан',num:6,duration:5210,tip:'← и → — менять направление, обходя акул и медуз'},
+    shoreArrival:{name:'Другой берег: выход из воды',num:6,duration:3.6,tip:'Прогулка к шезлонгу'},
     finish:{name:'Побережье: отдых',num:7,duration:1,tip:'Приключение завершено!'}
   };
-  const order=['approach','stairs','roofs','street','flight','bike','surf','finish'];
+  const order=['approach','stairs','roofs','roofDescent','street','airportArrival','flight','planeExit','bike','beachArrival','surf','shoreArrival','finish'];
   const portals={roofs:[1100,3310,4900],street:[950,2920,4800],flight:[1980,3990],bike:[1700,3670],surf:[1280,3180]};
   const groundY=520,heroX=318;
   function reset(){S={mode:'menu',status:'menu',dist:0,elapsed:0,allTime:0,score:0,portalCount:0,hp:3,matrix:0,matrixPulse:0,invincible:0,transition:0,toast:'',toastTimer:0,lane:0,planeY:355,player:{y:groundY,vy:0,jumps:0,grounded:true},collected:new Set(),hit:new Set(),dust:0,dodges:0};particles=[];updateHud(true);showMenu();}
@@ -146,7 +151,7 @@
   function nextMode(){const i=order.indexOf(S.mode);if(i<order.length-1)setMode(order[i+1]);}
   function updateControls(){const mode=S.mode,steer=mode==='bike'||mode==='surf',fly=mode==='flight',jump=mode==='roofs'||mode==='street';leftBtn.hidden=!(steer);rightBtn.hidden=!(steer);downBtn.hidden=!fly;upBtn.hidden=!(jump||fly||mode==='menu');upBtn.textContent=fly?'↑ ВЫШЕ':'↑ ПРЫЖОК';hud.hint.textContent=cfg[mode]?.tip||'Автобег включён';hud.title.textContent=mode==='finish'?'Финиш — заслуженный отдых':`Режим: ${cfg[mode]?.name||'Приключение'}`;}
   function fmtTime(t){return `${String(Math.floor(t/60)).padStart(2,'0')}:${String(Math.floor(t%60)).padStart(2,'0')}`;}
-  function updateHud(force=false){if(!S)return;if(!force&&uiTick++%3)return;const c=cfg[S.mode]||cfg.approach;hud.stage.textContent=c.name;hud.counter.textContent=`Этап ${c.num}/7`;let prog=0;if(S.mode==='approach')prog=(S.elapsed/3.35)*.22;else if(S.mode==='stairs')prog=.22+.78*S.elapsed/14.4;else if(S.mode==='finish')prog=1;else prog=S.dist/c.duration;hud.progress.style.width=`${Math.round(clamp(prog,0,1)*100)}%`;hud.score.textContent=Math.floor(S.score);hud.portal.textContent=S.portalCount;hud.time.textContent=fmtTime(S.allTime);hud.health.textContent='♥ '.repeat(S.hp)+'♡ '.repeat(3-S.hp);hud.matrix.hidden=S.matrix<=0;hud.matrix.textContent=`◈ МАТРИЦА ${Math.ceil(S.matrix)}c`;
+  function updateHud(force=false){if(!S)return;if(!force&&uiTick++%3)return;const c=cfg[S.mode]||cfg.approach;hud.stage.textContent=c.name;hud.counter.textContent=`Этап ${c.num}/7`;let prog=0;if(S.mode==='approach')prog=(S.elapsed/3.35)*.22;else if(S.mode==='stairs')prog=.22+.78*S.elapsed/14.4;else if(S.mode==='finish')prog=1;else if(['roofDescent','airportArrival','planeExit','beachArrival','shoreArrival'].includes(S.mode))prog=S.elapsed/c.duration;else prog=S.dist/c.duration;hud.progress.style.width=`${Math.round(clamp(prog,0,1)*100)}%`;hud.score.textContent=Math.floor(S.score);hud.portal.textContent=S.portalCount;hud.time.textContent=fmtTime(S.allTime);hud.health.textContent='♥ '.repeat(S.hp)+'♡ '.repeat(3-S.hp);hud.matrix.hidden=S.matrix<=0;hud.matrix.textContent=`◈ МАТРИЦА ${Math.ceil(S.matrix)}c`;
     E('pauseBtn').textContent=S.status==='paused'?'▶ Продолжить':'⏸ Пауза';}
   function message(txt,secs=1.5){S.toast=txt;S.toastTimer=secs;}
   function getRoofAt(x){return roofSegments.find(s=>x>=s.start&&x<=s.end)||null;}
@@ -188,6 +193,7 @@
   function update(dt){if(S.status!=='playing')return;S.elapsed+=dt;S.allTime+=dt;S.invincible=Math.max(0,S.invincible-dt);S.matrix=Math.max(0,S.matrix-dt);S.matrixPulse=Math.max(0,S.matrixPulse-dt*2);S.transition=Math.max(0,S.transition-dt);S.toastTimer=Math.max(0,S.toastTimer-dt);
     if(S.mode==='approach'){if(S.elapsed>=cfg.approach.duration)nextMode();}
     else if(S.mode==='stairs'){S.score+=12*dt;if(S.elapsed>=cfg.stairs.duration)nextMode();}
+    else if(['roofDescent','airportArrival','planeExit','beachArrival','shoreArrival'].includes(S.mode)){if(S.elapsed>=cfg[S.mode].duration)nextMode();}
     else if(S.mode==='roofs'||S.mode==='street'){
       const speed=(S.mode==='roofs'?316:320)*(S.matrix>0?1.35:1),prevX=S.dist;
       S.dist+=speed*dt;S.score+=speed*dt*.06;const p=S.player,prevY=p.y;
@@ -326,6 +332,40 @@
     line(-14,593,-45,626,'#bc9d80',12);line(14,593,38,626,'#bc9d80',12);rr(-23,514,46,83,14,S.matrix>0?'#50f5b2':'#ec8464');circle(0,491,27,'#dba67e');rr(-28,467,56,11,4,'#1e4154');line(-17,530,-54,576,'#dba67e',10);line(17,530,48,559,'#dba67e',10);ctx.restore();
     text('ДРУГОЙ БЕРЕГ УЖЕ БЛИЗКО',640,215,24,'#1b586b','center',850);
   }
+  function drawParkedBike(x,y,scale=1){ctx.save();ctx.translate(x,y);ctx.scale(scale,scale);circle(-32,0,28,'#263748');circle(47,0,28,'#263748');circle(-32,0,14,'#d2dce0');circle(47,0,14,'#d2dce0');line(-32,0,0,-42,'#e48e63',10);line(0,-42,47,0,'#e48e63',11);line(-32,0,47,0,'#e48e63',9);rr(-5,-59,62,16,6,'#2e4050');line(42,-54,59,-77,'#aabec2',6);line(59,-77,79,-75,'#aabec2',6);ctx.restore();}
+  function drawInterlude(mode){const q=clamp(S.elapsed/cfg[mode].duration,0,1),run=S.elapsed*3.8;
+    if(mode==='roofDescent'){
+      background('#83accb','#f1c39a');cityBack(S.elapsed*35);rect(0,530,W,190,'#52626b');rect(0,549,W,43,'#88938e');
+      roofDecor(0,365,465,21);for(let i=0;i<5;i++)rect(505+i*168,560,81,7,'#f1ddb7');
+      const x=300+q*500,y=q<.65?365+Math.pow(q/.65,1.8)*170:530;
+      runHero(x,y,run,1.1);text('С КРЫШИ — НА УЛИЦУ',690,190,34,'#25495b','center',900);
+    }else if(mode==='airportArrival'){
+      background('#8bc5dc','#dfedd4');clouds(S.elapsed*100,.65);rect(0,470,W,250,'#747f87');rect(0,490,W,56,'#9aa5a5');
+      rect(0,304,400,164,'#bacac5');rect(0,305,400,33,'#6f8998');for(let i=0;i<6;i++)rr(25+i*64,356,48,85,4,'#3c768a');
+      rect(410,280,48,190,'#8fabb5');rr(397,245,75,51,7,'#3d697e');rect(429,209,8,37,'#668ca0');
+      for(let i=0;i<9;i++)rect(i*188+20,617,90,7,'#f8e9bc');
+      drawPlane(895,442);const x=135+q*710;runHero(x,530,run,1.08);
+      text('ДОБРАТЬСЯ ДО АЭРОПОРТА',650,175,31,'#294d62','center',900);
+    }else if(mode==='planeExit'){
+      background('#94c9df','#e5e5c5');clouds(S.elapsed*35,.62);rect(0,490,W,230,'#7d8f91');rect(0,519,W,40,'#9ba4a5');
+      for(let i=0;i<9;i++)rect(i*187,634,91,8,'#eee1b7');drawPlane(440,418);
+      // выход из самолёта: лестница-стремянка, затем бег к байку
+      for(let i=0;i<8;i++)line(415+i*24,438+i*12,535+i*24,438+i*12,'#e7d7b9',3);
+      drawParkedBike(1067,549,1.0);const x=465+q*540,y=530;runHero(x,y,run,1.07);
+      text('ПРИЗЕМЛЕНИЕ • БЕГ К МОТОЦИКЛУ',690,160,29,'#284c61','center',900);
+    }else if(mode==='beachArrival'){
+      background('#8cd8d4','#ffe2ac');circle(1029,140,75,'#fff1ba');clouds(S.elapsed*32,.5);
+      rect(0,468,W,252,'#e6c99a');rect(830,448,450,272,'#269bb2');for(let i=0;i<10;i++)line(830,470+i*27,1280,460+i*27,'#90dfd388',3);
+      drawParkedBike(245,540,1.1);const x=390+q*590;runHero(x,545,run,1.06);
+      ctx.save();ctx.translate(1085,548);ctx.rotate(-.6);rr(-13,-115,26,150,12,'#f8eecf');line(0,-98,0,15,'#f49d7c',5);ctx.restore();
+      text('БАЙК ОСТАЁТСЯ НА ПЛЯЖЕ',660,160,31,'#2e6671','center',900);
+    }else if(mode==='shoreArrival'){
+      background('#8bccd1','#f9d6af');circle(1091,155,70,'#ffe3a9');rect(0,495,W,225,'#e8cba0');rect(0,490,440,230,'#2b98ad');for(let i=0;i<7;i++)line(0,508+i*30,440,505+i*30,'#a5f3e6aa',5);palm(1100,545,1.16);
+      line(1000,556,1135,556,'#946b55',12);line(1017,547,1061,451,'#946b55',12);line(1061,451,1175,493,'#946b55',12);
+      ctx.beginPath();ctx.moveTo(1017,547);ctx.lineTo(1061,452);ctx.lineTo(1175,492);ctx.lineTo(1134,560);ctx.closePath();fill('#f0edda');ctx.fill();
+      const x=430+q*660;runHero(x,545,run,1.0);text('ДРУГОЙ БЕРЕГ • ПОРА ОТДЫХАТЬ',640,154,30,'#375e71','center',900);
+    }
+  }
   function drawFinish(){background('#d4859a','#ffdf9d');circle(960,285,99,'#ffe0a8');for(let i=0;i<6;i++)rect(0,408+i*18,W,18,i%2?'#5aafaa':'#66c2b5');rect(0,525,W,195,'#f3d5a3');for(let i=0;i<30;i++)ellipse(rand(i)*W,540+rand(i+30)*180,5,2,'#d9b881');
     palm(1080,538,1.35);palm(140,577,1.05);ellipse(590,619,170,19,'#b28e68aa');
     line(487,598,656,598,'#7b605c',12);line(489,595,548,470,'#8e6a60',13);line(548,470,711,529,'#8e6a60',13);
@@ -342,7 +382,7 @@
     if(S.transition>.05){rect(0,0,W,H,`rgba(239,252,246,${S.transition*.13})`)}
   }
   function draw(){ctx.setTransform(canvas.width/W,0,0,canvas.height/H,0,0);ctx.clearRect(0,0,W,H);
-    const mode=S?.mode||'menu';if(mode==='approach'||mode==='menu')drawApproach();else if(mode==='stairs')drawStairs();else if(mode==='roofs')drawRoofs();else if(mode==='street')drawStreet();else if(mode==='flight')drawFlight();else if(mode==='bike')drawBike();else if(mode==='surf')drawSurf();else if(mode==='finish')drawFinish();drawFX();
+    const mode=S?.mode||'menu';if(mode==='approach'||mode==='menu')drawApproach();else if(mode==='stairs')drawStairs();else if(mode==='roofs')drawRoofs();else if(mode==='street')drawStreet();else if(mode==='flight')drawFlight();else if(mode==='bike')drawBike();else if(mode==='surf')drawSurf();else if(['roofDescent','airportArrival','planeExit','beachArrival','shoreArrival'].includes(mode))drawInterlude(mode);else if(mode==='finish')drawFinish();drawFX();
     if(S?.mode==='finish'&&S.status==='finish'&&!overlay.hidden)return;
     if(S?.mode==='finish'&&S.status==='finish'){
       showOverlay('ФИНИШ!','Время отдыхать ☀','Герой преодолел девять этажей, крыши города, препятствия на дороге, полёт, мотогонку и океан. Теперь он отдыхает на шезлонге.',`Результат: ${Math.floor(S.score)} очков · ${S.portalCount} порталов · ${fmtTime(S.allTime)}`,'↻ Ещё одно приключение');
