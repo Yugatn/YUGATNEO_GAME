@@ -1,7 +1,7 @@
 /* SIMBIONT CITY offline assets only; isolates PWA from all other games. */
 'use strict';
-const CACHE='yugatneo-symbiont-city-v3',PREFIX='yugatneo-symbiont-city-';
-const ASSETS=['./','./index.html','./style.css','./lab.css','./content.js','./engine.js','./game.js','./decisions.js','./lab-ui.js','./icon.svg','./manifest.webmanifest'];
+const CACHE='yugatneo-symbiont-city-v4',PREFIX='yugatneo-symbiont-city-';
+const ASSETS=['./','./index.html','./style.css','./lab.css','./workshops.css','./content.js','./engine.js','./game.js','./decisions.js','./lab-ui.js','./workshops.js','./workshops-ui.js','./icon.svg','./manifest.webmanifest'];
 self.addEventListener('install',e=>e.waitUntil((async()=>{
  const cache=await caches.open(CACHE);
  await cache.addAll(ASSETS);
