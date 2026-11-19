@@ -10,10 +10,13 @@
 <link rel="icon" type="image/svg+xml" href="./icon.svg">
 <link rel="manifest" href="./manifest.webmanifest">
 <link rel="stylesheet" href="./style.css">
+<link rel="stylesheet" href="./decisions.css">
 <script src="https://telegram.org/js/telegram-web-app.js"></script>
 <script defer src="./content.js"></script>
 <script defer src="./engine.js"></script>
 <script defer src="./game.js"></script>
+<script defer src="./decisions.js"></script>
+<script defer src="./decisions-ui.js"></script>
 </head>
 <body>
 <div id="app">
@@ -50,6 +53,25 @@
    <div id="districtList" class="district-list" aria-label="Миссии районов"></div>
   </aside>
  </section>
+ <section class="lab-panel" aria-labelledby="labHeading">
+  <div class="lab-heading">
+    <div><div class="eyebrow">НОВАЯ ГЛАВА · СИСТЕМНЫЕ РЕШЕНИЯ</div>
+      <h2 id="labHeading">Лаборатория решений</h2>
+      <p>Пять историй о взаимопомощи, доверии и ограниченных ресурсах. Изучи факты, выбери действие и посмотри последствия.</p></div>
+    <span id="labDone" class="count-label">0 / 5 ситуаций</span>
+  </div>
+  <div class="lab-progress" id="labMeter" role="progressbar" aria-label="Изученные системные ситуации"
+     aria-valuemin="0" aria-valuemax="100" aria-valuenow="0"><div id="labFill"></div></div>
+  <div class="lab-layout">
+    <div id="labCards" class="lab-cards" aria-label="Сценарии Лаборатории решений"></div>
+    <aside class="lab-side" aria-label="Состояние игрового города">
+      <h3>Состояние города</h3>
+      <div id="labStats" class="lab-stats"></div>
+      <p id="labStatus" role="status">Сравни возможные последствия своих действий.</p>
+      <p class="fine">Это условная модель компромиссов, а не реальные прогнозы или оценка личности. Решения можно менять без штрафа.</p>
+    </aside>
+  </div>
+ </section>
  <section class="bottom-grid">
   <div class="info-panel"><div class="panel-head"><div><div class="eyebrow">МОИ ПУТИ</div><h2>Навыки в игре</h2></div></div>
    <div id="skillBars" class="skill-bars"></div>
@@ -70,6 +92,19 @@
   <div id="missionBody" class="mission-body" aria-live="polite"></div>
   <div class="mission-footer"><button id="missionBack" class="button ghost" type="button">← Назад в город</button><button id="missionNext" class="button primary" type="button">Продолжить →</button></div>
  </div>
+</section>
+<section id="labOverlay" class="overlay" hidden aria-modal="true" role="dialog" aria-labelledby="labTitle">
+  <div class="mission-shell">
+    <div class="mission-top">
+      <div><div id="labSubtitle" class="eyebrow">ГОРОД РЕШЕНИЙ</div><h2 id="labTitle">Лаборатория решений</h2></div>
+      <button id="labClose" class="close" type="button" aria-label="Закрыть игровую ситуацию">✕</button>
+    </div>
+    <div class="mission-progress"><span id="labStep">ШАГ 1 · СИТУАЦИЯ</span></div>
+    <div id="labBody" class="mission-body" aria-live="polite"></div>
+    <div class="mission-footer">
+      <button id="labAction" class="button primary" type="button">ПРОДОЛЖИТЬ →</button>
+    </div>
+  </div>
 </section>
 <section id="infoOverlay" class="overlay" hidden aria-modal="true" role="dialog" aria-labelledby="infoTitle">
  <div class="mission-shell info-shell">
