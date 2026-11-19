@@ -349,6 +349,10 @@ $('age').addEventListener('change',()=>{
  if(!Number.isInteger(numeric)||numeric<0||numeric>110){
   $('age').value=String(state.age);notify('Укажи возраст от 0 до 110 лет.');return;
  }
+ // Native number inputs can fire an additional change on blur. Avoid
+ // rebuilding the district buttons between pointerdown and pointerup:
+ // otherwise the first user tap on a mission is silently discarded.
+ if(numeric===state.age)return;
  E.setAge(state,numeric);save();refresh();
  notify(numeric<=2?'Для этого возраста — только офлайн-идеи взрослому.':
   'Возрастной профиль обновлён, прогресс сохранён.');
