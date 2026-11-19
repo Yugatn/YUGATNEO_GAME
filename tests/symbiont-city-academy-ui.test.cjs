@@ -119,3 +119,20 @@ test('export includes aggregate Academy and Runner achievements and clear remove
   assert.deepEqual(errors,[]);
  }finally{w.close();}
 });
+
+test('question deck switches friend, family and self prompts without storing a child chat',()=>{
+ const {w,errors}=setup();
+ try{
+  const before=el(w,'academyDeckQuestion').textContent;
+  click(w,'#academyDeckNext');
+  assert.notEqual(el(w,'academyDeckQuestion').textContent,before);
+  click(w,'[data-deck-target="family"]');
+  assert.match(el(w,'academyDeckQuestion').textContent,/могу помочь/);
+  click(w,'[data-deck-target="self"]');
+  assert.match(el(w,'academyDeckQuestion').textContent,/чувствую/);
+  age(w,1);
+  assert.match(el(w,'academyDeckQuestion').textContent,/Взрослому/);
+  assert.equal(w.localStorage.getItem('yugatneo.symbiont-city.academy.v1'),null);
+  assert.deepEqual(errors,[]);
+ }finally{w.close();}
+});
