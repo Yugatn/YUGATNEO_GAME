@@ -106,7 +106,7 @@ test('old main-game progress is untouched; lab uses a distinct storage key',()=>
 test('decision lab is included in PWA and existing export and reset actions',()=>{
  const sw=fs.readFileSync(path.join(dir,'sw.js'),'utf8');
  const game=fs.readFileSync(path.join(dir,'game.js'),'utf8');
- assert.ok(sw.includes('yugatneo-symbiont-city-v4'));
+ assert.ok(sw.includes('yugatneo-symbiont-city-v5'));
  for(const file of ['decisions.js','lab-ui.js','lab.css'])
   assert.ok(sw.includes("'./"+file+"'"));
  assert.ok(game.includes("symbiont-city:cleared"));
