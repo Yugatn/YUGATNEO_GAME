@@ -82,7 +82,7 @@ test('attention tasks always include one unique target and advance only on corre
   }
   assert.equal(s.status,'complete');
   assert.equal(s.mistakes,s.total);
- });
+ }
 });
 test('bridge construction enforces safe dependency order and explains mistakes',()=>{
  const s=G.newGame('bridge',8,'auto',99);
