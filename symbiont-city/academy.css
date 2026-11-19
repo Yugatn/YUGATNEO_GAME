@@ -47,3 +47,11 @@
 
 /* A hidden panel must never occupy screen space, even with author-level display rules. */
 .spiral-canvas[hidden],.spiral-controls[hidden],#spiralPhase[hidden],#spiralHint[hidden],#spiralIntro[hidden]{display:none!important}
+
+.academy-deck{background:linear-gradient(155deg,#214a42,#10373b);border:1px solid #8ed0ad;border-radius:17px;padding:17px;margin:16px 0;display:grid;gap:12px}
+.academy-deck h3{margin:0 0 7px;font-size:21px}.academy-deck p{font-size:12px;color:#d4e9da;line-height:1.6;margin:0}
+.academy-deck-picker{display:flex;flex-wrap:wrap;gap:8px}
+.academy-deck-picker button{border:1px solid #8dd0af;background:#173d3c;border-radius:28px;padding:9px 14px;color:#edfff5;font-weight:800}
+.academy-deck-picker button[aria-pressed=true]{border-color:#ffe4a0;background:#3e5f4b;color:#fff9d3}
+.academy-deck-question{border-left:4px solid #bff4a5;padding:14px;background:#123f3a;border-radius:11px;font-weight:850;font-size:clamp(17px,3vw,21px);min-height:65px;color:#f0fff2}
+.academy-deck>.button{justify-self:start}
