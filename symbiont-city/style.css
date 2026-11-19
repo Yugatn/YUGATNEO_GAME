@@ -3,7 +3,7 @@
 *,*:before,*:after{box-sizing:border-box}
 html,body{margin:0;min-width:280px;min-height:100%;background:var(--bg);color:var(--ink);font-family:system-ui,-apple-system,"Segoe UI",Arial,sans-serif}
 body{background:radial-gradient(ellipse at 48% -10%,#1c4950 0,transparent 49%),linear-gradient(155deg,#0b1b2c,#071a23 62%,#08131d);overflow-x:hidden}
-button,select{font:inherit;color:inherit}
+button,select,input{font:inherit;color:inherit}
 button{cursor:pointer;touch-action:manipulation}
 button:focus-visible,select:focus-visible,canvas:focus-visible{outline:3px solid var(--focus);outline-offset:3px}
 a{color:#affbd7}
@@ -29,7 +29,7 @@ h1 em{font-style:normal;color:#a2ffe0}
 .profile{padding:17px 20px;border:1px solid #467675;border-radius:20px;background:linear-gradient(135deg,#18343c,#122f38)}
 .profile>label{font-size:12px;font-weight:850;color:#b8e4d9;display:block;margin:0 0 8px}
 .age-line{display:grid;grid-template-columns:.7fr 1.3fr;gap:9px}
-select{background:#082329;border:1px solid #63978d;border-radius:12px;min-width:0;width:100%;padding:11px;color:#e3ffef;font-weight:800}
+select,.age-line input{background:#082329;border:1px solid #63978d;border-radius:12px;min-width:0;width:100%;padding:11px;color:#e3ffef;font-weight:800}
 .profile-text{font-size:12px;color:#bddfd3;line-height:1.5;margin:12px 0 0}
 .dashboard{display:grid;grid-template-columns:minmax(0,1.65fr) minmax(300px,.9fr);gap:16px;align-items:stretch}
 .map-panel,.districts,.info-panel{min-width:0;background:linear-gradient(155deg,#102b37ec,#0c2331f0);border:1px solid #3c666c;border-radius:20px;box-shadow:0 12px 38px #0003;padding:18px}
@@ -118,6 +118,6 @@ footer button{border:0;background:none;text-decoration:underline;color:#b7f4d4;p
 .toast.show{opacity:1}
 @media(max-width:990px){.dashboard{grid-template-columns:1fr}.district-list{grid-template-columns:1fr 1fr}}
 @media(max-width:720px){.intro-strip,.bottom-grid{grid-template-columns:1fr}.intro-copy{padding:15px}.profile{padding:14px}.district-list{grid-template-columns:1fr}.container{gap:12px}.map-panel,.districts,.info-panel{padding:13px}.masthead{padding:12px var(--pad)}.logo{width:39px;height:39px;font-size:23px}.brand span{font-size:9px}.brand strong{font-size:21px}.brand small{font-size:9px}}
-@media(max-width:400px){.masthead{gap:8px}.head-actions{gap:7px}.score{padding:7px}.icon-btn{width:35px;height:35px}.logo{width:34px;height:34px}.brand strong{font-size:19px}.intro-copy h1{font-size:25px}.age-line{grid-template-columns:1fr 1.45fr}select{font-size:12px;padding:10px 7px}.mission-top{padding:13px}.mission-progress{padding:0 13px 10px}.mission-body{padding:12px 13px}.mission-footer{padding:9px}.button{padding:10px;min-height:46px;font-size:12px}.choice{padding:10px}.memory-options button{min-height:54px}}
+@media(max-width:400px){.masthead{gap:8px}.head-actions{gap:7px}.score{padding:7px}.icon-btn{width:35px;height:35px}.logo{width:34px;height:34px}.brand strong{font-size:19px}.intro-copy h1{font-size:25px}.age-line{grid-template-columns:1fr 1.45fr}select,.age-line input{font-size:12px;padding:10px 7px}.mission-top{padding:13px}.mission-progress{padding:0 13px 10px}.mission-body{padding:12px 13px}.mission-footer{padding:9px}.button{padding:10px;min-height:46px;font-size:12px}.choice{padding:10px}.memory-options button{min-height:54px}}
 @media(max-height:620px){.mission-shell{max-height:96dvh}.mission-top h2{font-size:20px}.mission-top{padding:11px}.mission-body{padding:10px}.mission-footer{padding:8px}.overlay{padding:5px}}
 @media(prefers-reduced-motion:reduce){*{scroll-behavior:auto!important;transition:none!important;animation:none!important}}
