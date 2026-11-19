@@ -106,9 +106,10 @@ test('adult receives three alternatives; changing one replaces effects, not rewa
  const {w,errors}=setup(main,lab);
  try{
   assert.equal(el(w,'labCount').textContent,'1 / 5 историй');
-  open(w,'generator');press(w,'#labNext');press(w,'#labNext');
+  open(w,'generator');
+  assert.match(el(w,'labBody').textContent,/энергосети/,'adult scenario uses adult-specific briefing');
+  press(w,'#labNext');press(w,'#labNext');
   assert.equal(choices(w).length,3);
-  assert.match(el(w,'labBody').textContent,/энергосети/);
   press(w,'[data-lab-option="0"]');
   const first=save(w);assert.equal(first.choices.generator,0);
   press(w,'#labClose');
