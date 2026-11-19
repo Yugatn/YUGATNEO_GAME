@@ -141,7 +141,7 @@ test('PWA lists workshop scripts and HTML includes all controls and no private d
   assert.ok(html.includes('./'+file));
   assert.ok(sw.includes("'./"+file+"'"));
  }
- assert.ok(sw.includes('yugatneo-symbiont-city-v4'));
+ assert.ok(sw.includes('yugatneo-symbiont-city-v5'));
  assert.ok(ui.includes("symbiont-city:export"));
  assert.ok(ui.includes("symbiont-city:cleared"));
  assert.ok(!ui.includes('initDataUnsafe'));

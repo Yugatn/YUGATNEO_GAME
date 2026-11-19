@@ -7,9 +7,11 @@ const original=fs.readFileSync(path.join(root,'index.html'),'utf8');
 const css=fs.readFileSync(path.join(root,'style.css'),'utf8');
 const labCSS=fs.readFileSync(path.join(root,'lab.css'),'utf8');
 const workshopsCSS=fs.readFileSync(path.join(root,'workshops.css'),'utf8');
+const routeCSS=fs.readFileSync(path.join(root,'help-route.css'),'utf8');
 const html=original.replace('<link rel="stylesheet" href="./style.css">','<style>'+css+'</style>')
  .replace('<link rel="stylesheet" href="./lab.css">','<style>'+labCSS+'</style>')
  .replace('<link rel="stylesheet" href="./workshops.css">','<style>'+workshopsCSS+'</style>')
+ .replace('<link rel="stylesheet" href="./help-route.css">','<style>'+routeCSS+'</style>')
  .replace(/<script[^>]*src="[^"]+"[^>]*><\/script>/g,'');
 const content=fs.readFileSync(path.join(root,'content.js'),'utf8');
 const engine=fs.readFileSync(path.join(root,'engine.js'),'utf8');
@@ -18,6 +20,8 @@ const decisions=fs.readFileSync(path.join(root,'decisions.js'),'utf8');
 const labUI=fs.readFileSync(path.join(root,'lab-ui.js'),'utf8');
 const workshops=fs.readFileSync(path.join(root,'workshops.js'),'utf8');
 const workshopsUI=fs.readFileSync(path.join(root,'workshops-ui.js'),'utf8');
+const helpRoute=fs.readFileSync(path.join(root,'help-route.js'),'utf8');
+const helpRouteUI=fs.readFileSync(path.join(root,'help-route-ui.js'),'utf8');
 async function open(browser,width,height){
  const page=await browser.newPage({viewport:{width,height},deviceScaleFactor:1});
  const errors=[];
@@ -38,6 +42,8 @@ async function open(browser,width,height){
  await page.addScriptTag({content:labUI});
  await page.addScriptTag({content:workshops});
  await page.addScriptTag({content:workshopsUI});
+ await page.addScriptTag({content:helpRoute});
+ await page.addScriptTag({content:helpRouteUI});
  await page.evaluate(()=>{
   document.getElementById('districtList').addEventListener('click',()=>window.__districtClicks=(window.__districtClicks||0)+1);
  });
@@ -234,5 +240,31 @@ test('complete real visual search, build a bridge, and preserve existing city pr
    assert.match(await page.locator('#cityLevel').textContent(),/0 \/ 14/);
    assert.deepEqual(errors,[]);
   }finally{await page.close();}
+ }finally{await browser.close();}
+});
+
+test('help route gameplay stays visible on portrait and desktop, with a reachable completion',async()=>{
+ const browser=await chromium.launch({headless:true,executablePath:process.env.CHROME_BIN||undefined,args:['--no-sandbox']});
+ try{
+  fs.mkdirSync(path.resolve(__dirname,'../test-artifacts/symbiont-city'),{recursive:true});
+  for(const [w,h] of [[320,700],[390,844],[1280,850]]){
+   const {page,errors}=await open(browser,w,h);
+   try{
+    await page.locator('#routeStart').click();
+    assert.equal(await page.locator('#routeOverlay').isVisible(),true);
+    const info=await page.evaluate(()=>{
+      const r=document.querySelector('.route-board').getBoundingClientRect();
+      return {width:r.width,left:r.left,right:r.right,overflow:document.documentElement.scrollWidth-innerWidth};
+    });
+    assert.ok(info.width>130&&info.left>=0&&info.right<=w+2&&info.overflow<=2,
+      'route board fits screen: '+w+' '+JSON.stringify(info));
+    assert.equal(await page.locator('[data-route-dir]').count(),4);
+    await page.locator('#routeHint').click();
+    assert.match(await page.locator('#routeBody').textContent(),/Совет:/);
+    assert.deepEqual(errors,[]);
+    if(w<=390)await page.screenshot({path:path.resolve(__dirname,
+      '../test-artifacts/symbiont-city/help-route-'+w+'x'+h+'.png')});
+   }finally{await page.close();}
+  }
  }finally{await browser.close();}
 });

@@ -12,6 +12,7 @@
 <link rel="stylesheet" href="./style.css">
 <link rel="stylesheet" href="./lab.css">
 <link rel="stylesheet" href="./workshops.css">
+<link rel="stylesheet" href="./help-route.css">
 <script src="https://telegram.org/js/telegram-web-app.js"></script>
 <script defer src="./content.js"></script>
 <script defer src="./engine.js"></script>
@@ -20,6 +21,8 @@
 <script defer src="./lab-ui.js"></script>
 <script defer src="./workshops.js"></script>
 <script defer src="./workshops-ui.js"></script>
+<script defer src="./help-route.js"></script>
+<script defer src="./help-route-ui.js"></script>
 </head>
 <body>
 <div id="app">
@@ -80,11 +83,19 @@
   <div class="workshop-heading">
    <div><div class="eyebrow">ИГРАЙ · ИССЛЕДУЙ · ПРОБУЙ СНОВА</div>
     <h2 id="workshopsHeading">Мастерские интеллекта</h2>
-    <p>Три настоящие мини-игры: найди пары по памяти, найди нужный знак среди других и построй безопасный мост. Без проигрыша за медлительность и без обязательных покупок.</p></div>
+    <p>Три мастерские и новое путешествие: память, внимание, строительство моста и маршрут помощи через лабиринт. Без проигрыша за медлительность и без обязательных покупок.</p></div>
    <span class="workshop-count" id="workshopsProgress">0 / 3</span>
   </div>
   <div class="workshop-village" id="workshopVillage" aria-label="Постепенно восстанавливающийся игровой город"></div>
   <div class="workshop-grid" id="workshopCards" aria-label="Мини-игры на память, внимание и планирование"></div>
+  <div class="help-route-entry">
+   <div class="help-route-intro"><div class="eyebrow">НОВОЕ ПРИКЛЮЧЕНИЕ · ПРОСТРАНСТВЕННОЕ МЫШЛЕНИЕ</div>
+    <h3>🧭 Маршрут помощи</h3>
+    <p>Исследуй коридоры, собери необходимые припасы и доставь их жителям. Запоминай повороты, планируй и при необходимости попроси подсказку.</p>
+    <small id="routeProgress">Новый маршрут доступен</small>
+   </div>
+   <button type="button" class="button primary" id="routeStart">▶ Войти в лабиринт</button>
+  </div>
   <div class="workshop-hint">Для 3–5 лет — совместное прохождение со взрослым. Для 0–2 лет — идеи живых игр без экрана. Возраст и сложность берутся из настроек выше; успехи оцениваются только внутри игры.</div>
  </section>
  <section class="bottom-grid">
@@ -133,6 +144,20 @@
   <div class="mission-footer">
    <button class="button ghost" id="workshopRestart" type="button">↻ Сначала</button>
    <button class="button primary" id="workshopDone" type="button">В город →</button>
+  </div>
+ </div>
+</section>
+<section id="routeOverlay" class="overlay" role="dialog" aria-modal="true" aria-labelledby="routeTitle" hidden>
+ <div class="mission-shell route-dialog">
+  <div class="mission-top"><div><div class="eyebrow">МАСТЕРСКАЯ · ПЛАНИРОВАНИЕ И ПАМЯТЬ</div>
+   <h2 id="routeTitle">🧭 Маршрут помощи</h2></div>
+   <button type="button" class="close" id="routeClose" aria-label="Закрыть маршрут">✕</button></div>
+  <div class="route-status"><span id="routeSupplies">Припасы 0/2</span><span id="routeSteps">Шаги: 0</span><span id="routeRecord">Рекорд: —</span></div>
+  <div id="routeBody" class="mission-body route-body" aria-live="polite"></div>
+  <div class="mission-footer">
+   <button type="button" class="button ghost" id="routeHint">◈ Подсказка</button>
+   <button type="button" class="button ghost" id="routeAgain">↻ Новый лабиринт</button>
+   <button type="button" class="button primary" id="routeDone">Вернуться в город</button>
   </div>
  </div>
 </section>
