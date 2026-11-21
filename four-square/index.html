@@ -1,0 +1,93 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, maximum-scale=1">
+  <meta name="theme-color" content="#0d1519">
+  <meta name="description" content="КВАДРАТ — футбольная игра на асфальтовом поле 2×2, адаптированная для Telegram Mini App.">
+  <meta name="color-scheme" content="dark">
+  <link rel="icon" href="./icon.svg" type="image/svg+xml">
+  <link rel="manifest" href="./manifest.webmanifest">
+  <link rel="stylesheet" href="./style.css">
+  <title>КВАДРАТ · футбольная мини-игра</title>
+  <script src="https://telegram.org/js/telegram-web-app.js"></script>
+  <script type="module" src="./app.mjs"></script>
+</head>
+<body>
+  <div class="app">
+    <header class="header">
+      <div class="identity">
+        <div class="emblem" aria-hidden="true"><i></i><i></i><i></i><i></i></div>
+        <div>
+          <span class="eyebrow">YUGATNEO · MINI GAME</span>
+          <h1>КВАДРАТ<span class="mini-ball">⚽</span></h1>
+        </div>
+      </div>
+      <div class="header-actions">
+        <span id="mode-pill" class="mode-pill">1 игрок + 3 бота</span>
+        <button id="share" class="icon-button" type="button" aria-label="Поделиться игрой" title="Поделиться игрой"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m14 5 5 5-5 5M19 10H9a5 5 0 0 0-5 5v4"/></svg></button>
+      </div>
+    </header>
+
+    <div class="app-grid">
+      <main class="game-main">
+        <div class="live-top">
+          <div class="score-stat"><span class="small-kicker">РОЗЫГРЫШ</span><strong id="round">01</strong></div>
+          <div class="center-live" role="status" aria-live="polite">
+            <span class="live-dot"></span>
+            <span id="phase">ТВОЯ ПОДАЧА</span>
+          </div>
+          <div class="score-stat right"><span class="small-kicker">ГОЛЫ ЗА МАТЧ</span><strong id="total-goals">0</strong></div>
+        </div>
+        <div class="field-shell">
+          <div class="field-rim">
+            <canvas id="field" width="760" height="760" role="img" aria-label="Игровое поле: четыре квадрата. Нажми на нужный квадрат, чтобы выбрать цель для удара.">Асфальтовое поле, разделённое на четыре квадрата.</canvas>
+          </div>
+          <div class="field-guide"><span><b class="legend-line"></b> Линия квадрата</span><span><b class="legend-center"></b> Центр — штраф</span><span><b class="legend-select"></b> Выбранная цель</span></div>
+        </div>
+        <div class="status-box" role="status" aria-live="polite">
+          <span class="status-icon" id="message-icon" aria-hidden="true">↗</span>
+          <div class="status-copy"><strong id="message-title">Начало игры</strong><p id="message">Выполни подачу по диагонали. Сначала мяч отскакивает в центре, затем в квадрате напротив.</p></div>
+        </div>
+        <div class="controls" id="controls">
+          <div class="control-heading"><span>УПРАВЛЕНИЕ МЯЧОМ</span><span id="control-tip">Твой квадрат — №1</span></div>
+          <div class="target-row"><span>Куда отбить:</span><div id="aim-chips" class="aim-chips" role="group" aria-label="Выбор квадрата для удара"></div></div>
+          <div class="action-row">
+            <button type="button" id="kick" class="action kick"><span aria-hidden="true">↗</span><span>НОГОЙ<small>после отскока</small></span></button>
+            <button type="button" id="head" class="action head"><span aria-hidden="true">◉</span><span>ГОЛОВОЙ<small>можно с лёта</small></span></button>
+            <button type="button" id="serve" class="action serve"><span aria-hidden="true">↗</span><span>ПОДАЧА<small>по диагонали</small></span></button>
+          </div>
+          <button type="button" id="reenter" class="reenter" hidden>Встать в очередь и вернуться на поле</button>
+          <p class="feedback" id="feedback" aria-live="polite">Выбери цель на поле и нажми кнопку удара, когда мяч у тебя.</p>
+        </div>
+      </main>
+
+      <aside class="sidebar">
+        <section class="panel standings">
+          <div class="panel-title"><span>СЧЁТ ИГРОКОВ</span><span class="subdued">до 5 голов</span></div>
+          <div id="scoreboard" class="scoreboard"></div>
+          <div class="queue-detail"><span>↻</span><span id="queue">Выбывшего игрока заменяет следующий участник.</span></div>
+        </section>
+        <section class="panel info-panel">
+          <div class="panel-title"><span>КАК ИГРАТЬ</span><span class="subdued">4 квадрата</span></div>
+          <div class="rules-grid">
+            <div class="rule"><b class="n">01</b><div><strong>Подача</strong><p>По диагонали: сначала центр, затем квадрат соперника. После этих двух отскоков можно бить ногой.</p></div></div>
+            <div class="rule"><b class="n">02</b><div><strong>Обычный удар</strong><p>Ногой — только после первого отскока в своём квадрате. Второй отскок — пропущенный гол.</p></div></div>
+            <div class="rule"><b class="n">03</b><div><strong>Удар головой</strong><p>Можно отбивать с лёта. Забитый гол головой = сразу 5 пропущенных и вылет.</p></div></div>
+            <div class="rule"><b class="n">04</b><div><strong>Штраф в центре</strong><p>Красный квадрат штрафует того, кто направил туда мяч. После пяти пропущенных — замена.</p></div></div>
+          </div>
+        </section>
+        <section class="panel news-panel">
+          <div class="panel-title"><span>СОБЫТИЯ МАТЧА</span><span class="subdued">прямой эфир</span></div>
+          <ol id="events" class="event-list"></ol>
+        </section>
+        <div class="side-actions">
+          <button id="restart" type="button" class="secondary-button">↻ Новая игра</button>
+          <button id="pause" type="button" class="secondary-button">Ⅱ Пауза</button>
+        </div>
+      </aside>
+    </div>
+    <footer class="footer"><span>© 2026 Югатн · YUGATNEO GAME</span><span>Локальный матч с ботами · без аккаунта и сбора данных</span></footer>
+  </div>
+</body>
+</html>

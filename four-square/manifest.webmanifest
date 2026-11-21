@@ -1,0 +1,11 @@
+{
+  "name": "КВАДРАТ — футбольная мини-игра",
+  "short_name": "КВАДРАТ",
+  "lang": "ru",
+  "description": "Асфальтовый квадрат на четыре игрока. До пяти пропущенных голов, удар головой с лёта и очередь замены.",
+  "start_url": "./",
+  "display": "standalone",
+  "background_color": "#0d1519",
+  "theme_color": "#0d1519",
+  "icons": [{ "src": "./icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any maskable" }]
+}
