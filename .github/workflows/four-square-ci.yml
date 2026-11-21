@@ -1,0 +1,35 @@
+name: Four Square Telegram Mini App tests
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'four-square/**'
+      - 'tests/four-square*.test.mjs'
+      - '.github/workflows/four-square-ci.yml'
+  pull_request:
+    branches: [main]
+    paths:
+      - 'four-square/**'
+      - 'tests/four-square*.test.mjs'
+      - '.github/workflows/four-square-ci.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Validate game rules and Telegram interface
+        run: node --test tests/four-square*.test.mjs
+      - name: Static asset syntax
+        run: |
+          node --check four-square/engine.mjs
+          node --check four-square/app.mjs
+          python3 -m json.tool four-square/manifest.webmanifest >/dev/null
