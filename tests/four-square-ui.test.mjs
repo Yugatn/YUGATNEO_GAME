@@ -20,6 +20,10 @@ test('mobile UI, telegram bridge and standalone PWA files', () => {
   assert.match(html, /type="module" src="\.\/app\.mjs"/);
   assert.match(app, /tg\?\.ready\?\./);
   assert.match(app, /tg\?\.expand\?\./);
+  assert.match(app, /tg\.requestFullscreen\(\)/);
+  assert.match(app, /tg\.openTelegramLink\(url\)/);
+  assert.match(html, /id="fullscreen"/);
+  assert.match(css, /\.icon-button\[hidden\]/);
   assert.match(app, /visibilitychange/);
   assert.match(css, /@media\(max-width:475px\)/);
   assert.equal(manifest.display, 'standalone');

@@ -89,20 +89,20 @@ test('after fifth conceded replaces player and serves again',()=>{
   g.tick(50);
 });
 
-test('reserve human returns to vacant slot after a queue rotation',()=>{
+test('waiting human returns in the first vacant square, ahead of fallback bots',()=>{
   const g=make();
   g.penalty(0,5,'header');
   assert.equal(g.requestReentry(),true);
-  g.beginServe(0);
-  g.penalty(1,5,'header');
+  assert.equal(g.requestReentry(),false,'do not queue same player twice');
+  assert.equal(g.queue.length,1,'a bot must not be inserted before a waiting human');
   assert.equal(g.humanSeat,-1);
   g.beginServe(0);
   g.penalty(1,5,'header');
   assert.equal(g.humanSeat,1);
   assert.equal(g.players[1].name,'Ты');
   assert.equal(g.humanQueued,false);
+  assert.equal(g.queue.length,0);
 });
-
 test('bot starts automatic diagonal serve in no-human corner',()=>{
   const g=make();
   g.beginServe(1);

@@ -20,6 +20,28 @@ try {
   tg?.setBackgroundColor?.('#0d1519');
 } catch (_) { /* The game also works as an ordinary web page. */ }
 
+const fullscreenButton = $('fullscreen');
+function updateFullscreenButton() {
+  const available = Boolean(tg?.requestFullscreen && tg?.isVersionAtLeast?.('8.0'));
+  fullscreenButton.hidden = !available;
+  if (available) {
+    const active = Boolean(tg.isFullscreen);
+    fullscreenButton.title = active ? 'Свернуть полный экран' : 'Полный экран в Telegram';
+    fullscreenButton.setAttribute('aria-pressed', String(active));
+  }
+}
+fullscreenButton.addEventListener('click', () => {
+  try {
+    if (!tg?.requestFullscreen) return;
+    if (tg.isFullscreen) tg.exitFullscreen?.();
+    else tg.requestFullscreen();
+  } catch (_) {
+    feedback('Полноэкранный режим недоступен в этой версии Telegram.', true);
+  }
+});
+try { tg?.onEvent?.('fullscreenChanged', updateFullscreenButton); } catch (_) {}
+updateFullscreenButton();
+
 const colors = SEATS.map(p => p.color);
 const aimChips = [];
 for (let i = 0; i <= 4; i += 1) {
@@ -91,7 +113,12 @@ $('pause').addEventListener('click', () => {
 $('share').addEventListener('click', async () => {
   const share = { title: 'КВАДРАТ — футбольная игра', text: 'Футбол в квадрате: 4 сектора, 5 голов и удар головой с лёта!', url: location.href.split('?')[0] };
   try {
-    if (navigator.share) await navigator.share(share);
+    // Telegram's native share sheet shares the game link; it does not create an online match.
+    if (tg?.openTelegramLink) {
+      const url = 'https://t.me/share/url?url=' + encodeURIComponent(share.url) +
+        '&text=' + encodeURIComponent(share.text);
+      tg.openTelegramLink(url);
+    } else if (navigator.share) await navigator.share(share);
     else if (navigator.clipboard) { await navigator.clipboard.writeText(share.url); feedback('Ссылка скопирована.'); }
     else feedback('Скопируй адрес страницы из браузера.');
   } catch (_) { /* User cancelled the share sheet. */ }
@@ -164,7 +191,7 @@ function renderUI() {
     el.append(jersey, meta, tally);
     return el;
   }));
-  const queue = game.humanQueued ? 'Ты в очереди. На свободное место сначала выйдет резервный игрок.' :
+  const queue = game.humanQueued ? 'Ты в очереди. Войдёшь в следующий освободившийся квадрат.' :
     game.humanSeat < 0 ? 'Ты выбыл. Нажми «Встать в очередь», чтобы вернуться.' :
     'Пять пропущенных голов — вылет. Следующий участник занимает свободный квадрат.';
   $('queue').textContent = queue;

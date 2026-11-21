@@ -1,4 +1,4 @@
-const CACHE = 'yugatneo-four-square-v1';
+const CACHE = 'yugatneo-four-square-v2';
 const SHELL = ['./', './index.html', './style.css', './engine.mjs', './app.mjs', './icon.svg', './manifest.webmanifest'];
 self.addEventListener('install', event => {
   event.waitUntil(caches.open(CACHE).then(cache => cache.addAll(SHELL)).then(() => self.skipWaiting()));
