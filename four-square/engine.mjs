@@ -187,9 +187,9 @@ export class SquareGame {
   requestReentry() {
     if (this.humanSeat !== -1) return false;
     if (this.humanQueued) return false;
-    // Player can wait behind a bot or two; at most 2 are queued by design.
-    if (this.queue.length === 0) this.queue.push(this.newBot());
-    this.queue.push({ id: 'human', name: this.humanName, human: true, conceded: 0 });
+    // A real person always takes the next vacated square. Bots are fallback replacements,
+    // not ahead of a waiting player. The queue can be extended with online players later.
+    this.queue.unshift({ id: 'human', name: this.humanName, human: true, conceded: 0 });
     this.humanQueued = true;
     this.notice('Ты в очереди. Когда освободится место после вылета, вернёшься на поле.', 'info');
     return true;
