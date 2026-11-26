@@ -1,3 +1,19 @@
+# Каталог мини-приложений YUGATNEO
+
+- **[Игры](https://yugatn.github.io/YUGATNEO_GAME/games/)** — отдельный каталог игровых приложений.
+- **[Психологические тесты](https://yugatn.github.io/YUGATNEO_GAME/psychology/)** — самостоятельный раздел для саморефлексии.
+
+### Психологические приложения
+
+- [Мотивация по Герчикову](https://yugatn.github.io/YUGATNEO_GAME/psychology/motivation-wheel/)
+- [Формула темперамента Белова](https://yugatn.github.io/YUGATNEO_GAME/psychology/belov-temperament/)
+- [Психогеометрия Деллингер](https://yugatn.github.io/YUGATNEO_GAME/psychology/psychogeometry/)
+- [Цветовой тест Люшера](https://yugatn.github.io/YUGATNEO_GAME/psychology/luscher-color/)
+
+Старые ссылки на психологические приложения перенаправляют на новый раздел. Папка `tests/` содержит программные автотесты и не относится к психологическим опросникам.
+
+---
+
 # YUGATNEO GAME — CHESS и MATRIX RUNNER
 
 ## КВАДРАТ — Telegram Mini App · футбольная игра
