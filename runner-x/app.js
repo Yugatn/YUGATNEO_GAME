@@ -4,9 +4,9 @@
 const Core=window.MatrixRunnerXCore,Renderer=window.MatrixRunnerXRenderer;
 const $=id=>document.getElementById(id);
 const canvas=$('scene'),renderer=new Renderer(canvas);
-let state=Core.newGame();let last=0,best=readBest('standard');let lastPhase='ready';let telegram=null,accumulator=0;
 const labels={training:'ОБУЧЕНИЕ',standard:'СТАНДАРТ',expert:'ЭКСПЕРТ'};
 const storageKey=d=>'yugatneo.matrixRunnerX.best.v1'+(d==='standard'?'':'.'+d);
+let state=Core.newGame();let last=0,best=readBest('standard');let lastPhase='ready';let telegram=null,accumulator=0,lastSaved=0;
 const nf=new Intl.NumberFormat('ru-RU');
 function readBest(d){try{const s=Number(localStorage.getItem(storageKey(d)));return Number.isSafeInteger(s)&&s>0&&s<1000000000?s:0;}catch{return 0;}}
 function saveBest(){if(state.score<=best)return;best=state.score;try{localStorage.setItem(storageKey(state.difficulty),String(best));}catch{}}
@@ -28,8 +28,8 @@ function showOverlay(kind){const ready=kind==='ready',paused=kind==='paused';
   $('overlay-tips').textContent=ready?'Свайп или клавиши: влево / вправо / вверх. Центр экрана — прыжок.':paused?'КЛАВИШИ: ПРОБЕЛ, ←, →, F, V, P':'ПРОБУЙ ДРУГОЙ ПУТЬ И СОБИРАЙ ОЧКИ';
   $('start').textContent=ready?'▶ НАЧАТЬ':paused?'▶ ПРОДОЛЖИТЬ':'↻ ЕЩЁ РАЗ';
 }
-function begin(){if(state.phase==='gameover'||state.phase==='ready'){state=Core.newGame((Math.random()*4294967296)>>>0,$('difficulty').value);best=readBest(state.difficulty);renderer.yaw=0;}
-  accumulator=0;Core.start(state);$('overlay').hidden=true;last=performance.now();lastPhase='running';haptic('light');canvas.focus({preventScroll:true});}
+function begin(){if(state.phase==='running')return;if(state.phase==='gameover'||state.phase==='ready'){state=Core.newGame((Math.random()*4294967296)>>>0,$('difficulty').value);best=readBest(state.difficulty);renderer.yaw=0;}
+  accumulator=0;lastSaved=performance.now();Core.start(state);$('overlay').hidden=true;last=performance.now();lastPhase='running';haptic('light');canvas.focus({preventScroll:true});}
 function pause(){if(state.phase==='running'){saveBest();Core.pause(state);showOverlay('paused');lastPhase='paused';}
  else if(state.phase==='paused')begin();}
 function action(name){if(state.phase!=='running')return;
@@ -52,7 +52,7 @@ canvas.addEventListener('pointerup',e=>{if(!gesture||gesture.id!==e.pointerId)re
 },{passive:false});
 canvas.addEventListener('pointercancel',()=>{gesture=null;});
 for(const id of ['left','right','jump','fire'])$(id).addEventListener('click',e=>{if(e.detail===0)action(id);});
-window.addEventListener('keydown',e=>{if(['Space','ArrowUp','ArrowLeft','ArrowRight','KeyW','KeyA','KeyD'].includes(e.code))e.preventDefault();
+window.addEventListener('keydown',e=>{if(e.target?.matches?.('select,input,textarea,button,[contenteditable=true]'))return;if(['Space','ArrowUp','ArrowLeft','ArrowRight','KeyW','KeyA','KeyD'].includes(e.code))e.preventDefault();
   if(e.repeat)return;
   if(e.code==='Space'||e.code==='ArrowUp'||e.code==='KeyW')action('jump');
   if(e.code==='ArrowLeft'||e.code==='KeyA')action('left');
@@ -64,6 +64,7 @@ window.addEventListener('keydown',e=>{if(['Space','ArrowUp','ArrowLeft','ArrowRi
 },{passive:false});
 document.addEventListener('visibilitychange',()=>{if(document.hidden&&state.phase==='running')pause();});
 window.addEventListener('blur',()=>{if(state.phase==='running')pause();});
+window.addEventListener('pagehide',saveBest);
 if(window.ResizeObserver)new ResizeObserver(()=>renderer.resize()).observe(canvas);
 window.addEventListener('resize',()=>renderer.resize(),{passive:true});
 let hudTime=0;
@@ -92,7 +93,7 @@ function tick(now){const dt=last?Math.max(0,(now-last)/1000):1/60;last=now;
       if(ev==='gameover'){saveBest();showOverlay('over');lastPhase='gameover';haptic('heavy');}
     }
     }
-    if(state.phase==='running')saveBest();
+    if(state.phase==='running'&&now-lastSaved>=1000){saveBest();lastSaved=now;}
   }
   renderer.scene(state,Math.min(.05,dt));updateHud(dt);
   requestAnimationFrame(tick);
