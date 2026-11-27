@@ -1,0 +1,46 @@
+// Planet X — repeatable UI logic smoke test (mock DOM, no browser layout).
+// Run: node ideas-x/tests/interface-smoke.cjs
+const fs=require("node:fs");
+const path=require("node:path");
+function runSmoke(html) {
+const assert=(condition,label)=>{if(!condition)throw Error(label);passed.push(label)},passed=[];
+const js=html.split("<script>")[1].split("</script>")[0];
+const ids=[...html.matchAll(/\bid="([^"]+)"/g)].map(m=>m[1]);
+assert(new Set(ids).size===ids.length,"Unique HTML IDs");
+assert([...js.matchAll(/\$\("([^"]+)"\)/g)].every(m=>ids.includes(m[1])),"All DOM references exist");
+class MockNode {
+constructor(){this.value="";this.checked=false;this.hidden=false;this.disabled=false;this.dataset={};this.attrs={};this.children=[];this.listeners={};this._html="";this.scrollTop=0;let set=new Set();this.classList={toggle:(k,v)=>{let on=v===undefined?!set.has(k):!!v;if(on)set.add(k);else set.delete(k);return on},contains:k=>set.has(k)}}
+set innerHTML(v){this._html=v;let o=v.match(/<option value="([^"]*)"/);if(o&&!this.value)this.value=o[1]}get innerHTML(){return this._html}
+appendChild(n){this.children.push(n);return n}replaceChildren(...n){this.children=n}setAttribute(k,v){this.attrs[k]=v}addEventListener(k,v){this.listeners[k]=v}querySelectorAll(){return []}
+}
+const els=Object.fromEntries(ids.map(id=>[id,new MockNode()])),store={},listeners={};
+const doc={getElementById:k=>els[k]||null,createElementNS:()=>new MockNode(),createDocumentFragment:()=>new MockNode(),addEventListener:(k,v)=>listeners[k]=v,hidden:false};
+new Function("document","window","localStorage","fetch","AbortSignal","setInterval","clearInterval","confirm",js)(doc,{addEventListener:(k,v)=>listeners[k]=v},{getItem:k=>store[k]||null,setItem:(k,v)=>store[k]=v},async()=>{throw Error("offline test")},{timeout:()=>null},()=>1,()=>{},()=>true);
+const state=()=>JSON.parse(store["ideas-x-v1"]),click=(el,dataset)=>el.onclick({target:{closest:()=>({dataset})}});
+const tabs=["overview","system","society","science","peace","generations","development","chronicle","settings"];
+const switchTo=id=>{if(tabs.slice(0,4).includes(id))click(els.deckNav,{tab:id});else els.moreTabs.onchange({target:{value:id}})};
+assert(tabs.every(t=>els[t].hidden===(t!=="overview")),"Initial overview only");
+assert(!els.start.hidden&&els.start.disabled&&els.controls.hidden,"Start visible, disabled until selection");
+assert(els.econGlobal.innerHTML===""&&els.scienceGlobal.innerHTML==="","Inactive panels not rendered");
+els.mode.value="sandbox";els.regionSelect.value="eu";els.regionSelect.onchange({target:els.regionSelect});
+assert(!els.start.disabled&&els.start.textContent==="Начать здесь","Region unlocks fixed start");
+els.start.onclick();
+assert(state().started&&state().selected==="eu"&&els.start.hidden&&!els.controls.hidden,"Start swaps to time controls");
+for(let t of tabs){switchTo(t);assert(tabs.every(k=>els[k].hidden===(k!==t)),"Single active panel: "+t)}
+switchTo("system");els.deckScroll.scrollTop=155;switchTo("society");switchTo("system");
+assert(els.deckScroll.scrollTop===155,"Restore tab scroll position");
+assert(els.econGlobal.innerHTML.includes("Устойчивость мира"),"Economy rendered on demand");
+switchTo("generations");els.enroll.onclick();assert(state().generations.length===1,"School moved and works");
+switchTo("science");click(els.techGrid,{science:"launch",tech:"water"});assert(state().research[0]?.tech==="water","Science action");
+click(els.controls,{step:"7"});assert(state().day===7,"Time control independent of tab");
+els.layer.onchange({target:{value:"ecology"}});assert(els.layer.value==="ecology","Map layer selection");
+els.mapZoom.onclick();assert(els.mapwrap.classList.contains("zoomed"),"Map zoom");
+switchTo("settings");els.mapMotion.onclick();assert(els.atlas.classList.contains("noMotion"),"Animation preference");
+els.reset.onclick();assert(state().day===0&&!state().started&&!els.overview.hidden&&els.settings.hidden,"Reset returns to overview");
+assert(els.start.disabled&&els.controls.hidden,"Reset restores start controls");
+switchTo("system");assert(els.deckScroll.scrollTop===0,"Reset clears scroll memory");
+return passed;
+}
+const passed=runSmoke(fs.readFileSync(path.join(__dirname,"../index.html"),"utf8"));
+for(const label of passed)console.log("PASS "+label);
+console.log(passed.length+" checks passed");
