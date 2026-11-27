@@ -43,6 +43,15 @@ result.audioZero=audioPrefs({music:0}).music===0;
 result.audioIndependent=audioLevel("music",{music:20,effects:80})===.2&&audioLevel("effects",{music:20,effects:80})===.8;
 result.audioThemes=audioTheme("running",false,false,false)==="battle"&&audioTheme("paused",false,false,false)===null&&audioTheme("paused",true,true,true)==="space"&&audioTheme("paused",true,false,true)==="society"&&audioTheme("paused",true,false,false)==="inner";
 result.audioScores=Object.values(AUDIO_THEMES).every(n=>n.length===6&&n.every(v=>Number.isFinite(v)&&v>0));
+const preview=create(0,1,42,metaNew()),before=JSON.stringify(preview);
+result.placementPreview=placementIssue(preview,0,0,"attention")===null&&JSON.stringify(preview)===before;
+result.placementBounds=placementIssue(preview,-1,0,"attention")==="bounds";
+result.placementTeam=placementIssue(preview,0,0,"courage")==="team";
+result.placementOccupied=place(preview,0,0,"attention")&&placementIssue(preview,0,0,"attention")==="occupied";
+result.placementCooldown=placementIssue(preview,0,1,"attention")==="cooldown";
+preview.cool.attention=0;preview.clarity=0;result.placementClarity=placementIssue(preview,0,1,"attention")==="clarity";
+preview.clarity=1000;addEnemy(preview,{key:"greed",r:0});preview.enemies[0].x=1.5;result.placementEnemy=placementIssue(preview,0,1,"attention")==="enemy";
+preview.phase="lost";result.placementFinished=placementIssue(preview,1,1,"attention")==="finished";
 return result})()
 `)();
 const ids=new Set(Array.from(html.slice(0,html.indexOf("<script>")).matchAll(/\bid="([^"]+)"/g),m=>m[1]));
