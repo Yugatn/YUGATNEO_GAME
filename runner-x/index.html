@@ -46,6 +46,8 @@ canvas{display:block;width:100%;height:100%;touch-action:none;outline:none}
 @media(max-height:670px){.bar{padding-top:max(7px,env(safe-area-inset-top));padding-bottom:5px}.metric{padding-top:4px;padding-bottom:4px}.metric strong{font-size:17px}.actions{grid-template-rows:46px 38px;gap:6px}.splash-art{height:120px}.splash h1{font-size:27px}.splash p{font-size:11px}.btn-start{padding:10px}}
 @media(min-width:731px){.app{box-shadow:0 0 120px #0009}.stage{min-height:470px}.actions{grid-template-rows:62px 46px}}
 @media(prefers-reduced-motion:reduce){.btn-start,.control{transition:none!important}.splash-art{filter:none}}
+.status-line{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:6px 12px;font-size:11px;background:#0d222b;color:#b0dedf;font-weight:800;position:relative;z-index:4}.status-line strong{color:#92eeff}.difficulty{width:min(100%,300px);padding:9px 12px;border:1px solid #32636a;border-radius:10px;background:#102a31;color:#effff9;font:inherit;font-size:13px}.difficulty[hidden]{display:none}.splash-art{height:clamp(90px,19vh,190px)}.instructions{line-height:1.45}
+@media(max-height:670px){.splash-art{height:76px}.overlay{padding:9px 14px}.splash{gap:5px}.btn-start{margin-top:5px;min-height:42px}.instructions{margin-top:3px}}
 </style>
 <script src="https://telegram.org/js/telegram-web-app.js" defer></script>
 </head>
@@ -57,6 +59,7 @@ canvas{display:block;width:100%;height:100%;touch-action:none;outline:none}
   <div class="metric"><label>РЕКОРД</label><strong id="best">0</strong></div>
   <div class="metric"><label>УРОВЕНЬ</label><strong id="level">1</strong></div>
  </div>
+ <div class="status-line"><span id="data-status">КОД: 0 · ЩИТ: 0/5</span><strong id="difficulty-status">СТАНДАРТ</strong></div>
  <section class="stage" id="stage" aria-label="Трёхмерная трасса Matrix Runner X">
   <canvas id="scene" role="img" tabindex="0" aria-label="Вид сверху на бегуна в круглых очках: нажми центр, чтобы прыгнуть, края — чтобы повернуть или сменить полосу"></canvas>
   <div class="vignette"></div>
@@ -78,6 +81,7 @@ canvas{display:block;width:100%;height:100%;touch-action:none;outline:none}
     </svg>
     <h1 id="overlay-title">MATRIX<br><em>RUNNER X</em></h1>
     <p id="overlay-description">Беги сквозь спиральный мир. <span class="highlight">Прыгай по центру</span>, поворачивай касанием краёв, поднимайся на новые уровни. Портал открывает код Матрицы и суперспособность.</p>
+    <select class="difficulty" id="difficulty" aria-label="Сложность игры"><option value="training">Обучение · защитный щит</option><option value="standard" selected>Стандарт · классический режим</option><option value="expert">Эксперт · высокая скорость</option></select>
     <button type="button" class="btn-start" id="start">▶ НАЧАТЬ</button>
     <div class="instructions" id="overlay-tips">◁ КРАЙ — ЛЕВО · ЦЕНТР — ПРЫЖОК · ПРАВЫЙ КРАЙ — ПРАВО ▷</div>
    </div>
@@ -92,8 +96,8 @@ canvas{display:block;width:100%;height:100%;touch-action:none;outline:none}
    <button class="control small" type="button" id="pause" aria-label="Пауза">Ⅱ ПАУЗА</button>
  </nav>
 </main>
-<script src="./engine.js"></script>
-<script src="./render.js"></script>
-<script src="./app.js"></script>
+<script src="./engine.js?v=2"></script>
+<script src="./render.js?v=2"></script>
+<script src="./app.js?v=2"></script>
 </body>
 </html>
