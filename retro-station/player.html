@@ -1,0 +1,25 @@
+<!doctype html><html lang="ru"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Retro Station Player</title><style>html,body,#game{width:100%;height:100%;margin:0;background:#080c14;color:#e6edff;font:15px system-ui}#notice{position:absolute;inset:0;display:grid;place-items:center;text-align:center;padding:18px;pointer-events:none}#notice[hidden]{display:none}</style></head><body><div id="game"></div><div id="notice">Загрузка…</div><script>
+"use strict";
+const SYSTEMS={"nes":["Dendy / NES / Famicom","nes zip",16],"segaMD":["Sega Mega Drive / Genesis","md gen bin smd zip",32],"segaMS":["Sega Master System","sms zip",16],"segaGG":["Sega Game Gear","gg zip",16],"snes":["Super Nintendo / Super Famicom","sfc smc zip",32],"gba":["Game Boy Advance","gba zip",64],"psx":["PlayStation 1","chd pbp iso bin zip",800]}, CDN="https://cdn.emulatorjs.org/4.2.3/data/",VERSION="4.2.3";
+let current=null,started=false,auto=true,interval=null,safeToSave=false;
+function send(type,extra={}){parent.postMessage({type,session:current?.session,...extra},location.origin)}
+function status(state,text){send("retro-status",{state,text})}
+function error(text){document.getElementById("notice").hidden=false;document.getElementById("notice").textContent=text;status("error",text)}
+function manager(){return window.EJS_emulator?.gameManager}
+async function snapshot(request=null){try{if(!started||!safeToSave)throw Error("Игра не готова к сохранению.");const gm=manager();if(typeof gm?.getState!=="function")throw Error("Ядро не предоставляет состояние.");const value=await gm.getState();const bytes=value instanceof ArrayBuffer?new Uint8Array(value):ArrayBuffer.isView(value)?new Uint8Array(value.buffer,value.byteOffset,value.byteLength):null;if(!bytes?.length||bytes.length>64*1048576)throw Error("Некорректный размер состояния.");send("retro-snapshot",{bytes:bytes.slice(),request,version:VERSION,id:current.id})}catch(e){send("retro-save-error",{request,text:e.message||String(e)})}}
+async function restore(bytes){if(!started||!manager()||typeof manager().loadState!=="function")throw Error("Восстановление недоступно.");if(!(bytes instanceof Uint8Array)||!bytes.length||bytes.length>64*1048576)throw Error("Некорректное состояние.");await manager().loadState(bytes);safeToSave=true}
+window.addEventListener("message",async e=>{
+ if(e.origin!==location.origin||e.source!==parent)return;const d=e.data;if(!d||typeof d.type!=="string")return;
+ if(d.type==="retro-init"&&!current){const s=SYSTEMS[d.core];if(!s||!(d.file instanceof Blob)||!d.file.size||d.file.size>s[2]*1048576||typeof d.id!=="string"||typeof d.session!=="string")return;current=d;auto=d.auto!==false;
+ try{Object.assign(window,{EJS_player:"#game",EJS_core:d.core,EJS_gameUrl:d.file,EJS_gameName:d.id,EJS_gameID:parseInt(d.id.split(":").pop().slice(0,8),16),EJS_pathtodata:CDN,EJS_biosUrl:d.bios instanceof Blob?d.bios:"",EJS_threads:false,EJS_startOnLoaded:false,EJS_language:"ru-RU",EJS_color:"#6596ff",EJS_backgroundColor:"#080c14",EJS_askBeforeExit:false,EJS_volume:0.5,EJS_startButtonName:"Начать игру",EJS_ready:()=>{document.getElementById("notice").hidden=true;status("ready","Ядро готово. Нажмите «Начать игру».")},EJS_onGameStart:async()=>{if(started)return;started=true;document.getElementById("notice").hidden=true;try{if(d.resume){await restore(d.resume);status("running","Последнее состояние восстановлено.")}else{safeToSave=true;status("running","Игра запущена.")}}catch(e){safeToSave=false;status("running","Не удалось восстановить состояние. Автосохранение заблокировано до ручного сохранения.")}interval=setInterval(()=>{if(auto&&safeToSave)snapshot()},30000)},EJS_onExit:()=>{started=false;safeToSave=false;clearInterval(interval);status("exit","Игра завершена.")}});
+ const script=document.createElement("script");script.src=CDN+"loader.js";script.onerror=()=>error("Ядро недоступно. Подключитесь к интернету или проверьте офлайн-кэш.");document.head.append(script);status("loading","Загрузка ядра и образа…");
+ }catch(e){error(e.message||String(e))}return}
+ if(!current||d.session!==current.session)return;
+ if(d.type==="retro-save"){if(d.manual&&started)safeToSave=true;await snapshot(d.request)}
+ if(d.type==="retro-auto")auto=!!d.enabled;
+ if(d.type==="retro-restore"){try{await restore(d.bytes);status("running","Состояние восстановлено.")}catch(err){status("running","Ошибка восстановления: "+err.message)}}
+});
+document.addEventListener("visibilitychange",()=>{if(document.hidden&&auto&&safeToSave)snapshot()});
+window.addEventListener("pagehide",()=>clearInterval(interval));
+parent.postMessage({type:"retro-player-ready"},location.origin);
+</script></body></html>
