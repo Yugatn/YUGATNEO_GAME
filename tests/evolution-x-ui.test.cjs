@@ -131,3 +131,15 @@ test('cell alternative control, generation notification and sound preference',()
  assert.equal(element(w,'soundPause').getAttribute('aria-pressed'),'true');
  w.close();
 });
+
+test('world brief and chronicle render on pause, old state remains readable',()=>{
+ const saved=Core.create(3);Core.start(saved);saved.planet=2;
+ saved.chronicle=[{planet:1,name:'Криос',portals:3,runHits:0,spaceHits:0,medals:['Звёздный пилот'],bonus:150}];
+ const {w}=setup(saved);element(w,'start').click();
+ assert.match(element(w,'worldTrait').textContent,/четыре ускорения/);
+ element(w,'pause').click();
+ assert.match(element(w,'pauseWorld').textContent,/Аврора/);
+ assert.match(element(w,'journal').textContent,/Криос/);
+ assert.match(element(w,'journal').textContent,/Звёздный пилот/);
+ w.close();
+});

@@ -47,6 +47,9 @@ canvas{position:absolute;inset:0;width:100%;height:100%;touch-action:none;displa
 #divideNext[hidden]{display:none}
 #planet{max-width:48%;overflow:hidden;text-overflow:ellipsis}
 #mission{min-width:0}
+#worldTrait{position:absolute;top:calc(124px + env(safe-area-inset-top));left:14px;right:105px;color:#b8d9d4;font-size:11px;line-height:1.3;z-index:2;pointer-events:none;text-shadow:0 1px 4px #000}
+#journal{max-height:125px;overflow:auto;padding:8px 16px 8px 24px;margin:0;width:min(100%,440px);text-align:left;font-size:12px;line-height:1.5;color:#b7d9d9;background:#102c38;border:1px solid #366963;border-radius:10px}
+#pauseWorld{font-weight:800;color:#a7ffd9}
 .control:disabled{opacity:.55;cursor:default}
 @media(max-width:360px){.metrics{gap:8px}.metric strong{font-size:14px}.brand b{font-size:17px}#planet{font-size:10px;padding:5px 6px}}
 .overlay{position:absolute;inset:0;z-index:10;display:flex;align-items:center;justify-content:center;flex-direction:column;overflow-y:auto;gap:12px;padding:calc(25px + env(safe-area-inset-top)) 20px calc(25px + env(safe-area-inset-bottom));text-align:center;background:radial-gradient(ellipse at 50% 23%,#153d4b,#071625 49%,#020813 100%)}
@@ -80,6 +83,7 @@ canvas{position:absolute;inset:0;width:100%;height:100%;touch-action:none;displa
 </header>
 <div class="progress"><div id="fill"></div></div>
 <div class="phase"><span id="mission">Коснись первой клетки</span><span id="planet">МИР · 1</span></div>
+<div id="worldTrait"></div>
 <button id="pause" type="button">Ⅱ ПАУЗА</button>
 <div class="message" id="message" role="status" aria-live="polite"></div>
 <div class="note" id="cellNote">Касайтесь ярких клеток. Следующее поколение активируется после завершения текущего. Пробел — альтернативное управление.</div>
@@ -118,6 +122,9 @@ canvas{position:absolute;inset:0;width:100%;height:100%;touch-action:none;displa
 </section>
 <section class="overlay" id="paused" hidden aria-labelledby="pauseTitle">
   <div class="kicker">ВРЕМЯ ОСТАНОВЛЕНО</div><h1 id="pauseTitle">ПАУЗА</h1>
+  <p id="pauseWorld"></p>
+  <div class="kicker">ХРОНИКА ПОСЛЕДНИХ МИРОВ</div>
+  <ul id="journal" aria-label="Хроника пройденных миров"></ul>
   <p>Прогресс сохраняется только на этом устройстве. Можно продолжить или вернуться в начало.</p>
   <button id="resume" class="start" type="button">▶ ПРОДОЛЖИТЬ</button>
   <button id="soundPause" class="secondary" type="button" aria-pressed="false">♪ Звук выключен</button>

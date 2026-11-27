@@ -8,6 +8,19 @@ const CELL_GOAL=256;
 const RUN_GOAL=760;
 const SPACE_GOAL=900;
 const VALID_PHASES=['intro','cells','emergence','runner','launch','space','landing'];
+// Fictional gameplay parameters; not real astronomical measurements.
+const PROFILES=Object.freeze([
+ {name:'Исток',gravity:1,runSpeed:23,spaceSpeed:25,runnerGap:25,asteroidGap:25,boost:3,cellBonus:0,trait:'Равновесие · базовая физика'},
+ {name:'Криос',gravity:.65,runSpeed:21,spaceSpeed:23,runnerGap:28,asteroidGap:27,boost:3,cellBonus:1,trait:'Слабая гравитация · длинные прыжки'},
+ {name:'Аврора',gravity:.85,runSpeed:26,spaceSpeed:27,runnerGap:24,asteroidGap:25,boost:4,cellBonus:2,trait:'Энергетическое поле · четыре ускорения'},
+ {name:'Гелиос',gravity:1.4,runSpeed:28,spaceSpeed:30,runnerGap:23,asteroidGap:23,boost:3,cellBonus:3,trait:'Сильная гравитация · короткие прыжки'},
+ {name:'Элизиум',gravity:.95,runSpeed:24,spaceSpeed:26,runnerGap:27,asteroidGap:28,boost:4,cellBonus:4,trait:'Стабильная среда · редкие препятствия'}
+].map(Object.freeze));
+function profile(planet){
+ const n=Number.isSafeInteger(planet)&&planet>=0?planet:0;
+ return PROFILES[n%PROFILES.length];
+}
+function speedBonus(planet){return Math.min(4,Math.floor(planet/PROFILES.length)*.6);}
 function rand(s){s.seed=(Math.imul(s.seed,1664525)+1013904223)>>>0;return s.seed/4294967296;}
 function chooseLane(s){return Math.floor(rand(s)*3)-1;}
 function newCellState(s){
@@ -21,7 +34,7 @@ function runnerEntities(s){
   const types=['block','bar','block','step','agent','block'];
   const type=types[(Math.floor(loc/30)+s.planet)%types.length];
   list.push({id:'r'+s.planet+'-'+list.length,at:loc,lane,type,done:false});
-  loc+=25+Math.floor(rand(s)*9);
+  loc+=profile(s.planet).runnerGap+Math.floor(rand(s)*9);
  }
  for(const at of [135,345,580]){
   // Keep portal entry free of same-lane obstacles nearby.
@@ -37,7 +50,7 @@ function spaceEntities(s){
  while(at<SPACE_GOAL-35){
   list.push({id:'a'+s.planet+'-'+list.length,at,lane:chooseLane(s),
     size:0.7+rand(s)*.75,done:false});
-  at+=25+Math.floor(rand(s)*13);
+  at+=profile(s.planet).asteroidGap+Math.floor(rand(s)*13);
  }
  return list;
 }
@@ -50,7 +63,7 @@ function newRunner(s){
 }
 function newSpace(s){
  s.space={
-  distance:0,furthest:0,lane:0,hull:3,invulnerable:0,boostTime:0,boostCharges:3,
+  distance:0,furthest:0,lane:0,hull:3,invulnerable:0,boostTime:0,boostCharges:profile(s.planet).boost,boostCapacity:profile(s.planet).boost,
   avoided:0,hits:0,asteroids:spaceEntities(s)
  };
 }
@@ -58,7 +71,7 @@ function create(seed){
  const s={version:1,phase:'intro',seed:Number.isInteger(seed)?seed>>>0:2026,
   planet:0,score:0,totalDistance:0,time:0,nextId:0,events:[],
   cells:[],wave:0,waveRemaining:0,divisions:0,transition:0,
-  runner:null,space:null};
+  runner:null,space:null,chronicle:[]};
  newCellState(s);return s;
 }
 function start(s){
@@ -86,7 +99,7 @@ function divide(s,nx,ny){
  s.cells.splice(index,1,{id:++s.nextId,generation:parent.generation+1},
                     {id:++s.nextId,generation:parent.generation+1});
  s.divisions++;s.waveRemaining--;
- s.score+=5+Math.min(12,s.wave);
+ s.score+=5+Math.min(12,s.wave)+profile(s.planet).cellBonus;
  s.events=['divide'];
  if(s.cells.length>=CELL_GOAL){
   s.phase='emergence';s.transition=2.15;s.events.push('emergence');
@@ -146,6 +159,20 @@ function ability(s){
  }
  return false;
 }
+function recordWorld(s){
+ const r=s.runner||{},p=s.space||{};
+ const journal=Array.isArray(s.chronicle)?s.chronicle:[];
+ if(journal.some(entry=>entry.planet===s.planet))return;
+ const portals=Number.isFinite(r.portals)?r.portals:0;
+ const runHits=Number.isFinite(r.hits)?r.hits:0,spaceHits=Number.isFinite(p.hits)?p.hits:0;
+ const medals=[];
+ if(portals>=3)medals.push('Проводник Матрицы');
+ if(s.runner&&Number.isFinite(r.hits)&&runHits===0)medals.push('Безупречный бег');
+ if(spaceHits===0)medals.push('Звёздный пилот');
+ const bonus=medals.length*150;s.score+=bonus;
+ journal.push({planet:s.planet,name:profile(s.planet).name,portals,runHits,spaceHits,medals,bonus,score:Math.round(s.score)});
+ s.chronicle=journal.slice(-30);
+}
 function scoreProgress(s){
  if(s.phase==='intro')return 0;
  if(s.phase==='cells'||s.phase==='emergence')
@@ -167,11 +194,11 @@ function step(s,rawDt){
   }
  }else if(s.phase==='runner'){
   const r=s.runner,old=r.distance;
-  r.distance+=dt*(23+Math.min(5,s.planet*1.4));
+  r.distance+=dt*(profile(s.planet).runSpeed+speedBonus(s.planet));
   creditDistance(s,r,old,RUN_GOAL);
   r.invulnerable=Math.max(0,r.invulnerable-dt);
   if(r.jump>0||r.velocity>0){
-   r.velocity-=27*dt;
+   r.velocity-=27*profile(s.planet).gravity*dt;
    r.jump+=r.velocity*dt;
    if(r.jump<=0){r.jump=0;r.velocity=0;}
   }
@@ -207,7 +234,7 @@ function step(s,rawDt){
   const p=s.space,old=p.distance;
   p.boostTime=Math.max(0,p.boostTime-dt);
   p.invulnerable=Math.max(0,p.invulnerable-dt);
-  p.distance+=dt*(25+Math.min(5,s.planet*1.25))*(p.boostTime>0?1.75:1);
+  p.distance+=dt*(profile(s.planet).spaceSpeed+speedBonus(s.planet))*(p.boostTime>0?1.75:1);
   creditDistance(s,p,old,SPACE_GOAL);
   for(const a of p.asteroids){
    if(a.done||a.at>p.distance||a.at<old)continue;
@@ -226,7 +253,9 @@ function step(s,rawDt){
   }
   if(p.distance>=SPACE_GOAL){
    p.distance=SPACE_GOAL;s.phase='landing';s.transition=2.8;
-   s.score+=900*(s.planet+1);s.events.push('planetReached');
+   s.score+=900*(s.planet+1);
+   recordWorld(s);
+   s.events.push('planetReached');
   }
  }else if(s.phase==='landing'){
   s.transition-=dt;
@@ -238,7 +267,7 @@ function step(s,rawDt){
  return s.events;
 }
 const api={CELL_GOAL,RUN_GOAL,SPACE_GOAL,create,start,cellPositions,divide,
- divideNext,steer,jump,ability,step,scoreProgress};
+ divideNext,steer,jump,ability,step,scoreProgress,profile};
 if(typeof module!=='undefined'&&module.exports)module.exports=api;
 else root.StoryXEvolution=api;
 })(typeof globalThis!=='undefined'?globalThis:this);

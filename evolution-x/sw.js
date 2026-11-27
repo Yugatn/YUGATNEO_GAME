@@ -1,6 +1,6 @@
 /* EVOLUTION X self-contained offline shell. No private data cached. */
 'use strict';
-const CACHE='yugatneo-evolution-x-v2',PREFIX='yugatneo-evolution-x-';
+const CACHE='yugatneo-evolution-x-v3',PREFIX='yugatneo-evolution-x-';
 const ASSETS=['./','./index.html','./engine.js','./game.js','./icon.svg','./manifest.webmanifest'];
 self.addEventListener('install',event=>event.waitUntil((async()=>{
  const cache=await caches.open(CACHE);await cache.addAll(ASSETS);await self.skipWaiting();

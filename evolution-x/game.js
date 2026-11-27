@@ -19,6 +19,18 @@ const worlds=[
  {name:'Элизиум',cell:'#153b2c',run:'#10362e',road:'#20443c',sky:'#041b20',planet:'#9cffe2',rim:'#b7ffaf'}
 ];
 function world(offset=0){return worlds[(state.planet+offset)%worlds.length];}
+function boostCapacity(){return state.space?.boostCapacity||Math.max(3,state.space?.boostCharges||0);}
+function worldBrief(){const p=Core.profile(state.planet);return p.trait+' · гравитация ×'+String(p.gravity).replace('.',',');}
+function renderJournal(){
+ const list=$('journal');list.textContent='';
+ const entries=Array.isArray(state.chronicle)?state.chronicle.slice(-5).reverse():[];
+ if(!entries.length){list.textContent='Первые результаты появятся после посадки на следующей планете.';return;}
+ for(const entry of entries){
+  const row=document.createElement('li');
+  row.textContent='Мир '+(entry.planet+1)+' · '+entry.name+' — порталы '+entry.portals+'/3, удары '+entry.runHits+'/'+entry.spaceHits+'; '+(entry.medals.length?entry.medals.join(', ')+' · +'+entry.bonus:'цикл пройден');
+  list.append(row);
+ }
+}
 let soundOn=false,audio=null;
 try{soundOn=localStorage.getItem(SOUND_KEY)==='1';}catch(_){}
 function unlockAudio(){
@@ -54,6 +66,8 @@ function restore(){
   if((item.phase==='space'||item.phase==='landing')&&!item.space)return null;
   if((item.phase==='cells'||item.phase==='emergence')&&!item.cells.length)return null;
   if(!Number.isFinite(item.score)||item.score<0||!Number.isInteger(item.planet)||item.planet<0||item.planet>1000)return null;
+  if(!Array.isArray(item.chronicle))item.chronicle=[];
+  item.chronicle=item.chronicle.filter(x=>x&&Number.isInteger(x.planet)&&Array.isArray(x.medals)&&typeof x.name==='string').slice(-30);
   return item;
  }catch(_){return null;}
 }
@@ -100,7 +114,7 @@ function newGame(){
  state=Core.create(Date.now()>>>0);
  Core.start(state);
  $('intro').hidden=true;$('paused').hidden=true;pausedFrom=null;
- message('КОСНИСЬ ПЕРВОЙ КЛЕТКИ',1800);
+ message('ИСТОК · '+worldBrief(),2200);
  save(true);feel('light');
  updateHUD();
 }
@@ -114,6 +128,7 @@ function pause(){
  if(pausedFrom||state.phase==='intro'||!$('intro').hidden)return;
  pausedFrom=state.phase;
  $('paused').hidden=false;
+ $('pauseWorld').textContent=world().name+' · '+worldBrief();renderJournal();
  save(true);
 }
 function resume(){
@@ -195,12 +210,14 @@ function updateHUD(){
  $('score').textContent=Math.floor(state.score).toLocaleString('ru-RU');
  $('best').textContent=Math.max(best,Math.floor(state.score)).toLocaleString('ru-RU');
  $('planet').textContent='МИР '+(state.planet+1)+' · '+world().name;
+ $('worldTrait').textContent=state.phase==='space'||state.phase==='landing'?'Цель: '+world(1).name+' · '+Core.profile(state.planet+1).trait:worldBrief();
  $('divideNext').hidden=state.phase!=='cells'||!$('intro').hidden||!!pausedFrom;
  $('fill').style.width=Core.scoreProgress(state).toFixed(1)+'%';
  const cellStage=state.phase==='cells'||state.phase==='emergence';
  $('controls').style.display=cellStage?'none':'grid';
  $('pause').style.display=state.phase==='intro'?'none':'block';
  $('cellNote').style.display=state.phase==='cells'?'block':'none';
+ $('cellNote').textContent='Касайтесь ярких клеток. Пробел — альтернативное управление.'+(Core.profile(state.planet).cellBonus?' Бонус среды: +'+Core.profile(state.planet).cellBonus+' за деление.':'');
  const runner=state.runner,space=state.space;
  if(cellStage){
   $('mission').textContent='КЛЕТКИ '+state.cells.length+'/'+Core.CELL_GOAL+
@@ -218,7 +235,7 @@ function updateHUD(){
  $('center').append(document.createTextNode(state.phase==='space'?'↑ УСКОРЕНИЕ':'↑ ПРЫЖОК'));
  $('center').disabled=state.phase==='space'&&space.boostCharges<1;
  const sm=document.createElement('small');
- sm.textContent=state.phase==='space'?'ЗАРЯДЫ: '+space.boostCharges+'/3':'ЦЕНТР ЭКРАНА';
+ sm.textContent=state.phase==='space'?'ЗАРЯДЫ: '+space.boostCharges+'/'+boostCapacity():'ЦЕНТР ЭКРАНА';
  $('center').append(sm);
  const showAction=state.phase==='runner'&&runner.matrix;
  $('action').classList.toggle('visible',!!showAction);
@@ -450,7 +467,11 @@ function transitionScreen(phase){
   ctx.save();ctx.globalAlpha=.45;ellipse(cx+radius*.2,cy-radius*.1,radius*.51,radius*.37,world(1).rim);ctx.restore();
  }
  ctx.fillStyle='#dcffee';ctx.textAlign='center';ctx.font='bold 20px system-ui';
- ctx.fillText(emerging?'ЧЕЛОВЕК · НОВЫЙ УРОВЕНЬ':launch?'ПОЛЁТ К НОВОЙ ПЛАНЕТЕ':'НОВЫЙ МИР · НОВЫЙ ЦИКЛ',cx,H*.78);
+ ctx.fillText(emerging?'ЧЕЛОВЕК · НОВЫЙ УРОВЕНЬ':launch?'ПОЛЁТ К НОВОЙ ПЛАНЕТЕ':world(1).name.toUpperCase()+' · НОВЫЙ ЦИКЛ',cx,H*.78);
+ if(phase==='landing'){
+  const last=state.chronicle?.[state.chronicle.length-1];
+  if(last?.planet===state.planet){ctx.font='bold 13px system-ui';ctx.fillText('ЦИКЛ ЗАВЕРШЁН · БОНУС +'+last.bonus,cx,H*.82);}
+ }
 }
 function render(){
  if(state.phase==='intro'){gradient('#061629','#020713');drawStars(14);return;}
@@ -471,8 +492,8 @@ function reactions(events){
   if(e==='space'){message('ОБЛЕТАЙ АСТЕРОИДЫ · ЦЕНТР ДАЁТ УСКОРЕНИЕ',2400);feel('heavy');}
   if(e==='asteroidHit'){message('УДАР АСТЕРОИДА · МАНЕВРИРУЙ',1000);feel('medium');}
   if(e==='checkpoint'){message('ВОССТАНОВЛЕН КОРАБЛЬ · ПРОДОЛЖАЙ',1250);}
-  if(e==='planetReached'){message('ДОСТИГНУТА НОВАЯ ПЛАНЕТА!',2600);feel('heavy');save(true);}
-  if(e==='newPlanet'){message(world().name.toUpperCase()+' · СНОВА ОДНА КЛЕТКА',2600);feel('heavy');save(true);}
+  if(e==='planetReached'){message('ПОСАДКА · '+world(1).name.toUpperCase(),2600);feel('heavy');save(true);}
+  if(e==='newPlanet'){message(world().name.toUpperCase()+' · '+worldBrief(),3000);feel('heavy');save(true);}
  }
 }
 function frame(now){

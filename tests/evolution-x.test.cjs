@@ -196,7 +196,7 @@ test('PWA assets are complete and independently scoped',()=>{
   assert.ok(fs.existsSync(path.join(root,filename)),filename);
  }
  const sw=fs.readFileSync(path.join(root,'sw.js'),'utf8');
- assert.ok(sw.includes('evolution-x-v2'));
+ assert.ok(sw.includes('evolution-x-v3'));
 });
 
 test('accessible division requires exactly 255 actions and cannot skip waves',()=>{
@@ -219,4 +219,30 @@ test('each generated portal has a clear entry on its own lane',()=>{
   assert.equal(portals.length,3);
   for(const p of portals)assert.ok(!s.runner.entities.some(o=>o.type!=='portal'&&o.type!=='rocket'&&o.lane===p.lane&&Math.abs(o.at-p.at)<14));
  }
+});
+
+test('world profiles change jump physics, speed, cell rewards and boost capacity',()=>{
+ const make=planet=>{const s=started();s.planet=planet;divideAll(s);advance(s,2.2);s.runner.entities=[];return s;};
+ const cold=make(1),hot=make(3);
+ assert.ok(hot.score>cold.score);
+ const coldStart=cold.runner.distance,hotStart=hot.runner.distance;
+ Evolution.jump(cold);Evolution.jump(hot);advance(cold,.4);advance(hot,.4);
+ assert.ok(cold.runner.jump>hot.runner.jump);
+ assert.ok(hot.runner.distance-hotStart>cold.runner.distance-coldStart);
+ const aurora=make(2);aurora.phase='launch';aurora.transition=.01;advance(aurora,.05);
+ assert.equal(aurora.space.boostCharges,4);
+ assert.equal(aurora.space.boostCapacity,4);
+ assert.equal(Evolution.profile(5).name,Evolution.profile(0).name);
+});
+test('landing creates one chronicle record, three medals and bonus; legacy saves migrate',()=>{
+ const s=started();divideAll(s);advance(s,2.5);
+ s.runner.portals=3;s.runner.hits=0;
+ s.phase='launch';s.transition=.01;advance(s,.05);
+ s.space.asteroids=[];s.space.hits=0;s.space.distance=Evolution.SPACE_GOAL-.05;
+ delete s.chronicle;
+ Evolution.step(s,1/60);
+ assert.equal(s.phase,'landing');assert.equal(s.chronicle.length,1);
+ assert.equal(s.chronicle[0].bonus,450);assert.equal(s.chronicle[0].medals.length,3);
+ const stored=JSON.parse(JSON.stringify(s));advance(stored,3);
+ assert.equal(stored.chronicle.length,1);assert.equal(stored.planet,1);
 });
