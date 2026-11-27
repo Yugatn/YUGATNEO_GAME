@@ -1,4 +1,4 @@
-const CACHE = 'yugatneo-chess-v9';
+const CACHE = 'yugatneo-chess-v10';
 const SHELL = ['./', './index.html', './manifest.json', './icon.svg'];
 const ENGINE = 'https://cdnjs.cloudflare.com/ajax/libs/chess.js/0.10.3/chess.min.js';
 self.addEventListener('install', event => {
@@ -23,7 +23,7 @@ self.addEventListener('fetch', event => {
   // The runner has its own /runner/ service worker and cache; never hijack it.
   // Each independent Mini App has its own scoped service worker.
   if (url.origin === self.location.origin &&
-    ['runner/','matrix-sprint/','runner-x/','chess-mini/','tamagotchi/','evolution-x/','matrix-jet/','maze-x/','symbiont-city/','four-square/','belov-temperament/','psychogeometry/','luscher-color/','psychology/','games/','motivation-wheel/','checkers/','fifteen/','sudoku/','tetris/','snake-x/','roof-to-ocean/','tanks/','worms/','matrio/','battle-toads/','gta-city/','galaxy/','dune/','bomberman/','pacman/','kozel/','huyok/','pacman/'].some(dir =>
+    ['trading-x/','runner/','matrix-sprint/','runner-x/','chess-mini/','tamagotchi/','evolution-x/','matrix-jet/','maze-x/','symbiont-city/','four-square/','belov-temperament/','psychogeometry/','luscher-color/','psychology/','games/','motivation-wheel/','checkers/','fifteen/','sudoku/','tetris/','snake-x/','roof-to-ocean/','tanks/','worms/','matrio/','battle-toads/','gta-city/','galaxy/','dune/','bomberman/','pacman/','kozel/','huyok/','pacman/'].some(dir =>
       (url.pathname.startsWith(new URL('./'+dir, self.registration.scope).pathname) || url.pathname === new URL('./'+dir, self.registration.scope).pathname.slice(0,-1)))) return;
   if (url.origin === self.location.origin) {
     event.respondWith((async () => {
