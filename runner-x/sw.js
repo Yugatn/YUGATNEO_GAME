@@ -1,7 +1,7 @@
 /* Optional standalone offline shell. Never caches Telegram user data. */
 'use strict';
-const NAME='yugatneo-matrix-runner-x-v1', PREFIX='yugatneo-matrix-runner-x-';
-const ASSETS=['./','./index.html','./engine.js','./render.js','./app.js','./icon.svg','./manifest.webmanifest'];
+const NAME='yugatneo-matrix-runner-x-v2', PREFIX='yugatneo-matrix-runner-x-';
+const ASSETS=['./','./index.html','./engine.js?v=2','./render.js?v=2','./app.js?v=2','./icon.svg','./manifest.webmanifest'];
 self.addEventListener('install',event=>event.waitUntil((async()=>{
  const c=await caches.open(NAME);await c.addAll(ASSETS);await self.skipWaiting();
 })()));
@@ -19,7 +19,7 @@ self.addEventListener('fetch',event=>{
   const cache=await caches.open(NAME);
   if(r.mode==='navigate'){
    try{const res=await fetch(r);if(res.ok)await cache.put(r,res.clone());return res;}
-   catch{return(await cache.match(r))||Response.error();}
+   catch{return(await cache.match(r))||(await cache.match(new URL('./index.html',scope).href))||Response.error();}
   }
   const old=await cache.match(r);if(old)return old;
   const res=await fetch(r);if(res.ok)await cache.put(r,res.clone());return res;
