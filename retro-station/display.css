@@ -1,0 +1,9 @@
+/* Full browser viewport fallback, native Fullscreen API where allowed. */
+html.retro-display-lock,html.retro-display-lock body{overflow:hidden!important;overscroll-behavior:none}
+.retro-expanded{position:fixed!important;inset:0!important;width:100%!important;height:100vh!important;height:100dvh!important;max-width:none!important;max-height:none!important;min-height:0!important;aspect-ratio:auto!important;margin:0!important;border:0!important;border-radius:0!important;background:#05070b!important;z-index:10000!important}
+.retro-expanded:fullscreen,.retro-expanded:-webkit-full-screen{width:100%!important;height:100%!important;max-height:none!important}
+.retro-display-bar{position:absolute;top:max(8px,env(safe-area-inset-top));right:max(8px,env(safe-area-inset-right));left:auto;display:flex;align-items:center;justify-content:flex-end;gap:8px;z-index:2147483646;max-width:calc(100% - 16px);pointer-events:none;font:13px/1.4 system-ui,sans-serif}
+.retro-display-bar[hidden],.retro-display-bar [hidden]{display:none!important}
+.retro-display-bar button{pointer-events:auto;background:rgba(16,26,44,.92);color:#f0f5ff;border:1px solid #647b9d;border-radius:8px;padding:9px 12px;font:inherit;cursor:pointer;white-space:nowrap}
+.retro-display-note{background:rgba(16,26,44,.94);padding:8px 12px;border-radius:8px;color:#edf3ff;max-width:min(520px,58vw);overflow-wrap:anywhere}
+@media(pointer:fine) and (hover:hover) and (min-width:800px){main{max-width:1600px!important}.retro-expanded .retro-display-bar{opacity:.45;transition:opacity .15s}.retro-expanded .retro-display-bar:hover,.retro-expanded .retro-display-bar:focus-within{opacity:1}.retro-expanded .retro-display-bar:has(.retro-display-note:not([hidden])){opacity:1}}
