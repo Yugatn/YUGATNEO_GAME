@@ -58,7 +58,10 @@ $("import").onchange=e=>{const f=e.target.files[0];e.target.value="";if(f)run(as
 $("full").onclick=()=>{if(display)display.toggle();else status("Модуль полного экрана недоступен.",true)};
 const videoModes=["tv","pixels","fill","crop"];let videoFit="tv";try{const v=localStorage.getItem("retro.nes.videoFit");if(videoModes.includes(v))videoFit=v}catch{}
 $("videoFit").value=videoFit;$("screen").dataset.fit=videoFit;
-$("videoFit").onchange=()=>{const v=$("videoFit").value;if(!videoModes.includes(v))return;$("screen").dataset.fit=v;try{localStorage.setItem("retro.nes.videoFit",v)}catch{}if(nes&&!paused&&!window.RetroDisplay?.mobile())$("canvas").focus({preventScroll:true})};
+function applyFit(v){if(!videoModes.includes(v))return;$("videoFit").value=v;$("screen").dataset.fit=v;try{localStorage.setItem("retro.nes.videoFit",v)}catch{}if(nes&&!paused&&!window.RetroDisplay?.mobile())$("canvas").focus({preventScroll:true})}
+$("videoFit").onchange=()=>applyFit($("videoFit").value);
+const displayBar=$("screen").querySelector(".retro-display-bar");if(displayBar){const fitButton=document.createElement("button");fitButton.type="button";fitButton.textContent="Масштаб";fitButton.title="Переключить 4:3 / исходные пиксели / растяжение / обрезку";fitButton.onclick=()=>applyFit(videoModes[(videoModes.indexOf($("videoFit").value)+1)%videoModes.length]);displayBar.prepend(fitButton)}
+
 
 $("player").onclick=()=>{release();touchPlayer=3-touchPlayer;$("player").textContent="Игрок "+touchPlayer};
 let controls=window.RetroControls?.load(),editor=null;
