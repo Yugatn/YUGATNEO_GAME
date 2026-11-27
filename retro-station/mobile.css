@@ -49,3 +49,5 @@ input,select,textarea{max-width:100%}
 .nes-screen.retro-expanded .nes-tools{grid-column:1/4;grid-row:2;width:auto;justify-self:end;align-self:center}
 }
 @media (pointer:fine) and (min-width:781px){.nes-screen #touchDeck,.nes-screen .nes-tools{display:none}.nes-screen .nes-video{width:100%;height:100%;min-height:0;display:grid;place-items:center}.nes-screen .nes-video canvas{max-height:100%;max-width:100%}}
+
+@media (orientation:landscape) and (max-height:600px) and (pointer:coarse){.nes-screen.retro-expanded{grid-template-rows:minmax(0,1fr) auto auto}.nes-screen.retro-expanded #touchDeck .smallpad{grid-row:2;grid-column:1/4;justify-self:center}.nes-screen.retro-expanded .nes-tools{grid-row:3;grid-column:1/4;justify-self:center}.nes-screen.retro-expanded .nes-tools button,.nes-screen.retro-expanded #touchDeck .smallpad button{min-height:32px;padding:4px 8px}.nes-screen.retro-expanded .nes-video canvas{min-height:0;max-height:100%}}
