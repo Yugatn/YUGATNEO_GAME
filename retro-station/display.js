@@ -1,9 +1,10 @@
 /* Retro Station shared fullscreen controller, no dependencies. */
 (function(global){
 "use strict";
-function desktop(){return typeof matchMedia==="function"?matchMedia("(pointer: fine) and (hover: hover) and (min-width: 800px)").matches:innerWidth>=800}
-function getPreference(){try{const v=localStorage.getItem("retro.fullscreen.auto");return v===null?desktop():v==="1"}catch{return desktop()}}
-function setPreference(v){try{localStorage.setItem("retro.fullscreen.auto",v?"1":"0")}catch{}}
+function desktop(){return !mobile()}
+function mobile(){return typeof matchMedia==="function"&&(matchMedia("(pointer: coarse)").matches||((typeof navigator!=="undefined"&&(navigator.maxTouchPoints||0)>0)&&matchMedia("(max-width: 900px)").matches))}
+function getPreference(){if(!mobile())return false;try{const v=localStorage.getItem("retro.fullscreen.mobile");return v===null?true:v==="1"}catch{return true}}
+function setPreference(v){if(!mobile())return;try{localStorage.setItem("retro.fullscreen.mobile",v?"1":"0")}catch{}}
 function create(target,options={}){
  if(!target)throw Error("Fullscreen target missing");
  let expanded=false,nativeSeen=false,wanted=false,pending=false;
@@ -26,11 +27,11 @@ function create(target,options={}){
  function leave(){wanted=false;nativeSeen=false;setExpanded(false);const el=fullscreenElement();if(el&&(el===target||target.contains(el))){try{const end=doc.exitFullscreen||doc.webkitExitFullscreen;return Promise.resolve(end?.call(doc)).catch(()=>{})}catch{}}return Promise.resolve()}
  function changed(){const el=fullscreenElement();if(el&&(el===target||target.contains(el))){nativeSeen=true;if(!wanted&&pending){leave();return}wanted=true;setExpanded(true)}else if(nativeSeen){nativeSeen=false;wanted=false;setExpanded(false)}else refresh()}
  function toggle(){return expanded?leave():enter(true)}
- function auto(real=true){if(getPreference())return enter(real);return Promise.resolve(false)}
+ function auto(){if(getPreference())return enter(false);return Promise.resolve(false)}
  function key(e){if(e.key==="F2"){e.preventDefault();toggle()}else if(e.key==="Escape"&&expanded&&!fullscreenElement()){e.preventDefault();leave()}}
  native.onclick=()=>enter(true);exit.onclick=leave;
  doc.addEventListener("fullscreenchange",changed);doc.addEventListener("webkitfullscreenchange",changed);doc.addEventListener("keydown",key);
  return {enter,leave,toggle,auto,isExpanded:()=>expanded,notice(t){note.textContent=t||"";note.hidden=!t}};
 }
-global.RetroDisplay={create,getPreference,setPreference,desktop};
+global.RetroDisplay={create,getPreference,setPreference,desktop,mobile};
 })(globalThis);
