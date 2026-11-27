@@ -78,6 +78,14 @@ class Renderer{
   c.save();c.strokeStyle=s.matrix>0?'#b8ffca':'#87caff';c.lineWidth=3.8;c.shadowBlur=13;c.shadowColor='#38ff9b';
   c.beginPath();c.moveTo(p[0].x,p[0].y);for(let i=1;i<p.length;i++)c.lineTo(p[i].x,p[i].y);c.stroke();c.restore();
  }
+ shard(o,s){
+  if(o.resolved||o.dataLane===undefined)return;
+  const p=core.positionAt(o.s,o.dataLane,1.2+.3*Math.sin(s.time*5+o.s));
+  const q=this.project(p);if(!q)return;
+  const c=this.ctx,r=Math.max(4,Math.min(15,q.k*.58));
+  c.save();c.shadowBlur=12;c.shadowColor='#67e9ff';c.fillStyle='#91f3ff';c.strokeStyle='#e9ffff';c.lineWidth=1.4;
+  c.beginPath();c.moveTo(q.x,q.y-r*1.4);c.lineTo(q.x+r,q.y);c.lineTo(q.x,q.y+r*1.4);c.lineTo(q.x-r,q.y);c.closePath();c.fill();c.stroke();c.restore();
+ }
  agent(a){const at=core.positionAt(a.s,0,0);const p=this.project(vec(at.x,at.y+2,at.z));if(!p)return;
   const c=this.ctx,r=Math.max(3,Math.min(23,p.k*.50));c.save();c.strokeStyle=RED;c.lineWidth=2.2;c.shadowColor=RED;c.shadowBlur=9;
   c.beginPath();c.arc(p.x,p.y-r*.7,r*.55,0,2*PI);c.stroke();
@@ -108,9 +116,13 @@ class Renderer{
  }
  scene(s,dt){if(!this.ctx)return;this.makeCamera(s,dt);this.background(s);this.road(s);
   for(const p of s.portals.filter(x=>x.s>=s.progress-9&&x.s<s.progress+135).sort((a,b)=>b.s-a.s))this.ring(p,s);
-  for(const o of s.obstacles.filter(x=>x.s>=s.progress-8&&x.s<s.progress+120).sort((a,b)=>b.s-a.s))this.box(o,s);
+  for(const o of s.obstacles.filter(x=>x.s>=s.progress-8&&x.s<s.progress+120).sort((a,b)=>b.s-a.s)){this.box(o,s);this.shard(o,s);}
   for(const agent of s.agents)this.agent(agent);
   this.avatar(s);
+  if(s.shieldVisual>0||s.shield){
+    const p=core.positionAt(s.progress,s.laneView,s.elevation+1.2),q=this.project(p);
+    if(q){const c=this.ctx,r=Math.max(24,Math.min(60,q.k*2.1));c.save();c.strokeStyle=s.shieldVisual>0?'#f9d985':'rgba(123,236,255,.65)';c.lineWidth=s.shieldVisual>0?4:1.8;c.beginPath();c.ellipse(q.x,q.y,r,r*1.12,0,0,2*PI);c.stroke();c.restore();}
+  }
   if(s.pulseVisual>0){const c=this.ctx;const x=this.width/2,y=this.height*.64;
    c.save();c.strokeStyle='rgba(98,255,174,'+(s.pulseVisual/.32)+')';c.lineWidth=4;
    c.beginPath();c.ellipse(x,y,(1-s.pulseVisual/.32)*this.width*.65, (1-s.pulseVisual/.32)*200+10,0,0,2*PI);c.stroke();c.restore();}
