@@ -196,7 +196,7 @@ test('PWA assets are complete and independently scoped',()=>{
   assert.ok(fs.existsSync(path.join(root,filename)),filename);
  }
  const sw=fs.readFileSync(path.join(root,'sw.js'),'utf8');
- assert.ok(sw.includes('evolution-x-v4'));
+ assert.ok(sw.includes('evolution-x-v5'));
 });
 
 test('accessible division requires exactly 255 actions and cannot skip waves',()=>{

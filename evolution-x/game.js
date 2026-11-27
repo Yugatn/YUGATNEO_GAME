@@ -9,6 +9,8 @@ const $=id=>document.getElementById(id);
 const canvas=$('canvas'),ctx=canvas.getContext('2d',{alpha:false});
 let W=390,H=780,scale=1,frameLast=0,hudLast=0,lastSave=0,noticeUntil=0;
 let noticeText='',pausedFrom=null;
+let divisionEffects=[];
+const reducedMotion=window.matchMedia?.('(prefers-reduced-motion: reduce)');
 const KEY='yugatneo.evolution-x.state.v1',BEST='yugatneo.evolution-x.best.v1';
 const SOUND_KEY='yugatneo.evolution-x.sound.v1';
 const worlds=[
@@ -116,6 +118,7 @@ function save(force){
  }
 }
 function newGame(){
+ divisionEffects=[];
  state=Core.create(Date.now()>>>0);
  Core.start(state);
  $('intro').hidden=true;$('paused').hidden=true;pausedFrom=null;
@@ -157,6 +160,25 @@ function control(command){
 $('start').addEventListener('click',start);
 for(const id of ['soundIntro','soundPause'])$(id).addEventListener('click',toggleSound);
 updateSound();
+// The core still commits exactly one split immediately. Animation is visual only.
+function performDivision(nx,ny){
+ if(state.phase!=='cells')return false;
+ const before=Core.cellPositions(state);
+ const ok=nx===undefined?Core.divideNext(state):Core.divide(state,nx,ny);
+ if(!ok)return false;
+ if(!reducedMotion?.matches){
+  const after=Core.cellPositions(state),ids=new Set(after.map(c=>c.id));
+  const parent=before.find(c=>!ids.has(c.id));
+  const children=after.filter(c=>c.id===state.nextId||c.id===state.nextId-1);
+  if(parent&&children.length===2){
+   // Cancel an older effect if a daughter has already been divided again.
+   divisionEffects=divisionEffects.filter(e=>e.ids.every(id=>ids.has(id))&&state.time-e.start<e.duration);
+   divisionEffects.push({parent,ids:children.map(c=>c.id),start:state.time,duration:after.length<=8?.88:after.length<=32?.58:.28});
+   divisionEffects=divisionEffects.slice(-8);
+  }
+ }
+ afterDivision();return true;
+}
 function afterDivision(){
  const events=state.events.slice();
  feel('light');reactions(events);save(state.phase==='emergence'||events.includes('newwave'));
@@ -165,7 +187,7 @@ function afterDivision(){
 }
 $('divideNext').addEventListener('click',()=>{
  if(pausedFrom||!$('intro').hidden)return;
- unlockAudio();if(Core.divideNext(state))afterDivision();
+ unlockAudio();performDivision();
 });
 $('pause').addEventListener('click',()=>pausedFrom?resume():pause());
 $('resume').addEventListener('click',resume);
@@ -193,7 +215,7 @@ canvas.addEventListener('pointerdown',ev=>{
  const x=ev.clientX-r.left,y=ev.clientY-r.top;
  if(state.phase==='cells'){
   const b=cellBoard(),nx=(x-b.x)/b.w,ny=(y-b.y)/b.h;
-  if(Core.divide(state,nx,ny))afterDivision();
+  performDivision(nx,ny);
  }else if(state.phase==='runner'||state.phase==='space'){
   control(x<W*.29?'left':x>W*.71?'right':'center');
  }
@@ -205,7 +227,7 @@ window.addEventListener('keydown',ev=>{
  if(['Space','ArrowUp','ArrowLeft','ArrowRight','KeyA','KeyD','KeyW','KeyF','Escape'].includes(ev.code))ev.preventDefault();
  if(ev.code==='Escape'){pausedFrom?resume():pause();return;}
  if(!pausedFrom&&$('intro').hidden&&state.phase==='cells'&&['Space','Enter'].includes(ev.code)){
-  ev.preventDefault();unlockAudio();if(Core.divideNext(state))afterDivision();return;
+  ev.preventDefault();unlockAudio();performDivision();return;
  }
  if(['ArrowLeft','KeyA'].includes(ev.code))control('left');
  if(['ArrowRight','KeyD'].includes(ev.code))control('right');
@@ -283,39 +305,120 @@ function drawStars(speed=0,color='#a8d5d8'){
  }
  ctx.globalAlpha=1;
 }
+// Organic contour with deterministic variation per cell; no random frame flicker.
+function membrane(x,y,rx,ry,id,t,pinch=0){
+ const count=32;ctx.beginPath();
+ for(let i=0;i<count;i++){
+  const a=i/count*Math.PI*2,c=Math.cos(a),s=Math.sin(a);
+  const irregular=1+.042*Math.sin(a*3+id*.71+t*1.5)+.027*Math.cos(a*5-id*.37);
+  const px=x+c*rx*irregular,py=y+s*ry*irregular*(1-pinch*Math.pow(1-Math.abs(c),2));
+  if(i===0)ctx.moveTo(px,py);else ctx.lineTo(px,py);
+ }
+ ctx.closePath();
+}
+function nucleus(x,y,r,active){
+ const g=ctx.createRadialGradient(x-r*.25,y-r*.3,r*.08,x,y,r);
+ g.addColorStop(0,active?'#9c8dd4':'#706d9e');g.addColorStop(.55,'#534878');g.addColorStop(1,'#282a50');
+ ellipse(x,y,r,r*.89,g,active?'#c0b1ed':'#7f87ab');
+ if(r>4)ellipse(x-r*.16,y+r*.1,r*.29,r*.25,'#d9c0ef','#a596c5');
+}
+function organelle(x,y,r,angle){
+ ctx.save();ctx.translate(x,y);ctx.rotate(angle);
+ ellipse(0,0,r,r*.43,'#b59d62','#ecd79a');
+ if(r>2.5)strokePath([[-r*.6,0],[-r*.3,-r*.22],[0,r*.22],[r*.3,-r*.22],[r*.6,0]],'#705e57',Math.max(.6,r*.11));
+ ctx.restore();
+}
+function cellBody(x,y,r,id,active,t,detail=true){
+ const outline=active?'#a6f6d1':'#587c92';
+ const fill=ctx.createRadialGradient(x-r*.23,y-r*.26,r*.06,x,y,r*1.08);
+ fill.addColorStop(0,active?'#b1debd':'#638b9a');
+ fill.addColorStop(.48,active?'#4cae9c':'#345e73');
+ fill.addColorStop(1,active?'#144f56':'#20394e');
+ if(detail&&r>22){ctx.shadowBlur=12;ctx.shadowColor=outline;}
+ membrane(x,y,r,r*.92,id,t);ctx.fillStyle=fill;ctx.fill();ctx.strokeStyle=outline;ctx.lineWidth=Math.max(.8,Math.min(3,r*.055));ctx.stroke();ctx.shadowBlur=0;
+ if(detail&&r>13){
+  membrane(x,y,r*.91,r*.84,id,t);ctx.strokeStyle=active?'#d2ffdb77':'#9ab3c455';ctx.lineWidth=Math.max(.8,r*.024);ctx.stroke();
+  for(let i=0;i<3;i++){const a=id*.79+i*2.1;organelle(x+Math.cos(a)*r*.57,y+Math.sin(a)*r*.52,r*.16,a+.4);}
+  for(let i=0;i<(r>40?15:6);i++){const a=i*2.399+id*.4,d=r*(.43+.29*((i*7)%11)/10);
+   ellipse(x+Math.cos(a)*d,y+Math.sin(a)*d,Math.max(.65,r*.024),Math.max(.65,r*.021),active?'#dbf9c688':'#a4c8d477');
+  }
+ }
+ nucleus(x-r*.08,y+r*.045,Math.max(1.7,r*.30),active);
+}
+function lerp(a,b,t){return a+(b-a)*t;}
+function smooth(t){return t*t*(3-2*t);}
+function cellRadius(c,b){return Math.min(b.w,b.h)*c.r*1.05;}
+function chromosome(x,y,r,a){
+ const dx=Math.cos(a)*r,dy=Math.sin(a)*r;
+ strokePath([[x-dx,y-dy],[x+dx,y+dy]],'#e6c7ff',Math.max(1,r*.32));
+ strokePath([[x+dy,y-dx],[x-dy,y+dx]],'#d8aef7',Math.max(1,r*.32));
+}
+function drawDivision(e,children,b){
+ const p=Math.max(0,Math.min(1,(state.time-e.start)/e.duration));
+ const parent=e.parent,oldR=cellRadius(parent,b),r=cellRadius(children[0],b);
+ const ax=b.x+children[0].x*b.w,ay=b.y+children[0].y*b.h,bx=b.x+children[1].x*b.w,by=b.y+children[1].y*b.h;
+ const cx=lerp(b.x+parent.x*b.w,(ax+bx)/2,smooth(p)),cy=lerp(b.y+parent.y*b.h,(ay+by)/2,smooth(p));
+ const angle=Math.atan2(by-ay,bx-ax);
+ const detailed=oldR>=18;
+ // Target rings preserve spatial feedback while accepting another tap immediately.
+ for(const c of children)if(c.active&&detailed){
+  ctx.save();ctx.globalAlpha=.28;ellipse(b.x+c.x*b.w,b.y+c.y*b.h,r,r*.93,null,'#bbffe1');ctx.restore();
+ }
+ if(p<.69){
+  const k=smooth(p/.69),rx=lerp(oldR,2*r,k),ry=lerp(oldR*.92,r*.92,k);
+  ctx.save();ctx.translate(cx,cy);ctx.rotate(angle);
+  const grad=ctx.createRadialGradient(-rx*.2,-ry*.2,1,0,0,Math.max(rx,ry)*1.05);
+  grad.addColorStop(0,'#b4e6c4');grad.addColorStop(.55,'#4cae9c');grad.addColorStop(1,'#17545d');
+  membrane(0,0,rx,ry,parent.id,state.time,.94*smooth(Math.max(0,(p-.25)/.44)));
+  ctx.fillStyle=grad;ctx.fill();ctx.strokeStyle='#baffde';ctx.lineWidth=Math.max(1,Math.min(3,r*.045));ctx.stroke();
+  const nr=Math.max(1.8,ry*.29);
+  if(p<.16)nucleus(0,0,nr,true);
+  else if(p<.48&&detailed){
+   const split=smooth(Math.max(0,(p-.22)/.26))*rx*.46;
+   for(let i=0;i<3;i++){
+    const y=(i-1)*nr*.58;
+    chromosome(-split,y,nr*.27,i*.65+.2);
+    chromosome(split,y,nr*.27,-i*.65-.2);
+   }
+  }else{
+   const separation=rx*.49*smooth(Math.min(1,(p-.15)/.4));
+   nucleus(-separation,0,nr,true);nucleus(separation,0,nr,true);
+  }
+  ctx.restore();
+ }else{
+  const k=smooth((p-.69)/.31),dx=Math.cos(angle)*r*.92,dy=Math.sin(angle)*r*.92;
+  cellBody(lerp(cx-dx,ax,k),lerp(cy-dy,ay,k),r,children[0].id,children[0].active,state.time,detailed);
+  cellBody(lerp(cx+dx,bx,k),lerp(cy+dy,by,k),r,children[1].id,children[1].active,state.time,detailed);
+ }
+ return p;
+}
 function drawCells(){
  gradient(world().cell,'#04101b');
- drawStars(3);
+ drawStars(reducedMotion?.matches?0:2);
  const b=cellBoard();
- ctx.fillStyle='#092330dd';ctx.strokeStyle='#397c76';
- ctx.lineWidth=2;ctx.fillRect(b.x-8,b.y-8,b.w+16,b.h+16);
- ctx.strokeRect(b.x-8,b.y-8,b.w+16,b.h+16);
- const positions=Core.cellPositions(state),n=positions.length;
- const cols=Math.ceil(Math.sqrt(n)),rows=Math.ceil(n/cols);
- const radius=Math.min(b.w/cols,b.h/rows)*.40;
+ // Microscope-like field, with gentle illumination rather than a solid grid.
+ const field=ctx.createRadialGradient(W/2,b.y+b.h/2,b.w*.08,W/2,b.y+b.h/2,b.w*.72);
+ field.addColorStop(0,'#174447');field.addColorStop(.7,'#0c292f');field.addColorStop(1,'#071a26');
+ ctx.fillStyle=field;ctx.strokeStyle='#397c76';ctx.lineWidth=1.5;
+ ctx.fillRect(b.x-8,b.y-8,b.w+16,b.h+16);ctx.strokeRect(b.x-8,b.y-8,b.w+16,b.h+16);
+ const positions=Core.cellPositions(state),n=positions.length,byId=new Map(positions.map(c=>[c.id,c]));
+ divisionEffects=reducedMotion?.matches?[]:divisionEffects.filter(e=>state.time-e.start<e.duration&&e.ids.every(id=>byId.has(id)));
+ const animated=new Set(divisionEffects.flatMap(e=>e.ids));
  for(const c of positions){
+  if(animated.has(c.id))continue;
   const x=b.x+c.x*b.w,y=b.y+c.y*b.h;
-  const pulse=1+.065*Math.sin(state.time*4+c.id*.34);
-  const r=radius*pulse;
-  ctx.save();
-  ctx.shadowBlur=c.active?15:4;ctx.shadowColor='#83ffb9';
-  const shade=ctx.createRadialGradient(x-r*.24,y-r*.20,r*.2,x,y,r*1.1);
-  shade.addColorStop(0,c.active?'#d5ffb1':'#5fa6aa');
-  shade.addColorStop(.6,c.active?'#45b99c':'#235969');
-  shade.addColorStop(1,c.active?'#126c65':'#173c56');
-  ellipse(x,y,r,r,shade,c.active?'#a5ffb3':'#336b76');
-  ctx.restore();
-  if(r>5){
-   ellipse(x-r*.14,y-r*.03,r*.28,r*.24,c.active?'#073e40':'#143f4a');
-   if(r>11){ellipse(x+r*.35,y+r*.23,r*.14,r*.07,'#b4efad88');ellipse(x-r*.38,y+r*.3,r*.11,r*.08,'#84d8c388');}
-  }
+  const pulse=reducedMotion?.matches?1:1+.025*Math.sin(state.time*3+c.id*.34);
+  cellBody(x,y,cellRadius(c,b)*pulse,c.id,c.active,reducedMotion?.matches?0:state.time,n<=64);
+ }
+ let stage='';
+ for(const e of divisionEffects){
+  const p=drawDivision(e,e.ids.map(id=>byId.get(id)),b);
+  if(n<=32)stage=p<.16?'Подготовка к делению':p<.48?'Разделение хромосом':p<.69?'Перетяжка мембраны':'Две дочерние клетки';
  }
  ctx.textAlign='center';ctx.fillStyle='#bcffe3';ctx.font='bold 12px system-ui';
  ctx.fillText('ДЕЛЕНИЕ · '+state.divisions+' касаний',W/2,b.y-22);
- if(n>=32){
-  ctx.fillStyle='#82b7b0';ctx.font='11px system-ui';
-  ctx.fillText('ЯРКИЕ КЛЕТКИ АКТИВНЫ • ТЁМНЫЕ ЖДУТ СВОЕЙ ОЧЕРЕДИ',W/2,b.y+b.h+26);
- }
+ ctx.fillStyle='#b6e3d6';ctx.font='11px system-ui';
+ ctx.fillText(stage||'Яркие клетки готовы к делению',W/2,b.y+b.h+26);
 }
 function matrixRain(){
  ctx.save();ctx.font='13px monospace';ctx.textAlign='center';
@@ -485,7 +588,7 @@ function transitionScreen(phase){
 }
 function render(){
  if(state.phase==='intro'){gradient('#061629','#020713');drawStars(14);return;}
- if(state.phase==='cells')drawCells();
+ if(state.phase==='cells'||(state.phase==='emergence'&&divisionEffects.some(e=>state.time-e.start<e.duration)))drawCells();
  else if(['emergence','launch','landing'].includes(state.phase))transitionScreen(state.phase);
  else if(state.phase==='runner')drawRunner();
  else if(state.phase==='space')drawSpace();

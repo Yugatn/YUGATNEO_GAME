@@ -8,21 +8,23 @@ const Core=require('../evolution-x/engine.js');
 const root=path.resolve(__dirname,'../evolution-x');
 const html=fs.readFileSync(path.join(root,'index.html'),'utf8');
 const script=fs.readFileSync(path.join(root,'game.js'),'utf8');
-function fakeContext(){
+function fakeContext(labels=[]){
  const gradient=()=>({addColorStop(){}});
  const ctx={
-  fillRect(){},strokeRect(){},fillText(){},beginPath(){},ellipse(){},arc(){},
+  fillRect(){},strokeRect(){},fillText(text){labels.push(text);},beginPath(){},ellipse(){},arc(){},
   fill(){},stroke(){},moveTo(){},lineTo(){},closePath(){},save(){},restore(){},
   translate(){},rotate(){},setTransform(){},
   createLinearGradient:gradient,createRadialGradient:gradient
  };
  return ctx;
 }
-function setup(saved){
+function setup(saved,reduce=false){
  const dom=new JSDOM(html,{url:'https://game.example.test/evolution-x/',runScripts:'outside-only',pretendToBeVisual:true});
  const w=dom.window;
  w.devicePixelRatio=1;
- w.HTMLCanvasElement.prototype.getContext=()=>fakeContext();
+ const labels=[];
+ w.matchMedia=()=>({matches:reduce});
+ w.HTMLCanvasElement.prototype.getContext=()=>fakeContext(labels);
  w.HTMLCanvasElement.prototype.getBoundingClientRect=()=>({
   left:0,top:0,width:390,height:780,right:390,bottom:780,x:0,y:0,toJSON(){}
  });
@@ -32,7 +34,7 @@ function setup(saved){
  w.confirm=()=>true;
  if(saved)w.localStorage.setItem('yugatneo.evolution-x.state.v1',JSON.stringify(saved));
  w.eval(script);
- return {w,callbacks};
+ return {w,callbacks,labels};
 }
 function element(w,id){return w.document.getElementById(id);}
 function touch(w,x,y){
@@ -153,4 +155,34 @@ test('specialization selection on pause persists and is locked for the current w
  assert.equal(element(w,'spec-navigation').disabled,true);
  assert.equal(JSON.parse(w.localStorage.getItem('yugatneo.evolution-x.state.v1')).specialization,'motor');
  w.close();
+});
+
+test('cell division has staged visual feedback and immediate logical progress',()=>{
+ const {w,callbacks,labels}=setup();element(w,'start').click();touch(w,195,400);
+ assert.match(element(w,'mission').textContent,/КЛЕТКИ 2\/256/);
+ cycleTick(callbacks,1000);
+ assert.ok(labels.includes('Подготовка к делению'));
+ for(let i=1;i<=8;i++)cycleTick(callbacks,1000+i*30);
+ assert.ok(labels.includes('Разделение хромосом'));
+ for(let i=9;i<=19;i++)cycleTick(callbacks,1000+i*30);
+ assert.ok(labels.includes('Перетяжка мембраны'));
+ for(let i=20;i<=30;i++)cycleTick(callbacks,1000+i*30);
+ assert.ok(labels.includes('Две дочерние клетки'));
+ assert.match(element(w,'mission').textContent,/КЛЕТКИ 2\/256/);
+ w.close();
+});
+test('rapid successive division, dense field and reduced motion remain playable',()=>{
+ const {w,callbacks}=setup();element(w,'start').click();
+ for(let i=0;i<254;i++)element(w,'divideNext').click();
+ assert.match(element(w,'mission').textContent,/КЛЕТКИ 255\/256/);
+ assert.doesNotThrow(()=>cycleTick(callbacks,1000));
+ element(w,'divideNext').click();
+ assert.match(element(w,'mission').textContent,/КЛЕТКИ 256\/256/);
+ assert.doesNotThrow(()=>cycleTick(callbacks,1030));
+ w.close();
+ const reduced=setup(undefined,true);element(reduced.w,'start').click();touch(reduced.w,195,400);
+ cycleTick(reduced.callbacks,1000);
+ assert.ok(!reduced.labels.includes('Подготовка к делению'));
+ assert.match(element(reduced.w,'mission').textContent,/КЛЕТКИ 2\/256/);
+ reduced.w.close();
 });
