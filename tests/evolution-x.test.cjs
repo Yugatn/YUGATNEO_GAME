@@ -196,5 +196,27 @@ test('PWA assets are complete and independently scoped',()=>{
   assert.ok(fs.existsSync(path.join(root,filename)),filename);
  }
  const sw=fs.readFileSync(path.join(root,'sw.js'),'utf8');
- assert.ok(sw.includes('evolution-x-v1'));
+ assert.ok(sw.includes('evolution-x-v2'));
+});
+
+test('accessible division requires exactly 255 actions and cannot skip waves',()=>{
+ const s=started();let count=0;
+ while(Evolution.divideNext(s)){count++;assert.ok(count<=255);}
+ assert.equal(count,255);assert.equal(s.phase,'emergence');
+ assert.equal(Evolution.divideNext(s),false);
+});
+test('distance scoring does not reward traversing a checkpoint twice',()=>{
+ const s=started();divideAll(s);advance(s,2.5);
+ const r=s.runner;r.entities=[];r.distance=100;r.furthest=100;
+ advance(s,1);const score=s.score,total=s.totalDistance,furthest=r.furthest;
+ r.distance=furthest-30;advance(s,.5);
+ assert.equal(r.furthest,furthest);assert.equal(s.score,score);assert.equal(s.totalDistance,total);
+});
+test('each generated portal has a clear entry on its own lane',()=>{
+ for(let seed=0;seed<15;seed++){
+  const s=started(seed);divideAll(s);advance(s,2.5);
+  const portals=s.runner.entities.filter(o=>o.type==='portal');
+  assert.equal(portals.length,3);
+  for(const p of portals)assert.ok(!s.runner.entities.some(o=>o.type!=='portal'&&o.type!=='rocket'&&o.lane===p.lane&&Math.abs(o.at-p.at)<14));
+ }
 });

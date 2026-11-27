@@ -42,7 +42,13 @@ canvas{position:absolute;inset:0;width:100%;height:100%;touch-action:none;displa
 #action:disabled{opacity:.5}
 #pause{position:absolute;top:calc(143px + env(safe-area-inset-top));right:15px;z-index:3;border:1px solid #477b76;border-radius:11px;background:#0a2f39ce;color:#e9fff7;padding:8px 13px;font-weight:800;font-size:12px}
 .note{position:absolute;bottom:calc(112px + env(safe-area-inset-bottom));left:16px;right:16px;text-align:center;color:#d1fff3;text-shadow:0 2px 8px #000;font-size:11px;z-index:2;pointer-events:none}
-#cellNote{display:none}
+#cellNote{display:none;bottom:calc(70px + env(safe-area-inset-bottom));font-size:12px}
+#divideNext{position:absolute;bottom:calc(16px + env(safe-area-inset-bottom));left:50%;transform:translateX(-50%);z-index:3;white-space:nowrap;max-width:95%;border:1px solid #52978e;background:#103b3f;color:#c5ffdf;border-radius:13px;padding:12px 18px;font-size:13px;font-weight:800}
+#divideNext[hidden]{display:none}
+#planet{max-width:48%;overflow:hidden;text-overflow:ellipsis}
+#mission{min-width:0}
+.control:disabled{opacity:.55;cursor:default}
+@media(max-width:360px){.metrics{gap:8px}.metric strong{font-size:14px}.brand b{font-size:17px}#planet{font-size:10px;padding:5px 6px}}
 .overlay{position:absolute;inset:0;z-index:10;display:flex;align-items:center;justify-content:center;flex-direction:column;overflow-y:auto;gap:12px;padding:calc(25px + env(safe-area-inset-top)) 20px calc(25px + env(safe-area-inset-bottom));text-align:center;background:radial-gradient(ellipse at 50% 23%,#153d4b,#071625 49%,#020813 100%)}
 .overlay[hidden]{display:none}
 .hero{width:min(275px,65vw);height:min(240px,34vh);object-fit:contain;filter:drop-shadow(0 8px 22px #4dfabb5e)}
@@ -76,7 +82,8 @@ canvas{position:absolute;inset:0;width:100%;height:100%;touch-action:none;displa
 <div class="phase"><span id="mission">Коснись первой клетки</span><span id="planet">МИР · 1</span></div>
 <button id="pause" type="button">Ⅱ ПАУЗА</button>
 <div class="message" id="message" role="status" aria-live="polite"></div>
-<div class="note" id="cellNote">Касайся каждой яркой клетки. Новые клетки станут активны после деления всех клеток текущего поколения.</div>
+<div class="note" id="cellNote">Касайтесь ярких клеток. Следующее поколение активируется после завершения текущего. Пробел — альтернативное управление.</div>
+<button id="divideNext" type="button" hidden>◉ РАЗДЕЛИТЬ АКТИВНУЮ КЛЕТКУ</button>
 <div class="bottom" id="controls">
   <button class="control" id="left" type="button">↶ ВЛЕВО<small>ПОЛОСА</small></button>
   <button class="control primary" id="center" type="button">↑ ПРЫЖОК<small>ЦЕНТР</small></button>
@@ -106,12 +113,14 @@ canvas{position:absolute;inset:0;width:100%;height:100%;touch-action:none;displa
   <p>Всё начинается с одной клетки. Касайся её и дочерних клеток, пройди путь к человеку, прыгай через препятствия, найди портал Матрицы и достигни ракеты. Затем облетай астероиды и начни новый цикл на другой планете.</p>
   <div class="steps"><span>01 · КЛЕТКИ</span><span>02 · ЧЕЛОВЕК</span><span>03 · МАТРИЦА</span><span>04 · КОСМОС</span><span>05 · НОВЫЙ МИР</span></div>
   <button id="start" class="start" type="button">▶ НАЧАТЬ РАЗВИТИЕ</button>
+  <button id="soundIntro" class="secondary" type="button" aria-pressed="false">♪ Звук выключен</button>
   <p style="font-size:11px">Это фантастическая метафора развития, а не биологическая модель происхождения человека.</p>
 </section>
 <section class="overlay" id="paused" hidden aria-labelledby="pauseTitle">
   <div class="kicker">ВРЕМЯ ОСТАНОВЛЕНО</div><h1 id="pauseTitle">ПАУЗА</h1>
   <p>Прогресс сохраняется только на этом устройстве. Можно продолжить или вернуться в начало.</p>
   <button id="resume" class="start" type="button">▶ ПРОДОЛЖИТЬ</button>
+  <button id="soundPause" class="secondary" type="button" aria-pressed="false">♪ Звук выключен</button>
   <button id="restart" class="secondary" type="button">↻ НАЧАТЬ ЗАНОВО</button>
 </section>
 </div>

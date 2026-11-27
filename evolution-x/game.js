@@ -10,6 +10,38 @@ const canvas=$('canvas'),ctx=canvas.getContext('2d',{alpha:false});
 let W=390,H=780,scale=1,frameLast=0,hudLast=0,lastSave=0,noticeUntil=0;
 let noticeText='',pausedFrom=null;
 const KEY='yugatneo.evolution-x.state.v1',BEST='yugatneo.evolution-x.best.v1';
+const SOUND_KEY='yugatneo.evolution-x.sound.v1';
+const worlds=[
+ {name:'Исток',cell:'#0b2630',run:'#0b1731',road:'#142d3f',sky:'#020817',planet:'#6ef2a1',rim:'#94ffcb'},
+ {name:'Криос',cell:'#102c49',run:'#182c51',road:'#233f59',sky:'#081527',planet:'#bcecff',rim:'#8ddcff'},
+ {name:'Аврора',cell:'#362040',run:'#302044',road:'#332d50',sky:'#160c2b',planet:'#efb2ff',rim:'#e5aaff'},
+ {name:'Гелиос',cell:'#493020',run:'#36252b',road:'#50372f',sky:'#21101d',planet:'#ffd58a',rim:'#ffc77d'},
+ {name:'Элизиум',cell:'#153b2c',run:'#10362e',road:'#20443c',sky:'#041b20',planet:'#9cffe2',rim:'#b7ffaf'}
+];
+function world(offset=0){return worlds[(state.planet+offset)%worlds.length];}
+let soundOn=false,audio=null;
+try{soundOn=localStorage.getItem(SOUND_KEY)==='1';}catch(_){}
+function unlockAudio(){
+ if(!soundOn)return;
+ try{const Audio=window.AudioContext||window.webkitAudioContext;if(!Audio)return;
+  if(!audio)audio=new Audio();
+  if(audio.state==='suspended')audio.resume().catch(()=>{});
+ }catch(_){}
+}
+function tone(type){
+ if(!soundOn||!audio||audio.state!=='running')return;
+ try{const now=audio.currentTime,osc=audio.createOscillator(),gain=audio.createGain();
+  const f=type==='heavy'?330:type==='medium'?520:780;
+  osc.type='sine';osc.frequency.setValueAtTime(f,now);osc.frequency.exponentialRampToValueAtTime(f*1.45,now+.09);
+  gain.gain.setValueAtTime(.0001,now);gain.gain.exponentialRampToValueAtTime(.055,now+.015);gain.gain.exponentialRampToValueAtTime(.0001,now+.13);
+  osc.connect(gain);gain.connect(audio.destination);osc.start(now);osc.stop(now+.14);
+  osc.onended=()=>{osc.disconnect();gain.disconnect();};
+ }catch(_){}
+}
+function updateSound(){for(const id of ['soundIntro','soundPause']){
+ const el=$(id);el.textContent=soundOn?'♪ Звук включён':'♪ Звук выключен';el.setAttribute('aria-pressed',String(soundOn));
+}}
+function toggleSound(){soundOn=!soundOn;try{localStorage.setItem(SOUND_KEY,soundOn?'1':'0');}catch(_){}unlockAudio();updateSound();if(soundOn)tone('medium');}
 const validPhases=new Set(['cells','emergence','runner','launch','space','landing']);
 function readBest(){try{return Math.max(0,Number(localStorage.getItem(BEST))||0);}catch(_){return 0;}}
 let best=readBest();
@@ -38,6 +70,7 @@ function telegram(){
 }
 const tg=telegram();
 function feel(type){
+ tone(type);
  try{tg?.HapticFeedback?.impactOccurred(type||'light');}catch(_){}
 }
 function resize(){
@@ -72,23 +105,26 @@ function newGame(){
  updateHUD();
 }
 function start(){
+ unlockAudio();
  if(state.phase==='intro')newGame();
  else{$('intro').hidden=true;$('paused').hidden=true;pausedFrom=null;updateHUD();}
 }
 if(state.phase!=='intro')$('start').textContent='▶ ПРОДОЛЖИТЬ ПУТЬ';
 function pause(){
- if(pausedFrom||state.phase==='intro')return;
+ if(pausedFrom||state.phase==='intro'||!$('intro').hidden)return;
  pausedFrom=state.phase;
  $('paused').hidden=false;
  save(true);
 }
 function resume(){
  if(!pausedFrom)return;
+ unlockAudio();
  pausedFrom=null;$('paused').hidden=true;
  frameLast=performance.now();
 }
 function control(command){
- if(pausedFrom||state.phase==='intro')return;
+ if(pausedFrom||state.phase==='intro'||!$('intro').hidden)return;
+ unlockAudio();
  if(command==='left'){if(Core.steer(state,-1))feel('light');}
  if(command==='right'){if(Core.steer(state,1))feel('light');}
  if(command==='center'){
@@ -99,6 +135,18 @@ function control(command){
  updateHUD();
 }
 $('start').addEventListener('click',start);
+for(const id of ['soundIntro','soundPause'])$(id).addEventListener('click',toggleSound);
+updateSound();
+function afterDivision(){
+ const events=state.events.slice();
+ feel('light');reactions(events);save(state.phase==='emergence'||events.includes('newwave'));
+ if(state.phase==='emergence')message('256 КЛЕТОК · РОЖДЕНИЕ НОВОГО ЭТАПА',2100);
+ updateHUD();
+}
+$('divideNext').addEventListener('click',()=>{
+ if(pausedFrom||!$('intro').hidden)return;
+ unlockAudio();if(Core.divideNext(state))afterDivision();
+});
 $('pause').addEventListener('click',()=>pausedFrom?resume():pause());
 $('resume').addEventListener('click',resume);
 $('restart').addEventListener('click',()=>{
@@ -115,16 +163,13 @@ function cellBoard(){
  return {x:(W-size)/2,y:(H-size)/2+10,w:size,h:size};
 }
 canvas.addEventListener('pointerdown',ev=>{
- if(pausedFrom||state.phase==='intro')return;
- ev.preventDefault();
+ if(pausedFrom||state.phase==='intro'||!$('intro').hidden)return;
+ unlockAudio();ev.preventDefault();
  const r=canvas.getBoundingClientRect();
  const x=ev.clientX-r.left,y=ev.clientY-r.top;
  if(state.phase==='cells'){
   const b=cellBoard(),nx=(x-b.x)/b.w,ny=(y-b.y)/b.h;
-  if(Core.divide(state,nx,ny)){
-   feel('light');save();
-   if(state.phase==='emergence')message('256 КЛЕТОК · РОЖДЕНИЕ НОВОГО ЭТАПА',2100);
-  }
+  if(Core.divide(state,nx,ny))afterDivision();
  }else if(state.phase==='runner'||state.phase==='space'){
   control(x<W*.29?'left':x>W*.71?'right':'center');
  }
@@ -132,20 +177,25 @@ canvas.addEventListener('pointerdown',ev=>{
 });
 window.addEventListener('keydown',ev=>{
  if(ev.repeat)return;
+ if(ev.target?.tagName==='BUTTON'&&['Space','Enter'].includes(ev.code))return;
  if(['Space','ArrowUp','ArrowLeft','ArrowRight','KeyA','KeyD','KeyW','KeyF','Escape'].includes(ev.code))ev.preventDefault();
  if(ev.code==='Escape'){pausedFrom?resume():pause();return;}
+ if(!pausedFrom&&$('intro').hidden&&state.phase==='cells'&&['Space','Enter'].includes(ev.code)){
+  ev.preventDefault();unlockAudio();if(Core.divideNext(state))afterDivision();return;
+ }
  if(['ArrowLeft','KeyA'].includes(ev.code))control('left');
  if(['ArrowRight','KeyD'].includes(ev.code))control('right');
  if(['ArrowUp','KeyW','Space'].includes(ev.code))control('center');
  if(ev.code==='KeyF')control('ability');
- if(ev.code==='Enter'&&state.phase==='intro')start();
+ if(ev.code==='Enter'&&!$('intro').hidden)start();
 });
 document.addEventListener('visibilitychange',()=>{if(document.hidden)pause();});
 window.addEventListener('pagehide',()=>save(true));
 function updateHUD(){
  $('score').textContent=Math.floor(state.score).toLocaleString('ru-RU');
  $('best').textContent=Math.max(best,Math.floor(state.score)).toLocaleString('ru-RU');
- $('planet').textContent='МИР · '+(state.planet+1);
+ $('planet').textContent='МИР '+(state.planet+1)+' · '+world().name;
+ $('divideNext').hidden=state.phase!=='cells'||!$('intro').hidden||!!pausedFrom;
  $('fill').style.width=Core.scoreProgress(state).toFixed(1)+'%';
  const cellStage=state.phase==='cells'||state.phase==='emergence';
  $('controls').style.display=cellStage?'none':'grid';
@@ -166,8 +216,9 @@ function updateHUD(){
  const active=state.phase==='runner'||state.phase==='space';
  $('center').textContent='';
  $('center').append(document.createTextNode(state.phase==='space'?'↑ УСКОРЕНИЕ':'↑ ПРЫЖОК'));
+ $('center').disabled=state.phase==='space'&&space.boostCharges<1;
  const sm=document.createElement('small');
- sm.textContent=state.phase==='space'?'ЗАЩИТА ОТ АСТЕРОИДОВ':'ЦЕНТР ЭКРАНА';
+ sm.textContent=state.phase==='space'?'ЗАРЯДЫ: '+space.boostCharges+'/3':'ЦЕНТР ЭКРАНА';
  $('center').append(sm);
  const showAction=state.phase==='runner'&&runner.matrix;
  $('action').classList.toggle('visible',!!showAction);
@@ -206,7 +257,7 @@ function drawStars(speed=0,color='#a8d5d8'){
  ctx.globalAlpha=1;
 }
 function drawCells(){
- gradient(state.planet%2?'#0b1530':'#0b2630','#04101b');
+ gradient(world().cell,'#04101b');
  drawStars(3);
  const b=cellBoard();
  ctx.fillStyle='#092330dd';ctx.strokeStyle='#397c76';
@@ -227,7 +278,10 @@ function drawCells(){
   shade.addColorStop(1,c.active?'#126c65':'#173c56');
   ellipse(x,y,r,r,shade,c.active?'#a5ffb3':'#336b76');
   ctx.restore();
-  if(r>5)ellipse(x-r*.14,y-r*.03,r*.28,r*.24,c.active?'#073e40':'#143f4a');
+  if(r>5){
+   ellipse(x-r*.14,y-r*.03,r*.28,r*.24,c.active?'#073e40':'#143f4a');
+   if(r>11){ellipse(x+r*.35,y+r*.23,r*.14,r*.07,'#b4efad88');ellipse(x-r*.38,y+r*.3,r*.11,r*.08,'#84d8c388');}
+  }
  }
  ctx.textAlign='center';ctx.fillStyle='#bcffe3';ctx.font='bold 12px system-ui';
  ctx.fillText('ДЕЛЕНИЕ · '+state.divisions+' касаний',W/2,b.y-22);
@@ -281,10 +335,10 @@ function drawPortal(x,y,width){
 }
 function drawRunner(){
  const r=state.runner;
- gradient(r.matrix?'#071d17':'#0b1731',r.matrix?'#042920':'#10273a');
+ gradient(r.matrix?'#071d17':world().run,r.matrix?'#042920':'#10273a');
  if(r.matrix)matrixRain();else drawStars(13,'#8dcce7');
  const road=roadGeometry(),left=road.left,right=left+road.width;
- ctx.fillStyle=r.matrix?'#0a352b':'#142d3f';
+ ctx.fillStyle=r.matrix?'#0a352b':world().road;
  ctx.fillRect(left,-30,road.width,H+60);
  for(let i=0;i<4;i++){
   const x=left+i*road.width/3;
@@ -324,6 +378,9 @@ function drawRunner(){
  }
  const px=xForLane(r.lane,road),py=road.centerY-r.jump*24;
  drawHuman(px,py,43);
+ if(r.shield>0||r.invulnerable>0){
+  ctx.save();ctx.globalAlpha=.45+.2*Math.sin(state.time*8);ellipse(px,py-15,34,50,null,r.shield>0?'#96ffd4':'#ffe0a0');ctx.restore();
+ }
  if(r.matrix){
   ctx.fillStyle='#b6ffbc';ctx.font='bold 12px monospace';ctx.textAlign='center';
   ctx.fillText('ПОРТАЛЫ '+r.portals+'  •  ЩИТ '+r.shield+'  •  ИМПУЛЬС '+r.pulse,W/2,H*.18);
@@ -342,12 +399,12 @@ function drawRocket(x,y,sz){
 }
 function drawSpace(){
  const p=state.space;
- gradient('#020817','#081829');drawStars(72,'#fff');
+ gradient(world().sky,'#081829');drawStars(p.boostTime>0?155:72,'#fff');
  if(p.distance>Core.SPACE_GOAL-250){
   const size=Math.max(20,Math.min(100,(p.distance-(Core.SPACE_GOAL-250))*.37));
   const pg=ctx.createRadialGradient(W*.54,H*.17,8,W*.54,H*.17,size);
-  pg.addColorStop(0,'#6ef2a1');pg.addColorStop(.7,'#1d7b8d');pg.addColorStop(1,'#174452');
-  ellipse(W*.54,H*.17,size,size,pg,'#94ffcb');
+  pg.addColorStop(0,world(1).planet);pg.addColorStop(.7,'#1d7b8d');pg.addColorStop(1,'#174452');
+  ellipse(W*.54,H*.17,size,size,pg,world(1).rim);
  }
  const road=roadGeometry(),pitch=road.pitch;
  for(const a of p.asteroids.filter(x=>!x.done&&x.at>p.distance-18&&x.at<p.distance+190).sort((a,b)=>b.at-a.at)){
@@ -366,6 +423,7 @@ function drawSpace(){
  }
  const sx=xForLane(p.lane,road),sy=H*.73;
  drawRocket(sx,sy,36);
+ if(p.invulnerable>0){ctx.save();ctx.globalAlpha=.55;ellipse(sx,sy-10,29,70,null,'#90e8ff');ctx.restore();}
  if(p.boostTime>0){
   ctx.save();ctx.shadowColor='#9affa7';ctx.shadowBlur=26;
   ellipse(sx,sy+60,8,28,'#b9ff92');ctx.restore();
@@ -386,8 +444,10 @@ function transitionScreen(phase){
   drawHuman(cx,cy+65,72);
  }else if(launch){drawRocket(cx,cy+60,80);}
  else{
-  ellipse(cx,cy,96,96,'#257c92','#9cffe2');
-  ellipse(cx+20,cy-10,51,37,'#4fd5a1');
+  const radius=Math.min(96,W*.26,H*.20),pg=ctx.createRadialGradient(cx-radius*.3,cy-radius*.3,2,cx,cy,radius);
+  pg.addColorStop(0,world(1).planet);pg.addColorStop(1,'#173a55');
+  ellipse(cx,cy,radius,radius,pg,world(1).rim);
+  ctx.save();ctx.globalAlpha=.45;ellipse(cx+radius*.2,cy-radius*.1,radius*.51,radius*.37,world(1).rim);ctx.restore();
  }
  ctx.fillStyle='#dcffee';ctx.textAlign='center';ctx.font='bold 20px system-ui';
  ctx.fillText(emerging?'ЧЕЛОВЕК · НОВЫЙ УРОВЕНЬ':launch?'ПОЛЁТ К НОВОЙ ПЛАНЕТЕ':'НОВЫЙ МИР · НОВЫЙ ЦИКЛ',cx,H*.78);
@@ -412,13 +472,13 @@ function reactions(events){
   if(e==='asteroidHit'){message('УДАР АСТЕРОИДА · МАНЕВРИРУЙ',1000);feel('medium');}
   if(e==='checkpoint'){message('ВОССТАНОВЛЕН КОРАБЛЬ · ПРОДОЛЖАЙ',1250);}
   if(e==='planetReached'){message('ДОСТИГНУТА НОВАЯ ПЛАНЕТА!',2600);feel('heavy');save(true);}
-  if(e==='newPlanet'){message('НОВАЯ ПЛАНЕТА · СНОВА ОДНА КЛЕТКА',2600);feel('heavy');save(true);}
+  if(e==='newPlanet'){message(world().name.toUpperCase()+' · СНОВА ОДНА КЛЕТКА',2600);feel('heavy');save(true);}
  }
 }
 function frame(now){
  const dt=frameLast?Math.min(.045,(now-frameLast)/1000):0;
  frameLast=now;
- if(!pausedFrom&&state.phase!=='intro'){
+ if(!pausedFrom&&$('intro').hidden&&state.phase!=='intro'){
   // Accumulate substeps: no skipped hazards during low frame rate.
   const steps=Math.ceil(dt/(1/60))||1;
   for(let i=0;i<steps;i++){

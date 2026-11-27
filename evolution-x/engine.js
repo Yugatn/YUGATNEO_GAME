@@ -24,7 +24,9 @@ function runnerEntities(s){
   loc+=25+Math.floor(rand(s)*9);
  }
  for(const at of [135,345,580]){
+  // Keep portal entry free of same-lane obstacles nearby.
   const lane=chooseLane(s);
+  list=list.filter(o=>o.lane!==lane||Math.abs(o.at-at)>=14);
   list.push({id:'p'+s.planet+'-'+at,at,lane,type:'portal',done:false});
  }
  list.push({id:'rocket',at:RUN_GOAL,lane:0,type:'rocket',done:false});
@@ -41,14 +43,14 @@ function spaceEntities(s){
 }
 function newRunner(s){
  s.runner={
-  distance:0,lane:0,jump:0,velocity:0,hits:0,invulnerable:0,
+  distance:0,furthest:0,lane:0,jump:0,velocity:0,hits:0,invulnerable:0,
   shield:0,pulse:0,matrix:false,portals:0,avoided:0,defeated:0,
   entities:runnerEntities(s)
  };
 }
 function newSpace(s){
  s.space={
-  distance:0,lane:0,hull:3,invulnerable:0,boostTime:0,boostCharges:3,
+  distance:0,furthest:0,lane:0,hull:3,invulnerable:0,boostTime:0,boostCharges:3,
   avoided:0,hits:0,asteroids:spaceEntities(s)
  };
 }
@@ -94,6 +96,19 @@ function divide(s,nx,ny){
   s.events.push('newwave');
  }
  return true;
+}
+// Keyboard/accessibility option: still requires one deliberate action per cell.
+function divideNext(s){
+ if(s.phase!=='cells')return false;
+ const c=cellPositions(s).find(x=>x.active);
+ return !!c&&divide(s,c.x,c.y);
+}
+function creditDistance(s,actor,old,goal){
+ const before=Math.max(old,Number.isFinite(actor.furthest)?actor.furthest:old);
+ const after=Math.max(before,Math.min(goal,actor.distance));
+ actor.furthest=after;
+ s.totalDistance+=after-before;
+ s.score+=Math.floor(after/5)-Math.floor(before/5);
 }
 function steer(s,direction){
  if(direction!==-1&&direction!==1)return false;
@@ -153,8 +168,7 @@ function step(s,rawDt){
  }else if(s.phase==='runner'){
   const r=s.runner,old=r.distance;
   r.distance+=dt*(23+Math.min(5,s.planet*1.4));
-  s.totalDistance+=r.distance-old;
-  s.score+=Math.floor(r.distance/5)-Math.floor(old/5);
+  creditDistance(s,r,old,RUN_GOAL);
   r.invulnerable=Math.max(0,r.invulnerable-dt);
   if(r.jump>0||r.velocity>0){
    r.velocity-=27*dt;
@@ -194,8 +208,7 @@ function step(s,rawDt){
   p.boostTime=Math.max(0,p.boostTime-dt);
   p.invulnerable=Math.max(0,p.invulnerable-dt);
   p.distance+=dt*(25+Math.min(5,s.planet*1.25))*(p.boostTime>0?1.75:1);
-  s.totalDistance+=p.distance-old;
-  s.score+=Math.floor(p.distance/5)-Math.floor(old/5);
+  creditDistance(s,p,old,SPACE_GOAL);
   for(const a of p.asteroids){
    if(a.done||a.at>p.distance||a.at<old)continue;
    a.done=true;
@@ -225,7 +238,7 @@ function step(s,rawDt){
  return s.events;
 }
 const api={CELL_GOAL,RUN_GOAL,SPACE_GOAL,create,start,cellPositions,divide,
- steer,jump,ability,step,scoreProgress};
+ divideNext,steer,jump,ability,step,scoreProgress};
 if(typeof module!=='undefined'&&module.exports)module.exports=api;
 else root.StoryXEvolution=api;
 })(typeof globalThis!=='undefined'?globalThis:this);

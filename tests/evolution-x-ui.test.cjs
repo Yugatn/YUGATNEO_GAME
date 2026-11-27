@@ -101,3 +101,33 @@ test('space scene HUD changes to flight controls and survives a render',()=>{
  assert.equal(stored.space.boostCharges,2);
  w.close();
 });
+
+test('restored running game is frozen until player explicitly continues',()=>{
+ const saved=Core.create(13);Core.start(saved);
+ while(Core.divideNext(saved)){}
+ for(let i=0;i<150;i++)Core.step(saved,1/60);
+ const {w,callbacks}=setup(saved);
+ cycleTick(callbacks,1000);cycleTick(callbacks,1030);
+ w.dispatchEvent(new w.Event('pagehide'));
+ const stored=JSON.parse(w.localStorage.getItem('yugatneo.evolution-x.state.v1'));
+ assert.equal(stored.runner.distance,saved.runner.distance);
+ element(w,'start').click();cycleTick(callbacks,1060);
+ w.dispatchEvent(new w.Event('pagehide'));
+ assert.ok(JSON.parse(w.localStorage.getItem('yugatneo.evolution-x.state.v1')).runner.distance>saved.runner.distance);
+ w.close();
+});
+test('cell alternative control, generation notification and sound preference',()=>{
+ const {w}=setup();
+ element(w,'soundIntro').click();
+ assert.equal(element(w,'soundIntro').getAttribute('aria-pressed'),'true');
+ assert.equal(w.localStorage.getItem('yugatneo.evolution-x.sound.v1'),'1');
+ element(w,'start').click();
+ element(w,'divideNext').click();
+ assert.match(element(w,'mission').textContent,/КЛЕТКИ 2\/256/);
+ assert.match(element(w,'message').textContent,/НОВОЕ ДЕЛЕНИЕ/);
+ w.dispatchEvent(new w.KeyboardEvent('keydown',{code:'Space',bubbles:true,cancelable:true}));
+ assert.match(element(w,'mission').textContent,/КЛЕТКИ 3\/256/);
+ element(w,'pause').click();
+ assert.equal(element(w,'soundPause').getAttribute('aria-pressed'),'true');
+ w.close();
+});
