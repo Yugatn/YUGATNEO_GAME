@@ -1,0 +1,21 @@
+<!doctype html><html lang="ru"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Sega X Player</title><style>html,body{width:100%;height:100%;margin:0;background:#05070c;color:#dce7ff;font:15px system-ui}#game{width:100%;height:100%}#notice{position:absolute;inset:0;display:grid;place-items:center;text-align:center;padding:20px;pointer-events:none}#notice[hidden]{display:none}</style></head><body><div id="game"></div><div id="notice">Ожидание картриджа…</div><script>
+"use strict";
+const CDN="https://cdn.emulatorjs.org/4.2.3/data/";
+const allowed={segaMD:["bin","gen","md","smd","zip"],segaMS:["sms","zip"],segaGG:["gg","zip"]};
+let launched=false,romUrl=null;
+function notify(state,text){parent.postMessage({type:"sega-x-status",state,text},location.origin)}
+function error(text){document.getElementById("notice").hidden=false;document.getElementById("notice").textContent=text;notify("error",text)}
+window.addEventListener("message",async e=>{
+ if(e.origin!==location.origin||e.source!==parent||e.data?.type!=="sega-x-load"||launched)return;
+ const {file,core}=e.data;if(!(file instanceof Blob)||!Object.hasOwn(allowed,core)||file.size===0||file.size>32*1024*1024){error("Недопустимый картридж.");return}
+ const ext=(file.name||"").split(".").pop().toLowerCase();if(!allowed[core].includes(ext)){error("Формат не соответствует выбранной системе.");return}
+ launched=true;try{
+ const hash=Array.from(new Uint8Array(await crypto.subtle.digest("SHA-256",await file.arrayBuffer())),x=>x.toString(16).padStart(2,"0")).join("");
+ romUrl=URL.createObjectURL(file);
+ Object.assign(window,{EJS_player:"#game",EJS_core:core,EJS_gameUrl:romUrl,EJS_pathtodata:CDN,EJS_gameName:(file.name||"cartridge").replace(/[^a-zA-Z0-9_. -]/g,"_").slice(0,90)+"-"+hash.slice(0,16),EJS_gameID:parseInt(hash.slice(0,7),16)+1,EJS_language:"ru-RU",EJS_startOnLoaded:false,EJS_threads:false,EJS_color:"#527ce8",EJS_backgroundColor:"#05070c",EJS_askBeforeExit:false,EJS_volume:0.5,EJS_startButtonName:"Начать игру",EJS_ready:()=>{document.getElementById("notice").hidden=true;notify("ready","Ядро готово. Нажмите «Начать игру» в окне эмулятора.")},EJS_onGameStart:()=>{document.getElementById("notice").hidden=true;notify("running","Игра запущена.")},EJS_onExit:()=>notify("exit","Эмулятор завершён.")});
+ const s=document.createElement("script");s.src=CDN+"loader.js";s.onerror=()=>error("Не удалось загрузить EmulatorJS. Проверьте интернет и повторите запуск.");document.head.append(s);notify("loading","Загрузка ядра и картриджа…");
+ }catch(err){error("Ошибка: "+(err.message||err))}
+});
+window.addEventListener("pagehide",()=>{if(romUrl)URL.revokeObjectURL(romUrl)});
+notify("waiting","Игровой экран готов.");
+</script></body></html>
