@@ -1,0 +1,14 @@
+
+"use strict";
+function create(n,cross=false){const s={n,board:new Uint8Array(n*n),owner:new Uint8Array(n*n),turn:1,score:[0,0,0],moves:0,passes:0,last:-1,ended:false};if(cross){const c=Math.floor(n/2)-1;s.board[c*n+c]=1;s.board[(c+1)*n+c+1]=1;s.board[c*n+c+1]=2;s.board[(c+1)*n+c]=2}return s}
+function clone(s){return {...s,board:s.board.slice(),owner:s.owner.slice(),score:s.score.slice()}}
+function legal(s,i){return !s.ended&&Number.isInteger(i)&&i>=0&&i<s.board.length&&!s.board[i]&&!s.owner[i]}
+function components(s,p){const n=s.n,N=n*n,seen=new Uint8Array(N),regions=[];const wall=i=>s.board[i]===p&&!s.owner[i];for(let i=0;i<N;i++){if(seen[i]||wall(i))continue;const q=[i];seen[i]=1;let edge=false;const enemies=[];for(let k=0;k<q.length;k++){const j=q[k],x=j%n,y=Math.floor(j/n);if(x===0||x===n-1||y===0||y===n-1)edge=true;if(s.board[j]===3-p&&!s.owner[j])enemies.push(j);for(const t of [x>0?j-1:-1,x<n-1?j+1:-1,y>0?j-n:-1,y<n-1?j+n:-1])if(t>=0&&!seen[t]&&!wall(t)){seen[t]=1;q.push(t)}}if(!edge&&enemies.length)regions.push({cells:q,enemies})}return regions}
+function capture(s,p){let count=0;for(const r of components(s,p)){for(const j of r.cells){if(!s.owner[j]&&s.board[j]===3-p)count++;if(!s.owner[j])s.owner[j]=p}}s.score[p]+=count;return count}
+function move(s,i){if(!legal(s,i))return null;const p=s.turn;s.board[i]=p;s.last=i;s.moves++;s.passes=0;const gained=capture(s,p);const lost=capture(s,3-p);s.turn=3-p;if(!s.board.some((v,j)=>!v&&!s.owner[j]))s.ended=true;return {gained,lost}}
+function pass(s){if(s.ended)return false;s.passes++;s.turn=3-s.turn;if(s.passes>=2)s.ended=true;return true}
+function candidates(s){const a=[];const n=s.n;let occupied=false;for(let i=0;i<s.board.length;i++)if(s.board[i]&&!s.owner[i]){occupied=true;break}for(let i=0;i<s.board.length;i++)if(legal(s,i)){const x=i%n,y=Math.floor(i/n);let near=0,own=0,enemy=0;for(let dy=-2;dy<=2;dy++)for(let dx=-2;dx<=2;dx++){const j=(y+dy)*n+x+dx;if(x+dx<0||x+dx>=n||y+dy<0||y+dy>=n||s.owner[j])continue;const b=s.board[j];if(b){near++;if(Math.max(Math.abs(dx),Math.abs(dy))===1){if(b===s.turn)own++;else enemy++}}}if(near||!occupied)a.push({i,h:own*1.4+enemy*1.8-Math.hypot(x-(n-1)/2,y-(n-1)/2)*.07})}if(!a.length)for(let i=0;i<s.board.length;i++)if(legal(s,i))a.push({i,h:0});return a.sort((a,b)=>b.h-a.h)}
+function choose(s,level=1,rng=Math.random){const p=s.turn,cs=candidates(s);if(!cs.length)return -1;const ranked=cs.map(c=>{const t=clone(s),r=move(t,c.i);return {i:c.i,t,v:r.gained*120-r.lost*145+c.h+(rng()-.5)*(level===0?5:.35)}}).sort((a,b)=>b.v-a.v);if(level!==2)return ranked[0].i;let best=-Infinity,pick=ranked[0].i;for(const c of ranked.slice(0,24)){let danger=0;if(!c.t.ended)for(const e of candidates(c.t).slice(0,18)){const u=clone(c.t),rr=move(u,e.i);danger=Math.max(danger,rr.gained*95-rr.lost*60)}const v=c.v-danger;if(v>best){best=v;pick=c.i}}return pick}
+
+
+self.onmessage=e=>{const {state,level}=e.data;self.postMessage({i:choose(state,level)})};
