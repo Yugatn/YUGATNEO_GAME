@@ -91,6 +91,10 @@ def check(browser, name, url, width, height):
     expect(page.locator("#zoomLevel")).to_have_text("3×")
     page.locator("#mapZoom").click()
     assert camera() == [0, 0, 1000, 440]
+    page.select_option("#layer", "resource:food")
+    expect(page.locator("#mapnote")).to_contain_text("Продовольствие")
+    assert page.locator("#markers .supplier").count() > 0
+    assert page.locator("#edges .resourceRoute").count() > 0
     page.select_option("#layer", "ecology")
     page.locator("[data-step='7']").click()
     expect(page.locator("#day")).to_have_text("7")
@@ -104,6 +108,10 @@ def check(browser, name, url, width, height):
     page.select_option("#logFilter", "all")
     expect(page.locator("#log")).to_contain_text("Первые участники")
     page.select_option("#moreTabs", "settings")
+    expect(page.locator("#eventSound")).to_have_attribute("aria-pressed", "false")
+    page.locator("#eventSound").click()
+    expect(page.locator("#eventSound")).to_have_attribute("aria-pressed", "true")
+    page.locator("#eventSound").click()
     page.locator("#mapMotion").click()
     page.reload(wait_until="domcontentloaded")
     expect(page.locator("#gameShell")).to_have_attribute("data-map-size", "compact")
