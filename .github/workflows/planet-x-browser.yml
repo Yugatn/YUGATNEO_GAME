@@ -1,0 +1,44 @@
+name: Planet X browser checks
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - 'ideas-x/index.html'
+      - 'ideas-x/tests/**'
+      - '.github/workflows/planet-x-browser.yml'
+  pull_request:
+    paths:
+      - 'ideas-x/index.html'
+      - 'ideas-x/tests/**'
+      - '.github/workflows/planet-x-browser.yml'
+permissions:
+  contents: read
+concurrency:
+  group: planet-x-browser-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  layout:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: UI logic
+        run: node ideas-x/tests/interface-smoke.cjs
+      - name: Browser dependencies
+        run: |
+          python -m pip install playwright==1.51.0
+          python -m playwright install --with-deps chromium webkit
+      - name: Layout and interaction
+        run: python ideas-x/tests/browser-layout.py
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: planet-x-layout
+          path: ideas-x/test-artifacts/
+          if-no-files-found: ignore
