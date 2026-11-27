@@ -6,7 +6,7 @@ function getPreference(){try{const v=localStorage.getItem("retro.fullscreen.auto
 function setPreference(v){try{localStorage.setItem("retro.fullscreen.auto",v?"1":"0")}catch{}}
 function create(target,options={}){
  if(!target)throw Error("Fullscreen target missing");
- let expanded=false,nativeSeen=false,wanted=false;
+ let expanded=false,nativeSeen=false,wanted=false,pending=false;
  const doc=target.ownerDocument||document,root=doc.documentElement;
  const bar=doc.createElement("div");bar.className="retro-display-bar";bar.hidden=true;
  const note=doc.createElement("span");note.className="retro-display-note";note.setAttribute("role","status");note.hidden=true;
@@ -21,10 +21,10 @@ function create(target,options={}){
   if(!real||fullscreenElement())return Promise.resolve(false);
   const request=target.requestFullscreen||target.webkitRequestFullscreen;
   if(!request)return Promise.resolve(false);
-  try{return Promise.resolve(request.call(target)).then(()=>{if(fullscreenElement()===target){nativeSeen=true;if(!wanted)leave();else refresh()}return !!fullscreenElement()}).catch(()=>{refresh();return false})}catch{refresh();return Promise.resolve(false)}
+  try{pending=true;return Promise.resolve(request.call(target)).then(()=>{pending=false;if(fullscreenElement()===target){nativeSeen=true;if(!wanted)leave();else refresh()}return !!fullscreenElement()}).catch(()=>{pending=false;refresh();return false})}catch{pending=false;refresh();return Promise.resolve(false)}
  }
  function leave(){wanted=false;nativeSeen=false;setExpanded(false);const el=fullscreenElement();if(el&&(el===target||target.contains(el))){try{const end=doc.exitFullscreen||doc.webkitExitFullscreen;return Promise.resolve(end?.call(doc)).catch(()=>{})}catch{}}return Promise.resolve()}
- function changed(){const el=fullscreenElement();if(el&&(el===target||target.contains(el))){nativeSeen=true;if(!wanted){leave();return}setExpanded(true)}else if(nativeSeen){nativeSeen=false;wanted=false;setExpanded(false)}else refresh()}
+ function changed(){const el=fullscreenElement();if(el&&(el===target||target.contains(el))){nativeSeen=true;if(!wanted&&pending){leave();return}wanted=true;setExpanded(true)}else if(nativeSeen){nativeSeen=false;wanted=false;setExpanded(false)}else refresh()}
  function toggle(){return expanded?leave():enter(true)}
  function auto(real=true){if(getPreference())return enter(real);return Promise.resolve(false)}
  function key(e){if(e.key==="F2"){e.preventDefault();toggle()}else if(e.key==="Escape"&&expanded&&!fullscreenElement()){e.preventDefault();leave()}}
