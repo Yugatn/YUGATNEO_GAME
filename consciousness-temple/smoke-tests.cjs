@@ -52,9 +52,28 @@ result.placementCooldown=placementIssue(preview,0,1,"attention")==="cooldown";
 preview.cool.attention=0;preview.clarity=0;result.placementClarity=placementIssue(preview,0,1,"attention")==="clarity";
 preview.clarity=1000;addEnemy(preview,{key:"greed",r:0});preview.enemies[0].x=1.5;result.placementEnemy=placementIssue(preview,0,1,"attention")==="enemy";
 preview.phase="lost";result.placementFinished=placementIssue(preview,1,1,"attention")==="finished";
+result.menuRoutes=Object.keys(MENU_PAGES).every(k=>menuRoute(k)===k);
+result.menuUnknown=menuRoute("constructor")==="home";
+result.worldRoutes=WORLD_ROUTES.every(k=>worldRoute(k)===k);
+result.worldFallback=worldRoute("bad")==="map";
+result.worldMap=worldMapVisible("questPanel")&&worldMapVisible("branchPanel")&&worldMapVisible("socialPanel")&&!worldMapVisible("spacePanel");
 return result})()
 `)();
 const ids=new Set(Array.from(html.slice(0,html.indexOf("<script>")).matchAll(/\bid="([^"]+)"/g),m=>m[1]));
 result.domReferences=Array.from(script.matchAll(/\$\("([^"]+)"\)/g),m=>m[1]).every(id=>ids.has(id));
+const menuCode=script.slice(script.indexOf("let menuActive=false"),script.indexOf("menuInit();restore();"));
+const mock=`
+const nodes={};const cl={add(){},remove(){}};const document={activeElement:null,body:{classList:cl}};
+function $(id){return nodes[id]||(nodes[id]={id,hidden:false,open:false,value:"",scrollTop:0,textContent:"",inert:false,isConnected:true,setAttribute(){},removeAttribute(){},focus(){document.activeElement=this},querySelector(){return null},prepend(){},addEventListener(){},showModal(){this.open=true},close(){this.open=false}})}
+document.activeElement=$("menuOpen");function el(){return {}}
+let s=create(0,1,42,metaNew()),worldOpen=false,worldSig="",practice=null,sceneOpen=false;function closePractice(){practice=null}function worldUI(){}function update(){}function save(){}function draw(){}function tone(){}function teamUI(){}function templeUI(){}function sceneUI(){}function learningUI(){}function journalUI(){}function mapUI(){}function renderLex(){}
+`;
+const menuResults=new Function(core+mock+menuCode+`
+return (()=>{menuInit();start(s);menuGo("home");const opened=menuActive&&s.phase==="paused"&&$("arena").inert&&$("gameMenu").open&&!$("page-home").hidden;menuGo("world");worldNavigate("spacePanel");const space=worldOpen&&$("spacePanel").open&&!$("spacePanel").hidden&&$("worldMap").hidden&&!$("questPanel").open;worldNavigate("questPanel");const quest=$("questPanel").open&&!$("worldMap").hidden&&$("spacePanel").hidden;practice={};menuBack();const practiceBack=!practice&&menuCurrent==="world";menuGo("library");const library=!worldOpen&&$("worldPanel").hidden&&!$("page-library").hidden;menuBack();const returnWorld=menuCurrent==="world"&&worldOpen&&$("questPanel").open;menuBack();const subBack=worldCurrent==="spacePanel";menuBack();const mapBack=worldCurrent==="map";menuBack();const back=menuCurrent==="home";menuBack();const close=!menuActive&&!$("arena").inert&&!$("gameMenu").open&&document.activeElement===$("menuOpen")&&s.phase==="paused";menuGo("settings");menuClose(false);const direct=!menuActive&&!$("arena").inert;return {opened,space,quest,practiceBack,library,returnWorld,subBack,mapBack,back,close,direct}})()
+`)();
+for(const [key,value] of Object.entries(menuResults))result["menu_"+key]=value;
+const allIds=Array.from(html.slice(0,html.indexOf("<script>")).matchAll(/\bid="([^"]+)"/g),m=>m[1]);
+result.uniqueIds=new Set(allIds).size===allIds.length;
+result.allMenuPages=new Function(core+"return Object.keys(MENU_PAGES)")().every(k=>ids.has("page-"+k));
 for(const [k,v] of Object.entries(result))console.log((v?"PASS ":"FAIL ")+k);
 if(!Object.values(result).every(Boolean))process.exitCode=1;
