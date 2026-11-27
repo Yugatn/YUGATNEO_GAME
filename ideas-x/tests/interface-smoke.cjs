@@ -39,6 +39,9 @@ switchTo("chronicle");assert(els.historyChart.innerHTML.includes("<svg")&&els.hi
 els.historyMetric.value="ecology";els.historyMetric.onchange();assert(els.historyChart.innerHTML.includes("Экология"),"History metric switch");
 els.logFilter.value="crisis";els.logFilter.onchange();assert(els.log.innerHTML.includes("Нет событий выбранного типа"),"Chronicle event filter");
 els.logFilter.value="all";els.logFilter.onchange();assert(els.log.innerHTML.includes("Первые участники"),"Chronicle restores events");
+els.layer.onchange({target:{value:"resource:food"}});assert(els.layer.value==="resource:food"&&els.mapnote.textContent.includes("Продовольствие"),"Resource layer");
+assert(els.markers.children.some(n=>n.classList.contains("supplier")),"Supplier highlights");
+assert(els.edges.children.some(n=>n.classList.contains("resourceRoute"))&&els.edges.children.some(n=>n.attrs.opacity===.07),"Resource route filtering");
 els.layer.onchange({target:{value:"ecology"}});assert(els.layer.value==="ecology","Map layer selection");
 els.mapZoom.onclick();assert(els.mapwrap.classList.contains("zoomed"),"Map zoom");
 const view=()=>els.atlas.attrs.viewBox.split(" ").map(Number);
@@ -67,6 +70,12 @@ els.mapSizeSelect.onchange({target:{value:"normal"}});assert(els.gameShell.attrs
 assert(JSON.parse(store["ideas-x-ui-v1"]).layer==="ecology","Map layer preference persisted");
 els.mapLabels.onclick();assert(JSON.parse(store["ideas-x-ui-v1"]).labels===true,"Map labels preference persisted");
 switchTo("system");assert(els.deckScroll.scrollTop===0,"Reset clears scroll memory");
+els.mode.value="peace";els.regionSelect.value="eu";els.regionSelect.onchange({target:els.regionSelect});els.start.onclick();assert(!els.eventAlert.hidden&&els.eventAlert.textContent==="Кризис","War alert");
+els.eventAlert.onclick();assert(!els.chronicle.hidden&&!els.eventCard.hidden&&els.eventText.textContent.includes("Вооружённый конфликт"),"Event opens chronicle card");
+els.eventRegion.onclick();assert(els.zoomLevel.textContent==="3×","Event region focus");
+els.eventDetails.onclick();assert(!els.peace.hidden,"Event opens relevant section");
+els.eventAlert.onclick();els.eventDismiss.onclick();assert(els.eventAlert.hidden&&els.eventCard.hidden,"Dismiss event");
+click(els.controls,{step:"1"});assert(els.eventAlert.hidden,"Dismissed event does not repeat");
 return passed;
 }
 const passed=runSmoke(fs.readFileSync(path.join(__dirname,"../index.html"),"utf8"));
