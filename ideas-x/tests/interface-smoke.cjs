@@ -26,6 +26,7 @@ els.mode.value="sandbox";els.regionSelect.value="eu";els.regionSelect.onchange({
 assert(!els.start.disabled&&els.start.textContent==="Начать здесь","Region unlocks fixed start");
 els.start.onclick();
 assert(state().started&&state().selected==="eu"&&els.start.hidden&&!els.controls.hidden,"Start swaps to time controls");
+assert(state().history.length===1&&state().history[0][0]===0&&state().history[0][1].length===192,"Initial historical snapshot");
 for(let t of tabs){switchTo(t);assert(tabs.every(k=>els[k].hidden===(k!==t)),"Single active panel: "+t)}
 switchTo("system");els.deckScroll.scrollTop=155;switchTo("society");switchTo("system");
 assert(els.deckScroll.scrollTop===155,"Restore tab scroll position");
@@ -33,6 +34,11 @@ assert(els.econGlobal.innerHTML.includes("Устойчивость мира"),"E
 switchTo("generations");els.enroll.onclick();assert(state().generations.length===1,"School moved and works");
 switchTo("science");click(els.techGrid,{science:"launch",tech:"water"});assert(state().research[0]?.tech==="water","Science action");
 click(els.controls,{step:"7"});assert(state().day===7,"Time control independent of tab");
+assert(state().history.length===2&&state().history[1][0]===4,"Four-turn history sampling");
+switchTo("chronicle");assert(els.historyChart.innerHTML.includes("<svg")&&els.historyStats.innerHTML.includes("Изменение"),"History graph and comparison");
+els.historyMetric.value="ecology";els.historyMetric.onchange();assert(els.historyChart.innerHTML.includes("Экология"),"History metric switch");
+els.logFilter.value="crisis";els.logFilter.onchange();assert(els.log.innerHTML.includes("Нет событий выбранного типа"),"Chronicle event filter");
+els.logFilter.value="all";els.logFilter.onchange();assert(els.log.innerHTML.includes("Первые участники"),"Chronicle restores events");
 els.layer.onchange({target:{value:"ecology"}});assert(els.layer.value==="ecology","Map layer selection");
 els.mapZoom.onclick();assert(els.mapwrap.classList.contains("zoomed"),"Map zoom");
 const view=()=>els.atlas.attrs.viewBox.split(" ").map(Number);
@@ -53,6 +59,7 @@ els.mapFocus.onclick();assert(view()[2]<1000,"Focus shortcut");
 switchTo("settings");els.mapMotion.onclick();assert(els.atlas.classList.contains("noMotion"),"Animation preference");
 els.reset.onclick();assert(state().day===0&&!state().started&&!els.overview.hidden&&els.settings.hidden,"Reset returns to overview");
 assert(els.start.disabled&&els.controls.hidden,"Reset restores start controls");
+assert(state().history.length===0,"Reset clears history");
 assert(JSON.parse(store["ideas-x-ui-v1"]).motion===false,"Motion preference persisted");
 els.mapSize.onclick();assert(els.gameShell.attrs["data-map-size"]==="large"&&JSON.parse(store["ideas-x-ui-v1"]).size==="large","Large atlas mode");
 els.mapSize.onclick();assert(els.gameShell.attrs["data-map-size"]==="compact","Compact atlas mode");
