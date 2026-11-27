@@ -196,7 +196,7 @@ test('PWA assets are complete and independently scoped',()=>{
   assert.ok(fs.existsSync(path.join(root,filename)),filename);
  }
  const sw=fs.readFileSync(path.join(root,'sw.js'),'utf8');
- assert.ok(sw.includes('evolution-x-v5'));
+ assert.ok(sw.includes('evolution-x-v6'));
 });
 
 test('accessible division requires exactly 255 actions and cannot skip waves',()=>{
@@ -267,4 +267,36 @@ test('motor and navigation grant respective bonuses, recorded in chronicle and r
  nav.space.distance=Evolution.SPACE_GOAL-.05;Evolution.step(nav,1/60);
  assert.equal(nav.chronicle[0].specialization,'Навигация');
  advance(nav,3);assert.equal(nav.specialization,null);
+});
+
+test('local division does not move or resize any unrelated cell, through all 255 divisions',()=>{
+ const s=started();
+ while(s.phase==='cells'){
+  const old=Evolution.cellPositions(s),p=old.filter(c=>c.active).at(-1);
+  assert.ok(p);assert.ok(Evolution.divide(s,p.x,p.y));
+  const next=Evolution.cellPositions(s),byId=new Map(next.map(c=>[c.id,c]));
+  for(const c of old)if(c.id!==p.id){
+   const v=byId.get(c.id);assert.ok(v);
+   assert.equal(v.x,c.x);assert.equal(v.y,c.y);assert.equal(v.r,c.r);
+  }
+  const children=next.filter(c=>c.id===s.nextId||c.id===s.nextId-1);
+  assert.equal(children.length,2);
+  for(const c of children)assert.ok(Math.hypot(c.x-p.x,c.y-p.y)<.4);
+ }
+ assert.equal(s.cells.length,256);
+ const pos=Evolution.cellPositions(s);
+ for(let i=0;i<pos.length;i++)for(let j=i+1;j<pos.length;j++){
+  const a=pos[i],b=pos[j];assert.ok(Math.hypot(a.x-b.x,a.y-b.y)>1.08*(a.r+b.r),'membranes must not overlap');
+ }
+});
+test('cell hit testing rejects empty space and inactive cells, and layout survives legacy JSON',()=>{
+ const s=started();assert.equal(Evolution.divide(s,.02,.02),false);
+ while(s.cells.length<73){const p=Evolution.cellPositions(s).filter(c=>c.active).at(-1);assert.ok(Evolution.divide(s,p.x,p.y));}
+ const pos=Evolution.cellPositions(s),copy=JSON.parse(JSON.stringify(s));
+ assert.deepEqual(Evolution.cellPositions(copy),pos);
+ for(const p of pos)assert.equal(Evolution.cellAt(s,p.x,p.y).id,p.id);
+ assert.equal(Evolution.divide(s,.01,.01),false);
+ const inactive=pos.find(c=>!c.active);assert.ok(inactive);
+ assert.equal(Evolution.divide(s,inactive.x,inactive.y),false);
+ assert.ok(Evolution.divideNext(copy));
 });

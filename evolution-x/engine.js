@@ -90,23 +90,55 @@ function start(s){
  if(s.phase!=='intro')return false;
  s.phase='cells';s.events=['begin'];return true;
 }
+// The ordered leaves of a binary division tree encode their ancestry by generation.
+ // Reconstruct fixed local regions from legacy saves without adding persisted coordinates.
 function cellPositions(s){
- const n=s.cells.length,cols=Math.ceil(Math.sqrt(n)),rows=Math.ceil(n/cols);
- return s.cells.map((c,i)=>({
-  id:c.id,x:((i%cols)+0.5)/cols,y:(Math.floor(i/cols)+0.5)/rows,
-  r:Math.min(.38/cols,.38/rows),generation:c.generation,
-  active:c.generation===s.wave
- }));
+ const out=[];let index=0;
+ function visit(depth,left,top,width,height){
+  const c=s.cells[index];if(!c)return;
+  if(c.generation===depth){
+   const x=left+width/2,y=top+height/2,u=2*x-1,v=2*y-1;
+   // Rounded colony footprint, with no global rearrangement after any split.
+   const cx=.5+.5*u*Math.sqrt(1-.24*v*v);
+   const cy=.5+.5*v*Math.sqrt(1-.24*u*u);
+   const r=Math.min(width,height)*(depth<2?.38:.30);
+   out.push({id:c.id,x:cx,y:cy,r,generation:c.generation,active:c.generation===s.wave});
+   index++;return;
+  }
+  if(depth>=8||!Number.isInteger(c.generation)||c.generation<depth)return;
+  if(depth%2===0){
+   visit(depth+1,left,top,width/2,height);
+   visit(depth+1,left+width/2,top,width/2,height);
+  }else{
+   visit(depth+1,left,top,width,height/2);
+   visit(depth+1,left,top+height/2,width,height/2);
+  }
+ }
+ visit(0,0,0,1,1);
+ // Defensive fallback for malformed/non-tree legacy data; never recurse indefinitely.
+ if(out.length!==s.cells.length){
+  const n=s.cells.length,cols=Math.ceil(Math.sqrt(n)),rows=Math.ceil(n/cols);
+  return s.cells.map((c,i)=>({id:c.id,x:((i%cols)+.5)/cols,y:(Math.floor(i/cols)+.5)/rows,
+   r:Math.min(.30/cols,.30/rows),generation:c.generation,active:c.generation===s.wave}));
+ }
+ return out;
+}
+function cellAt(s,nx,ny){
+ if(!Number.isFinite(nx)||!Number.isFinite(ny)||nx<0||nx>1||ny<0||ny>1)return null;
+ let best=null,nearest=Infinity;
+ for(const c of cellPositions(s)){
+  const d=Math.hypot(nx-c.x,ny-c.y);
+  // A small touch margin, but an empty part of the field is not a cell.
+  if(d<=c.r*1.22&&d<nearest){nearest=d;best=c;}
+ }
+ return best;
 }
 function divide(s,nx,ny){
- if(s.phase!=='cells'||!Number.isFinite(nx)||!Number.isFinite(ny)||
-    nx<0||nx>1||ny<0||ny>1)return false;
- const layout=cellPositions(s),n=layout.length;
- const cols=Math.ceil(Math.sqrt(n)),rows=Math.ceil(n/cols);
- const col=Math.min(cols-1,Math.floor(nx*cols));
- const row=Math.min(rows-1,Math.floor(ny*rows));
- const index=row*cols+col;
- if(index>=n||!layout[index].active)return false;
+ if(s.phase!=='cells')return false;
+ const hit=cellAt(s,nx,ny);
+ if(!hit||!hit.active)return false;
+ const index=s.cells.findIndex(c=>c.id===hit.id);
+ if(index<0)return false;
  const parent=s.cells[index];
  s.cells.splice(index,1,{id:++s.nextId,generation:parent.generation+1},
                     {id:++s.nextId,generation:parent.generation+1});
@@ -280,7 +312,7 @@ function step(s,rawDt){
  return s.events;
 }
 const api={CELL_GOAL,RUN_GOAL,SPACE_GOAL,create,start,cellPositions,divide,
- divideNext,steer,jump,ability,step,scoreProgress,profile,SPECIALIZATIONS,specialization,chooseSpecialization};
+ cellAt,divideNext,steer,jump,ability,step,scoreProgress,profile,SPECIALIZATIONS,specialization,chooseSpecialization};
 if(typeof module!=='undefined'&&module.exports)module.exports=api;
 else root.StoryXEvolution=api;
 })(typeof globalThis!=='undefined'?globalThis:this);

@@ -186,3 +186,13 @@ test('rapid successive division, dense field and reduced motion remain playable'
  assert.match(element(reduced.w,'mission').textContent,/КЛЕТКИ 2\/256/);
  reduced.w.close();
 });
+
+test('empty microscope field cannot divide a cell; visible daughter targets remain clickable',()=>{
+ const {w,callbacks}=setup();element(w,'start').click();
+ touch(w,22,227);assert.match(element(w,'mission').textContent,/КЛЕТКИ 1\/256/);
+ touch(w,195,400);cycleTick(callbacks,1000);
+ touch(w,105,400);assert.match(element(w,'mission').textContent,/КЛЕТКИ 3\/256/);
+ touch(w,105,310);assert.match(element(w,'mission').textContent,/КЛЕТКИ 3\/256/);
+ touch(w,285,400);assert.match(element(w,'mission').textContent,/КЛЕТКИ 4\/256/);
+ assert.doesNotThrow(()=>cycleTick(callbacks,1030));w.close();
+});

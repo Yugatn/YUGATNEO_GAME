@@ -249,7 +249,7 @@ function updateHUD(){
  $('pause').style.display=state.phase==='intro'?'none':'block';
  $('cellNote').style.display=state.phase==='cells'?'block':'none';
  const selected=Core.specialization(state);
- $('cellNote').textContent=selected?'Специализация: '+selected.name+'. Продолжайте деление.':state.cells.length>=32?'Специализация доступна в меню паузы. Выберите путь или продолжите деление.':'Касайтесь ярких клеток. Пробел — альтернативное управление.'+(Core.profile(state.planet).cellBonus?' Бонус среды: +'+Core.profile(state.planet).cellBonus+' за деление.':'');
+ $('cellNote').textContent=selected?'Специализация: '+selected.name+'. Продолжайте деление.':state.cells.length>=32?'Специализация доступна в меню паузы. Выберите путь или продолжите деление.':'Касайтесь ярких клеток или светлых контуров. Пробел — альтернативное управление.'+(Core.profile(state.planet).cellBonus?' Бонус среды: +'+Core.profile(state.planet).cellBonus+' за деление.':'');
  const runner=state.runner,space=state.space;
  if(cellStage){
   $('mission').textContent='КЛЕТКИ '+state.cells.length+'/'+Core.CELL_GOAL+
@@ -361,8 +361,8 @@ function drawDivision(e,children,b){
  const angle=Math.atan2(by-ay,bx-ax);
  const detailed=oldR>=18;
  // Target rings preserve spatial feedback while accepting another tap immediately.
- for(const c of children)if(c.active&&detailed){
-  ctx.save();ctx.globalAlpha=.28;ellipse(b.x+c.x*b.w,b.y+c.y*b.h,r,r*.93,null,'#bbffe1');ctx.restore();
+ for(const c of children)if(c.active){
+  ctx.save();ctx.globalAlpha=.55;ellipse(b.x+c.x*b.w,b.y+c.y*b.h,r,r*.93,null,'#bbffe1');ctx.restore();
  }
  if(p<.69){
   const k=smooth(p/.69),rx=lerp(oldR,2*r,k),ry=lerp(oldR*.92,r*.92,k);
@@ -418,7 +418,7 @@ function drawCells(){
  ctx.textAlign='center';ctx.fillStyle='#bcffe3';ctx.font='bold 12px system-ui';
  ctx.fillText('ДЕЛЕНИЕ · '+state.divisions+' касаний',W/2,b.y-22);
  ctx.fillStyle='#b6e3d6';ctx.font='11px system-ui';
- ctx.fillText(stage||'Яркие клетки готовы к делению',W/2,b.y+b.h+26);
+ ctx.fillText(stage||'Касайтесь ярких клеток и их контуров',W/2,b.y+b.h+26);
 }
 function matrixRain(){
  ctx.save();ctx.font='13px monospace';ctx.textAlign='center';
