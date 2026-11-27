@@ -36,6 +36,13 @@ const w=create(0,1,123,m);start(w);w.wave=waveLimit(w);step(w,.1);result.victory
 const l=create(0,1,123,m);start(l);for(let i=0;i<3;i++)breach(l,0);result.defeat=l.phase==="lost"&&l.integrity===0&&!start(l);
 const enemy=create(0,1,123,m);addEnemy(enemy,{key:"greed",r:0});const e=enemy.enemies[0],hp=e.hp;hurt(enemy,e,NaN);hurt(enemy,e,-10);result.invalidDamage=e.hp===hp;hurt(enemy,e,e.hp+e.shield);hurt(enemy,e,10);result.singleReward=enemy.kills===1;
 let fusions=0;for(const [k,f] of Object.entries(FUSIONS)){const x=create(9,1,123,m);x.clarity=10000;x.grid[0][0]={key:f.a,hp:V[f.a].hp,rank:1,t:1};x.grid[0][1]={key:f.b,hp:V[f.b].hp,rank:1,t:1};if(fuse(x,0,0,0,1)&&x.grid[0][0].key===k&&x.grid[0][1]===null&&restoreBattle(x))fusions++}result.allFusions=fusions===Object.keys(FUSIONS).length;
+result.audioDefaults=JSON.stringify(audioPrefs(null))===JSON.stringify({music:35,effects:55});
+result.audioClamp=JSON.stringify(audioPrefs({music:123,effects:-5}))===JSON.stringify({music:100,effects:0});
+result.audioInvalid=audioPrefs({music:NaN,effects:"10"}).effects===55;
+result.audioZero=audioPrefs({music:0}).music===0;
+result.audioIndependent=audioLevel("music",{music:20,effects:80})===.2&&audioLevel("effects",{music:20,effects:80})===.8;
+result.audioThemes=audioTheme("running",false,false,false)==="battle"&&audioTheme("paused",false,false,false)===null&&audioTheme("paused",true,true,true)==="space"&&audioTheme("paused",true,false,true)==="society"&&audioTheme("paused",true,false,false)==="inner";
+result.audioScores=Object.values(AUDIO_THEMES).every(n=>n.length===6&&n.every(v=>Number.isFinite(v)&&v>0));
 return result})()
 `)();
 const ids=new Set(Array.from(html.slice(0,html.indexOf("<script>")).matchAll(/\bid="([^"]+)"/g),m=>m[1]));
