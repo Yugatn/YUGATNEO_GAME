@@ -5,7 +5,11 @@
 'use strict';
 const C=Object.freeze({START_SPEED:17,MAX_SPEED:32,GRAVITY:22,JUMP:10.2,
   PORTAL_SECONDS:13,STEP_EVERY:380,STEP_HEIGHT:2.6,LANES:3,TURN_WINDOW:36,MAX_DT:1/30});
-const DIRECTIONS=['north','east','south','west'];
+const MODES=Object.freeze({
+ training:Object.freeze({start:12,max:22,accel:.09,turn:55,agent:310}),
+ standard:Object.freeze({start:17,max:32,accel:.14,turn:36,agent:225}),
+ expert:Object.freeze({start:21,max:38,accel:.20,turn:30,agent:195})
+});
 const ROT={left:-1,right:1};
 function clamp(v,a,b){return Math.max(a,Math.min(b,v));}
 function random(s){s.seed=(Math.imul(s.seed,1664525)+1013904223)>>>0;return s.seed/4294967296;}
@@ -32,11 +36,13 @@ function positionAt(s,lane=0,extra=0){
 }
 function tierAt(distance){return Math.max(0,Math.floor((distance+0.00001)/C.STEP_EVERY));}
 function nextTurn(s){return TURNS.find(t=>t.at>s-2)||null;}
-function newGame(seed=2026){
+function newGame(seed=2026,difficulty='standard'){
+  if(!Object.prototype.hasOwnProperty.call(MODES,difficulty))difficulty='standard';
+  const rules=MODES[difficulty];
   const s={phase:'ready',seed:seed>>>0,progress:0,time:0,lane:0,laneView:0,
-    elevation:0,vy:0,view:'top',yaw:0,speed:C.START_SPEED,
+    elevation:0,vy:0,view:'top',yaw:0,difficulty,rules,speed:rules.start,data:0,charge:0,shield:difficulty==='training'?1:0,shieldVisual:0,
     matrix:0,pulseCooldown:0,pulseVisual:0,portalCount:0,
-    obstacles:[],portals:[],agents:[],nextObstacle:52,nextPortal:142,nextAgent:225,
+    obstacles:[],portals:[],agents:[],nextObstacle:52,nextPortal:142,nextAgent:rules.agent,
     turnCursor:0,pendingTurn:null,avoided:0,turnsMade:0,tier:0,agentDodges:0,
     bonus:0,score:0,events:[],lastEvent:'',reason:'',lastStepChecked:0};
   replenish(s);
@@ -55,7 +61,9 @@ function replenish(s){
     const at=s.nextObstacle;s.nextObstacle+=22+random(s)*14;
     if(nearJunction(at,36)||nearStep(at,32)||nearPortal(at,28))continue;
     const lane=Math.floor(random(s)*3)-1;
-    s.obstacles.push({s:at,lane,type:random(s)<0.65?'barrier':'pillar',resolved:false});
+    const type=random(s)<0.65?'barrier':'pillar';
+    const safe=[-1,0,1].filter(v=>v!==lane);
+    s.obstacles.push({s:at,lane,type,dataLane:safe[Math.floor(at)%2],resolved:false});
   }
   while(s.nextPortal<s.progress+235){
     s.portals.push({s:s.nextPortal,lane:0,used:false});
@@ -65,7 +73,7 @@ function replenish(s){
 function turn(s,direction){
   if(!running(s)||!(direction in ROT))return false;
   const upcoming=TURNS[s.turnCursor];
-  if(upcoming&&upcoming.at-s.progress<=C.TURN_WINDOW&&upcoming.at-s.progress>=-3){
+  if(upcoming&&upcoming.at-s.progress<=s.rules.turn&&upcoming.at-s.progress>=-3){
     s.pendingTurn=direction;
     s.lastEvent=direction===upcoming.direction?'turn-queued':'wrong-turn-queued';
     return true;
@@ -86,15 +94,21 @@ function pulse(s){
   s.events.push('pulse');if(count)s.events.push('agent-neutralized');
   return true;
 }
+function consumeShield(s,events){
+  if(!s.shield)return false;
+  s.shield=0;s.charge=0;s.shieldVisual=.65;
+  s.lastEvent='shield-used';events.push('shield-used');return true;
+}
 function lose(s,reason,events){
-  s.phase='gameover';s.reason=reason;s.lastEvent=reason;events.push('gameover');
+  s.score=Math.floor(s.progress*2)+s.bonus;s.phase='gameover';s.reason=reason;s.lastEvent=reason;events.push('gameover');
 }
 function step(s,dt){
   if(!running(s)||!Number.isFinite(dt)||dt<=0)return [];
   dt=Math.min(C.MAX_DT,dt);const ev=s.events.splice(0);
   const old=s.progress;
   s.time+=dt;
-  s.speed=Math.min(C.MAX_SPEED,C.START_SPEED+s.time*0.14);
+  s.speed=Math.min(s.rules.max,s.rules.start+s.time*s.rules.accel);
+  s.shieldVisual=Math.max(0,s.shieldVisual-dt);
   s.progress+=s.speed*dt;
   s.matrix=Math.max(0,s.matrix-dt);
   s.pulseCooldown=Math.max(0,s.pulseCooldown-dt);
@@ -120,9 +134,14 @@ function step(s,dt){
     if(o.resolved||!(old<o.s&&s.progress>=o.s))continue;
     o.resolved=true;
     if(o.lane===s.lane&&s.elevation<(o.type==='pillar'?1.4:0.82)){
-      lose(s,'hit',ev);return ev;
+      if(!consumeShield(s,ev)){lose(s,'hit',ev);return ev;}
+    }else{
+      s.avoided++;s.bonus+=30;s.lastEvent='avoided';ev.push('avoided');
     }
-    s.avoided++;s.bonus+=30;s.lastEvent='avoided';ev.push('avoided');
+    if(o.dataLane===s.lane){
+      s.data++;s.bonus+=45;ev.push('data');
+      if(!s.shield&&++s.charge>=5){s.charge=0;s.shield=1;ev.push('shield-ready');}
+    }
   }
   s.obstacles=s.obstacles.filter(o=>o.s>s.progress-12);
   for(const p of s.portals){
@@ -136,14 +155,14 @@ function step(s,dt){
   s.portals=s.portals.filter(o=>o.s>s.progress-10);
   if(s.progress>=s.nextAgent){
     s.agents.push({s:s.progress-31,pace:5.6+random(s)*1.6});
-    s.nextAgent+=225;
+    s.nextAgent+=s.rules.agent;
     ev.push('agent-appeared');
   }
   for(const a of s.agents){
     a.s+=dt*(s.speed+a.pace);
     if(a.s>=s.progress-3){
       if(s.elevation>0.95){s.agentDodges++;s.bonus+=45;a.gone=true;ev.push('agent-dodged');}
-      else{lose(s,'agent',ev);return ev;}
+      else if(consumeShield(s,ev)){a.gone=true;}else{lose(s,'agent',ev);return ev;}
     }
   }
   s.agents=s.agents.filter(a=>!a.gone);
@@ -154,13 +173,19 @@ function nextHint(s){
   const t=TURNS[s.turnCursor],stepAt=(tierAt(s.progress)+1)*C.STEP_EVERY;
   const portal=s.portals.find(p=>!p.used&&p.s>s.progress);
   const candidates=[];
-  if(t)candidates.push({kind:'turn',distance:t.at-s.progress,text:'ПОВОРОТ '+(t.direction==='left'?'←':'→')});
+  if(t)candidates.push({kind:'turn',distance:t.at-s.progress,text:s.pendingTurn===t.direction?'ПОВОРОТ ПРИНЯТ ✓':'ПОВОРОТ '+(t.direction==='left'?'←':'→')});
   if(stepAt>s.progress)candidates.push({kind:'step',distance:stepAt-s.progress,text:'ПРЫЖОК НА УРОВЕНЬ ↑'});
   if(portal)candidates.push({kind:'portal',distance:portal.s-s.progress,text:'ПОРТАЛ — ПРЫЖОК ◎'});
+  const obstacle=s.obstacles.find(o=>!o.resolved&&o.s>s.progress&&o.lane===s.lane);
+  if(obstacle)candidates.push({kind:'obstacle',distance:obstacle.s-s.progress,text:'ПРЕПЯТСТВИЕ — ПРЫЖОК ИЛИ ПОЛОСА'});
+  if(s.agents.length){
+    const eta=Math.min(...s.agents.map(a=>Math.max(0,(s.progress-a.s-3)/a.pace)));
+    candidates.push({kind:'agent',distance:eta*s.speed,text:s.matrix>0&&s.pulseCooldown<=0?'АГЕНТ — ИМПУЛЬС':'АГЕНТ — ПРЫЖОК'});
+  }
   candidates.sort((a,b)=>a.distance-b.distance);
   return candidates[0]||{kind:'run',distance:999,text:'БЕГИ ВПЕРЁД'};
 }
-const api=Object.freeze({C,TURNS,vector,positionAt,tierAt,nextTurn,newGame,
+const api=Object.freeze({C,MODES,TURNS,vector,positionAt,tierAt,nextTurn,newGame,
   start,pause,jump,turn,camera,pulse,step,nextHint,replenish,random});
 root.MatrixRunnerXCore=api;
 if(typeof module!=='undefined'&&module.exports)module.exports=api;
