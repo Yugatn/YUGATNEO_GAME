@@ -67,6 +67,18 @@ result.cardReady=card.active&&card.affordable&&card.label==="Готово";
 result.cardAction=!cardPresentation(touch,"attention","attention","remove").active;
 touch.cool.attention=1.2;result.cardCooldown=cardPresentation(touch,"attention","attention","place").cool===2;
 touch.cool.attention=0;touch.clarity=0;result.cardLack=!cardPresentation(touch,"attention","attention","place").affordable;
+const art=create(0,1,42,metaNew());
+result.artRoles=Object.values(V).every(v=>ART_ROLES[v.kind]?.length===3);
+result.artRoleKinds=new Set(Object.keys(V).map(artRole)).size===17;
+result.artEnemies=Object.keys(E).every(k=>["fusion","swift","heavy","distort","shadow"].includes(artRole(k)));
+result.artPoses=Object.keys(V).concat(Object.keys(E)).every(k=>Object.values(artPose(k,2,1,true,.5)).every(Number.isFinite));
+result.artReduced=Object.keys(V).concat(Object.keys(E)).every(k=>JSON.stringify(artPose(k,2,1,false,1))===JSON.stringify({dx:0,dy:0,sx:1,sy:1}));
+result.artRecent=artRecent(2,2)===1&&artRecent(3,2)===0&&artRecent(2,undefined)===0;
+place(art,0,0,"attention");start(art);for(let i=0;i<20;i++)step(art,.1);
+result.artAction=Number.isFinite(art.grid[0][0].animAt);
+addEnemy(art,{key:"greed",r:0});hurt(art,art.enemies[0],10);
+result.artHit=art.enemies[0].hitAt===art.time;
+result.artReload=!!restoreBattle(art);
 return result})()
 `)();
 const ids=new Set(Array.from(html.slice(0,html.indexOf("<script>")).matchAll(/\bid="([^"]+)"/g),m=>m[1]));
