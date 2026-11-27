@@ -69,6 +69,9 @@ els.mapSize.onclick();assert(els.gameShell.attrs["data-map-size"]==="compact","C
 els.mapSizeSelect.onchange({target:{value:"normal"}});assert(els.gameShell.attrs["data-map-size"]==="normal","Map size settings synchronize");
 assert(JSON.parse(store["ideas-x-ui-v1"]).layer==="ecology","Map layer preference persisted");
 els.mapLabels.onclick();assert(JSON.parse(store["ideas-x-ui-v1"]).labels===true,"Map labels preference persisted");
+assert(els.eventSound.attrs["aria-pressed"]==="false","Sound off by default");
+els.eventSound.onclick();assert(JSON.parse(store["ideas-x-ui-v1"]).sound===true&&els.eventSound.attrs["aria-pressed"]==="true","Sound preference on");
+els.eventSound.onclick();assert(JSON.parse(store["ideas-x-ui-v1"]).sound===false,"Sound preference off");
 switchTo("system");assert(els.deckScroll.scrollTop===0,"Reset clears scroll memory");
 els.mode.value="peace";els.regionSelect.value="eu";els.regionSelect.onchange({target:els.regionSelect});els.start.onclick();assert(!els.eventAlert.hidden&&els.eventAlert.textContent==="Кризис","War alert");
 els.eventAlert.onclick();assert(!els.chronicle.hidden&&!els.eventCard.hidden&&els.eventText.textContent.includes("Вооружённый конфликт"),"Event opens chronicle card");
