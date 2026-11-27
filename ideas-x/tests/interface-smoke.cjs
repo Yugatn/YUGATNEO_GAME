@@ -11,7 +11,7 @@ assert([...js.matchAll(/\$\("([^"]+)"\)/g)].every(m=>ids.includes(m[1])),"All DO
 class MockNode {
 constructor(){this.value="";this.checked=false;this.hidden=false;this.disabled=false;this.dataset={};this.attrs={};this.children=[];this.listeners={};this._html="";this.scrollTop=0;let set=new Set();this.classList={toggle:(k,v)=>{let on=v===undefined?!set.has(k):!!v;if(on)set.add(k);else set.delete(k);return on},contains:k=>set.has(k)}}
 set innerHTML(v){this._html=v;let o=v.match(/<option value="([^"]*)"/);if(o&&!this.value)this.value=o[1]}get innerHTML(){return this._html}
-appendChild(n){this.children.push(n);return n}replaceChildren(...n){this.children=n}setAttribute(k,v){this.attrs[k]=v}addEventListener(k,v){this.listeners[k]=v}querySelectorAll(){return []}
+appendChild(n){this.children.push(n);return n}replaceChildren(...n){this.children=n}setAttribute(k,v){this.attrs[k]=v}addEventListener(k,v){this.listeners[k]=v}getBoundingClientRect(){return {left:0,top:0,width:1000,height:440}}querySelectorAll(){return []}
 }
 const els=Object.fromEntries(ids.map(id=>[id,new MockNode()])),store={},listeners={};
 const doc={getElementById:k=>els[k]||null,createElementNS:()=>new MockNode(),createDocumentFragment:()=>new MockNode(),addEventListener:(k,v)=>listeners[k]=v,hidden:false};
@@ -35,6 +35,21 @@ switchTo("science");click(els.techGrid,{science:"launch",tech:"water"});assert(s
 click(els.controls,{step:"7"});assert(state().day===7,"Time control independent of tab");
 els.layer.onchange({target:{value:"ecology"}});assert(els.layer.value==="ecology","Map layer selection");
 els.mapZoom.onclick();assert(els.mapwrap.classList.contains("zoomed"),"Map zoom");
+const view=()=>els.atlas.attrs.viewBox.split(" ").map(Number);
+assert(view()[2]<1000&&els.zoomLevel.textContent==="3×","Focus selected region");
+els.zoomIn.onclick();assert(view()[2]<1000/3,"Incremental zoom");
+els.zoomOut.onclick();assert(Math.abs(view()[2]-1000/3)<.01,"Incremental zoom out");
+const evt=(id,x,y)=>({pointerId:id,clientX:x,clientY:y,button:0,preventDefault(){}});
+let prior=view();els.atlas.listeners.pointerdown(evt(1,400,200));els.atlas.listeners.pointermove(evt(1,450,220));els.atlas.listeners.pointerup(evt(1,450,220));
+assert(view()[0]<prior[0],"Drag moves camera");
+els.mapHome.onclick();assert(view().join(" ")==="0 0 1000 440","World reset");
+els.atlas.listeners.pointerdown(evt(1,400,200));els.atlas.listeners.pointerdown(evt(2,600,200));els.atlas.listeners.pointermove(evt(2,700,200));els.atlas.listeners.pointerup(evt(1,400,200));els.atlas.listeners.pointerup(evt(2,700,200));
+assert(view()[2]<1000,"Pinch increases scale");
+for(let i=0;i<30;i++)els.zoomIn.onclick();assert(Math.abs(view()[2]-1000/6)<.01&&els.zoomIn.disabled,"Zoom upper bound");
+els.mapHome.onclick();assert(els.zoomOut.disabled&&els.zoomLevel.textContent==="1×","Zoom lower bound");
+els.atlas.listeners.wheel({clientX:500,clientY:220,deltaY:-100,preventDefault(){}});assert(view()[2]<1000,"Wheel zoom");
+els.atlas.listeners.keydown({target:els.atlas,key:"Home",preventDefault(){}});assert(view()[2]===1000,"Keyboard home");
+els.mapFocus.onclick();assert(view()[2]<1000,"Focus shortcut");
 switchTo("settings");els.mapMotion.onclick();assert(els.atlas.classList.contains("noMotion"),"Animation preference");
 els.reset.onclick();assert(state().day===0&&!state().started&&!els.overview.hidden&&els.settings.hidden,"Reset returns to overview");
 assert(els.start.disabled&&els.controls.hidden,"Reset restores start controls");
