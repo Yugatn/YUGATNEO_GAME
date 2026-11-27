@@ -20,12 +20,24 @@ function profile(planet){
  const n=Number.isSafeInteger(planet)&&planet>=0?planet:0;
  return PROFILES[n%PROFILES.length];
 }
+// One optional specialization per world; selection locks at emergence.
+const SPECIALIZATIONS=Object.freeze([
+ {id:'adaptation',name:'Адаптация',desc:'Один стартовый щит на беговом этапе.'},
+ {id:'motor',name:'Моторика',desc:'Начальная скорость прыжка выше на 15%.'},
+ {id:'navigation',name:'Навигация',desc:'Один дополнительный заряд ускорения в космосе.'}
+].map(Object.freeze));
+function specialization(s){return SPECIALIZATIONS.find(x=>x.id===s.specialization)||null;}
+function chooseSpecialization(s,id){
+ if(s.phase!=='cells'||s.cells.length<32||specialization(s)||!SPECIALIZATIONS.some(x=>x.id===id))return false;
+ s.specialization=id;s.events=['specialized'];return true;
+}
+function boostLimit(s){return profile(s.planet).boost+(s.specialization==='navigation'?1:0);}
 function speedBonus(planet){return Math.min(4,Math.floor(planet/PROFILES.length)*.6);}
 function rand(s){s.seed=(Math.imul(s.seed,1664525)+1013904223)>>>0;return s.seed/4294967296;}
 function chooseLane(s){return Math.floor(rand(s)*3)-1;}
 function newCellState(s){
  s.cells=[{id:++s.nextId,generation:0}];
- s.wave=0;s.waveRemaining=1;s.divisions=0;
+ s.wave=0;s.waveRemaining=1;s.divisions=0;s.specialization=null;
 }
 function runnerEntities(s){
  let list=[],loc=36;
@@ -57,13 +69,13 @@ function spaceEntities(s){
 function newRunner(s){
  s.runner={
   distance:0,furthest:0,lane:0,jump:0,velocity:0,hits:0,invulnerable:0,
-  shield:0,pulse:0,matrix:false,portals:0,avoided:0,defeated:0,
+  shield:s.specialization==='adaptation'?1:0,pulse:0,matrix:false,portals:0,avoided:0,defeated:0,
   entities:runnerEntities(s)
  };
 }
 function newSpace(s){
  s.space={
-  distance:0,furthest:0,lane:0,hull:3,invulnerable:0,boostTime:0,boostCharges:profile(s.planet).boost,boostCapacity:profile(s.planet).boost,
+  distance:0,furthest:0,lane:0,hull:3,invulnerable:0,boostTime:0,boostCharges:boostLimit(s),boostCapacity:boostLimit(s),
   avoided:0,hits:0,asteroids:spaceEntities(s)
  };
 }
@@ -108,6 +120,7 @@ function divide(s,nx,ny){
   s.score+=s.wave*12;
   s.events.push('newwave');
  }
+ if(s.cells.length===32&&!specialization(s))s.events.push('specializationUnlocked');
  return true;
 }
 // Keyboard/accessibility option: still requires one deliberate action per cell.
@@ -133,7 +146,7 @@ function steer(s,direction){
 }
 function jump(s){
  if(s.phase!=='runner'||s.runner.jump>0||s.runner.velocity>0)return false;
- s.runner.jump=.01;s.runner.velocity=12.5;s.events=['jump'];return true;
+ s.runner.jump=.01;s.runner.velocity=12.5*(s.specialization==='motor'?1.15:1);s.events=['jump'];return true;
 }
 function ability(s){
  if(s.phase==='runner'){
@@ -170,7 +183,7 @@ function recordWorld(s){
  if(s.runner&&Number.isFinite(r.hits)&&runHits===0)medals.push('Безупречный бег');
  if(spaceHits===0)medals.push('Звёздный пилот');
  const bonus=medals.length*150;s.score+=bonus;
- journal.push({planet:s.planet,name:profile(s.planet).name,portals,runHits,spaceHits,medals,bonus,score:Math.round(s.score)});
+ journal.push({planet:s.planet,name:profile(s.planet).name,specialization:specialization(s)?.name||null,portals,runHits,spaceHits,medals,bonus,score:Math.round(s.score)});
  s.chronicle=journal.slice(-30);
 }
 function scoreProgress(s){
@@ -267,7 +280,7 @@ function step(s,rawDt){
  return s.events;
 }
 const api={CELL_GOAL,RUN_GOAL,SPACE_GOAL,create,start,cellPositions,divide,
- divideNext,steer,jump,ability,step,scoreProgress,profile};
+ divideNext,steer,jump,ability,step,scoreProgress,profile,SPECIALIZATIONS,specialization,chooseSpecialization};
 if(typeof module!=='undefined'&&module.exports)module.exports=api;
 else root.StoryXEvolution=api;
 })(typeof globalThis!=='undefined'?globalThis:this);

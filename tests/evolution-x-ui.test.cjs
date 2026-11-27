@@ -143,3 +143,14 @@ test('world brief and chronicle render on pause, old state remains readable',()=
  assert.match(element(w,'journal').textContent,/Звёздный пилот/);
  w.close();
 });
+
+test('specialization selection on pause persists and is locked for the current world',()=>{
+ const saved=Core.create(3);Core.start(saved);while(saved.cells.length<32)Core.divideNext(saved);
+ const {w}=setup(saved);element(w,'start').click();element(w,'pause').click();
+ assert.equal(element(w,'spec-motor').disabled,false);
+ element(w,'spec-motor').click();
+ assert.equal(element(w,'spec-motor').getAttribute('aria-pressed'),'true');
+ assert.equal(element(w,'spec-navigation').disabled,true);
+ assert.equal(JSON.parse(w.localStorage.getItem('yugatneo.evolution-x.state.v1')).specialization,'motor');
+ w.close();
+});

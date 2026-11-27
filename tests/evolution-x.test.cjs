@@ -196,7 +196,7 @@ test('PWA assets are complete and independently scoped',()=>{
   assert.ok(fs.existsSync(path.join(root,filename)),filename);
  }
  const sw=fs.readFileSync(path.join(root,'sw.js'),'utf8');
- assert.ok(sw.includes('evolution-x-v3'));
+ assert.ok(sw.includes('evolution-x-v4'));
 });
 
 test('accessible division requires exactly 255 actions and cannot skip waves',()=>{
@@ -245,4 +245,26 @@ test('landing creates one chronicle record, three medals and bonus; legacy saves
  assert.equal(s.chronicle[0].bonus,450);assert.equal(s.chronicle[0].medals.length,3);
  const stored=JSON.parse(JSON.stringify(s));advance(stored,3);
  assert.equal(stored.chronicle.length,1);assert.equal(stored.planet,1);
+});
+
+test('specialization unlocks at 32 cells, is optional and can be selected only once per world',()=>{
+ const s=started();
+ assert.equal(Evolution.chooseSpecialization(s,'motor'),false);
+ while(s.cells.length<32)assert.ok(Evolution.divideNext(s));
+ assert.ok(s.events.includes('specializationUnlocked'));
+ assert.equal(Evolution.chooseSpecialization(s,'unknown'),false);
+ assert.ok(Evolution.chooseSpecialization(s,'adaptation'));
+ assert.equal(Evolution.chooseSpecialization(s,'navigation'),false);
+ divideAll(s);advance(s,2.5);
+ assert.equal(s.runner.shield,1);
+ assert.equal(Evolution.chooseSpecialization(s,'motor'),false);
+});
+test('motor and navigation grant respective bonuses, recorded in chronicle and reset on landing',()=>{
+ function selected(id){const s=started();while(s.cells.length<32)Evolution.divideNext(s);Evolution.chooseSpecialization(s,id);divideAll(s);advance(s,2.5);return s;}
+ const motor=selected('motor');Evolution.jump(motor);assert.equal(motor.runner.velocity,12.5*1.15);
+ const nav=selected('navigation');nav.phase='launch';nav.transition=.01;advance(nav,.05);
+ assert.equal(nav.space.boostCharges,4);assert.equal(nav.space.boostCapacity,4);
+ nav.space.distance=Evolution.SPACE_GOAL-.05;Evolution.step(nav,1/60);
+ assert.equal(nav.chronicle[0].specialization,'Навигация');
+ advance(nav,3);assert.equal(nav.specialization,null);
 });

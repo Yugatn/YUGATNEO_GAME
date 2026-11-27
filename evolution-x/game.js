@@ -20,6 +20,11 @@ const worlds=[
 ];
 function world(offset=0){return worlds[(state.planet+offset)%worlds.length];}
 function boostCapacity(){return state.space?.boostCapacity||Math.max(3,state.space?.boostCharges||0);}
+function renderSpecializations(){
+ const chosen=Core.specialization(state),eligible=state.phase==='cells'&&state.cells.length>=32&&!chosen;
+ $('specializationStatus').textContent=chosen?chosen.name+' · '+chosen.desc:eligible?'Выберите один путь развития. Выбор действует до конца мира.':state.phase==='cells'?'Откроется при достижении 32 клеток.':'Специализация в этом мире не выбрана.';
+ for(const spec of Core.SPECIALIZATIONS){const btn=$('spec-'+spec.id);btn.disabled=!eligible;btn.setAttribute('aria-pressed',String(chosen?.id===spec.id));}
+}
 function worldBrief(){const p=Core.profile(state.planet);return p.trait+' · гравитация ×'+String(p.gravity).replace('.',',');}
 function renderJournal(){
  const list=$('journal');list.textContent='';
@@ -27,7 +32,7 @@ function renderJournal(){
  if(!entries.length){list.textContent='Первые результаты появятся после посадки на следующей планете.';return;}
  for(const entry of entries){
   const row=document.createElement('li');
-  row.textContent='Мир '+(entry.planet+1)+' · '+entry.name+' — порталы '+entry.portals+'/3, удары '+entry.runHits+'/'+entry.spaceHits+'; '+(entry.medals.length?entry.medals.join(', ')+' · +'+entry.bonus:'цикл пройден');
+  row.textContent='Мир '+(entry.planet+1)+' · '+entry.name+' — порталы '+entry.portals+'/3, удары '+entry.runHits+'/'+entry.spaceHits+'; '+(entry.specialization?entry.specialization+' · ':'')+(entry.medals.length?entry.medals.join(', ')+' · +'+entry.bonus:'цикл пройден');
   list.append(row);
  }
 }
@@ -128,7 +133,7 @@ function pause(){
  if(pausedFrom||state.phase==='intro'||!$('intro').hidden)return;
  pausedFrom=state.phase;
  $('paused').hidden=false;
- $('pauseWorld').textContent=world().name+' · '+worldBrief();renderJournal();
+ $('pauseWorld').textContent=world().name+' · '+worldBrief();renderJournal();renderSpecializations();
  save(true);
 }
 function resume(){
@@ -164,6 +169,10 @@ $('divideNext').addEventListener('click',()=>{
 });
 $('pause').addEventListener('click',()=>pausedFrom?resume():pause());
 $('resume').addEventListener('click',resume);
+for(const spec of Core.SPECIALIZATIONS)$('spec-'+spec.id).addEventListener('click',()=>{
+ if(!pausedFrom||!Core.chooseSpecialization(state,spec.id))return;
+ feel('medium');renderSpecializations();save(true);updateHUD();
+});
 $('restart').addEventListener('click',()=>{
  if(!confirm('Начать новый путь с первой клетки? Текущий цикл будет перезаписан.'))return;
  try{localStorage.removeItem(KEY);}catch(_){}
@@ -217,7 +226,8 @@ function updateHUD(){
  $('controls').style.display=cellStage?'none':'grid';
  $('pause').style.display=state.phase==='intro'?'none':'block';
  $('cellNote').style.display=state.phase==='cells'?'block':'none';
- $('cellNote').textContent='Касайтесь ярких клеток. Пробел — альтернативное управление.'+(Core.profile(state.planet).cellBonus?' Бонус среды: +'+Core.profile(state.planet).cellBonus+' за деление.':'');
+ const selected=Core.specialization(state);
+ $('cellNote').textContent=selected?'Специализация: '+selected.name+'. Продолжайте деление.':state.cells.length>=32?'Специализация доступна в меню паузы. Выберите путь или продолжите деление.':'Касайтесь ярких клеток. Пробел — альтернативное управление.'+(Core.profile(state.planet).cellBonus?' Бонус среды: +'+Core.profile(state.planet).cellBonus+' за деление.':'');
  const runner=state.runner,space=state.space;
  if(cellStage){
   $('mission').textContent='КЛЕТКИ '+state.cells.length+'/'+Core.CELL_GOAL+
@@ -225,7 +235,7 @@ function updateHUD(){
  }else if(state.phase==='runner'||state.phase==='launch'){
   $('mission').textContent=(runner.matrix?'МАТРИЦА · ':'БЕГ · ')+
    Math.round(runner.distance)+'/'+Core.RUN_GOAL+' м · '+runner.portals+' портал(ов)'+
-   (runner.matrix?' · щит '+runner.shield:'');
+   (runner.shield>0||runner.matrix?' · щит '+runner.shield:'');
  }else if(state.phase==='space'||state.phase==='landing'){
   $('mission').textContent='КОСМОС '+Math.round(space.distance)+'/'+Core.SPACE_GOAL+
    ' · корпус '+space.hull+'/3';
@@ -483,6 +493,7 @@ function render(){
 function reactions(events){
  for(const e of events){
   if(e==='newwave'){message('ПОКОЛЕНИЕ '+(state.wave+1)+' · НОВОЕ ДЕЛЕНИЕ',1050);feel('medium');}
+  if(e==='specializationUnlocked'){message('32 КЛЕТКИ · ВЫБЕРИТЕ СПЕЦИАЛИЗАЦИЮ В ПАУЗЕ',2600);feel('medium');}
   if(e==='emergence'){feel('heavy');}
   if(e==='human'){message('ЧЕЛОВЕК · БЕГИ К ПОРТАЛУ',2300);feel('heavy');}
   if(e==='portal'){message('КОД МАТРИЦЫ · ЩИТ И ИМПУЛЬС АКТИВИРОВАНЫ',2200);feel('heavy');}
