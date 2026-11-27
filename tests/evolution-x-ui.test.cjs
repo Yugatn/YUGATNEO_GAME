@@ -12,7 +12,7 @@ function fakeContext(labels=[]){
  const gradient=()=>({addColorStop(){}});
  const ctx={
   fillRect(){},strokeRect(){},fillText(text){labels.push(text);},beginPath(){},ellipse(){},arc(){},
-  fill(){},stroke(){},moveTo(){},lineTo(){},closePath(){},save(){},restore(){},
+  fill(){},stroke(){},moveTo(){},lineTo(){},closePath(){},rect(){},clip(){},save(){},restore(){},
   translate(){},rotate(){},setTransform(){},
   createLinearGradient:gradient,createRadialGradient:gradient
  };
@@ -195,4 +195,32 @@ test('empty microscope field cannot divide a cell; visible daughter targets rema
  touch(w,105,310);assert.match(element(w,'mission').textContent,/КЛЕТКИ 3\/256/);
  touch(w,285,400);assert.match(element(w,'mission').textContent,/КЛЕТКИ 4\/256/);
  assert.doesNotThrow(()=>cycleTick(callbacks,1030));w.close();
+});
+
+test('microscope zoom, focus and pan mode do not change cell count; mapped touch divides',()=>{
+ const {w,callbacks}=setup();element(w,'start').click();
+ element(w,'zoomIn').click();assert.equal(element(w,'zoomLabel').textContent,'×2');
+ element(w,'zoomIn').click();assert.equal(element(w,'zoomLabel').textContent,'×3');
+ assert.equal(element(w,'zoomIn').disabled,true);
+ element(w,'panMode').click();touch(w,195,400);
+ assert.match(element(w,'mission').textContent,/КЛЕТКИ 1\/256/);
+ element(w,'panMode').click();touch(w,195,400);
+ assert.match(element(w,'mission').textContent,/КЛЕТКИ 2\/256/);
+ element(w,'zoomFocus').click();cycleTick(callbacks,1000);
+ // First daughter x=.25, zoom=3, focus exactly .25 => center of viewport.
+ touch(w,195,400);assert.match(element(w,'mission').textContent,/КЛЕТКИ 3\/256/);
+ element(w,'zoomOut').click();element(w,'zoomOut').click();
+ assert.equal(element(w,'zoomLabel').textContent,'×1');
+ assert.equal(element(w,'panMode').disabled,true);
+ w.close();
+});
+test('dense colony microscope renders during rapid division and reset',()=>{
+ const saved=Core.create(5);Core.start(saved);while(saved.cells.length<180)Core.divideNext(saved);
+ const {w,callbacks}=setup(saved);element(w,'start').click();
+ element(w,'zoomIn').click();element(w,'zoomIn').click();
+ for(let i=0;i<12;i++)element(w,'divideNext').click();
+ for(let i=0;i<20;i++)assert.doesNotThrow(()=>cycleTick(callbacks,1000+30*i));
+ element(w,'pause').click();element(w,'restart').click();
+ assert.equal(element(w,'zoomLabel').textContent,'×1');
+ assert.match(element(w,'mission').textContent,/КЛЕТКИ 1\/256/);w.close();
 });

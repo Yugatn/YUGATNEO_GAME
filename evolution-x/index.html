@@ -45,6 +45,14 @@ canvas{position:absolute;inset:0;width:100%;height:100%;touch-action:none;displa
 #cellNote{display:none;bottom:calc(70px + env(safe-area-inset-bottom));font-size:12px}
 #divideNext{position:absolute;bottom:calc(16px + env(safe-area-inset-bottom));left:50%;transform:translateX(-50%);z-index:3;white-space:nowrap;max-width:95%;border:1px solid #52978e;background:#103b3f;color:#c5ffdf;border-radius:13px;padding:12px 18px;font-size:13px;font-weight:800}
 #divideNext[hidden]{display:none}
+#microscope{position:absolute;bottom:calc(63px + env(safe-area-inset-bottom));left:50%;transform:translateX(-50%);display:flex;align-items:center;gap:5px;z-index:3;max-width:calc(100% - 12px);white-space:nowrap}
+#microscope[hidden]{display:none}
+#microscope button{min-width:40px;min-height:38px;padding:5px 8px;border-radius:9px;border:1px solid #4d817d;background:#12363d;color:#d2f8e6;font-size:12px;font-weight:750}
+#microscope button:disabled{opacity:.45}
+#microscope button[aria-pressed=true]{background:#397a67;border-color:#b0f5cf}
+#zoomLabel{min-width:27px;text-align:center;font-size:12px;color:#adf0d6}
+#cellNote{bottom:calc(110px + env(safe-area-inset-bottom))}
+@media(max-height:500px){#cellNote{display:none!important}#microscope{bottom:calc(56px + env(safe-area-inset-bottom))}}
 #planet{max-width:48%;overflow:hidden;text-overflow:ellipsis}
 #mission{min-width:0}
 #worldTrait{position:absolute;top:calc(124px + env(safe-area-inset-top));left:14px;right:105px;color:#b8d9d4;font-size:11px;line-height:1.3;z-index:2;pointer-events:none;text-shadow:0 1px 4px #000}
@@ -95,6 +103,10 @@ canvas{position:absolute;inset:0;width:100%;height:100%;touch-action:none;displa
 <button id="pause" type="button">Ⅱ ПАУЗА</button>
 <div class="message" id="message" role="status" aria-live="polite"></div>
 <div class="note" id="cellNote">Касайтесь ярких клеток. Следующее поколение активируется после завершения текущего. Пробел — альтернативное управление.</div>
+<div id="microscope" role="group" aria-label="Микроскоп" hidden>
+ <button id="zoomOut" type="button" aria-label="Уменьшить">−</button><span id="zoomLabel">×1</span><button id="zoomIn" type="button" aria-label="Увеличить">+</button>
+ <button id="zoomFocus" type="button" aria-label="Найти активную клетку">К клетке</button><button id="panMode" type="button" aria-pressed="false">Сдвиг</button>
+</div>
 <button id="divideNext" type="button" hidden>◉ РАЗДЕЛИТЬ АКТИВНУЮ КЛЕТКУ</button>
 <div class="bottom" id="controls">
   <button class="control" id="left" type="button">↶ ВЛЕВО<small>ПОЛОСА</small></button>
