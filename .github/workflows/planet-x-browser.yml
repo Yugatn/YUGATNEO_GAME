@@ -29,7 +29,9 @@ jobs:
         with:
           node-version: '22'
       - name: UI logic
-        run: node ideas-x/tests/interface-smoke.cjs
+        run: |
+          node ideas-x/tests/interface-smoke.cjs
+          node ideas-x/tests/human-potential.cjs
       - name: Browser dependencies
         run: |
           python -m pip install playwright==1.51.0
