@@ -26,7 +26,17 @@ result.stable=SPACE_WORLDS.every(([k])=>m.space.worlds[k].stable>=3);
 for(let i=0;i<3;i++)spaceStep(m,["research","reserve"]);
 result.exchange=spaceExchange(m,"moon","mars")&&!spaceExchange(m,"mars","moon");
 const saved=migrateMeta(JSON.parse(JSON.stringify(m)),0);result.reload=JSON.stringify(saved.space)===JSON.stringify(m.space)&&JSON.stringify(saved.planet)===JSON.stringify(p);
-result.legacy=migrateMeta({points:3},0).space.lastExchange===-1;return result})()
+result.legacy=migrateMeta({points:3},0).space.lastExchange===-1;
+const battle=create(0,1,123,m),base=battle.clarity;
+result.place=place(battle,0,0,"attention")&&battle.clarity===base-V.attention.cost&&!place(battle,0,0,"reason")&&!place(battle,-1,0,"reason");
+result.remove=remove(battle,0,0)&&!remove(battle,0,0);
+start(battle);const old=battle.time;step(battle,NaN);step(battle,-1);result.invalidTime=battle.time===old;
+step(battle,.1);result.pause=pause(battle)&&!pause(battle);const t=battle.time;step(battle,.1);result.resume=battle.time===t&&start(battle);
+const w=create(0,1,123,m);start(w);w.wave=waveLimit(w);step(w,.1);result.victory=w.phase==="won"&&award(m,0)&&!award(m,0);
+const l=create(0,1,123,m);start(l);for(let i=0;i<3;i++)breach(l,0);result.defeat=l.phase==="lost"&&l.integrity===0&&!start(l);
+const enemy=create(0,1,123,m);addEnemy(enemy,{key:"greed",r:0});const e=enemy.enemies[0],hp=e.hp;hurt(enemy,e,NaN);hurt(enemy,e,-10);result.invalidDamage=e.hp===hp;hurt(enemy,e,e.hp+e.shield);hurt(enemy,e,10);result.singleReward=enemy.kills===1;
+let fusions=0;for(const [k,f] of Object.entries(FUSIONS)){const x=create(9,1,123,m);x.clarity=10000;x.grid[0][0]={key:f.a,hp:V[f.a].hp,rank:1,t:1};x.grid[0][1]={key:f.b,hp:V[f.b].hp,rank:1,t:1};if(fuse(x,0,0,0,1)&&x.grid[0][0].key===k&&x.grid[0][1]===null&&restoreBattle(x))fusions++}result.allFusions=fusions===Object.keys(FUSIONS).length;
+return result})()
 `)();
 const ids=new Set(Array.from(html.slice(0,html.indexOf("<script>")).matchAll(/\bid="([^"]+)"/g),m=>m[1]));
 result.domReferences=Array.from(script.matchAll(/\$\("([^"]+)"\)/g),m=>m[1]).every(id=>ids.has(id));
