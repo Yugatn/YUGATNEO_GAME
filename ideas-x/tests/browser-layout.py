@@ -74,10 +74,35 @@ def check(browser, name, url, width, height):
     assert compact["deck"]["height"] >= base["deck"]["height"] if width <= 760 and height > width else True
     page.locator("#mapZoom").click()
     expect(page.locator("#mapwrap")).to_have_class("mapwrap zoomed")
+    expect(page.locator("#zoomLevel")).to_have_text("3×")
+    def camera():
+        return [float(x) for x in page.locator("#atlas").get_attribute("viewBox").split()]
+    initial = camera()
+    page.locator("#zoomIn").click()
+    assert camera()[2] < initial[2], "camera zoom in"
+    page.locator("#zoomOut").click()
+    assert abs(camera()[2] - initial[2]) < .01, "camera zoom out"
+    page.locator("#atlas").focus()
+    page.keyboard.press("ArrowRight")
+    assert camera()[0] > initial[0], "keyboard pan"
+    page.locator("#mapHome").click()
+    assert camera() == [0, 0, 1000, 440], "world camera reset"
+    page.locator("#mapFocus").click()
+    expect(page.locator("#zoomLevel")).to_have_text("3×")
     page.locator("#mapZoom").click()
+    assert camera() == [0, 0, 1000, 440]
     page.select_option("#layer", "ecology")
     page.locator("[data-step='7']").click()
     expect(page.locator("#day")).to_have_text("7")
+    page.select_option("#moreTabs", "chronicle")
+    expect(page.locator("#historyChart svg")).to_be_visible()
+    expect(page.locator("#historyStats")).to_contain_text("Изменение")
+    page.select_option("#historyMetric", "ecology")
+    expect(page.locator("#historyChart svg")).to_have_attribute("aria-label", "Экология — история мира и региона Западная Европа")
+    page.select_option("#logFilter", "crisis")
+    expect(page.locator("#log")).to_contain_text("Нет событий выбранного типа")
+    page.select_option("#logFilter", "all")
+    expect(page.locator("#log")).to_contain_text("Первые участники")
     page.select_option("#moreTabs", "settings")
     page.locator("#mapMotion").click()
     page.reload(wait_until="domcontentloaded")
@@ -85,6 +110,8 @@ def check(browser, name, url, width, height):
     expect(page.locator("#layer")).to_have_value("ecology")
     expect(page.locator("#day")).to_have_text("7")
     expect(page.locator("#regionSelect")).to_have_value("eu")
+    page.select_option("#moreTabs", "chronicle")
+    expect(page.locator("#historyHint")).to_contain_text("2 сохранённых срезов")
     page.select_option("#moreTabs", "settings")
     expect(page.locator("#mapMotion")).to_have_attribute("aria-pressed", "false")
     page.locator("[data-tab=system]").click()
