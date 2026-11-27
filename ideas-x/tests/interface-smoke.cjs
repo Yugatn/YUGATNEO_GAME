@@ -38,6 +38,12 @@ els.mapZoom.onclick();assert(els.mapwrap.classList.contains("zoomed"),"Map zoom"
 switchTo("settings");els.mapMotion.onclick();assert(els.atlas.classList.contains("noMotion"),"Animation preference");
 els.reset.onclick();assert(state().day===0&&!state().started&&!els.overview.hidden&&els.settings.hidden,"Reset returns to overview");
 assert(els.start.disabled&&els.controls.hidden,"Reset restores start controls");
+assert(JSON.parse(store["ideas-x-ui-v1"]).motion===false,"Motion preference persisted");
+els.mapSize.onclick();assert(els.gameShell.attrs["data-map-size"]==="large"&&JSON.parse(store["ideas-x-ui-v1"]).size==="large","Large atlas mode");
+els.mapSize.onclick();assert(els.gameShell.attrs["data-map-size"]==="compact","Compact atlas mode");
+els.mapSizeSelect.onchange({target:{value:"normal"}});assert(els.gameShell.attrs["data-map-size"]==="normal","Map size settings synchronize");
+assert(JSON.parse(store["ideas-x-ui-v1"]).layer==="ecology","Map layer preference persisted");
+els.mapLabels.onclick();assert(JSON.parse(store["ideas-x-ui-v1"]).labels===true,"Map labels preference persisted");
 switchTo("system");assert(els.deckScroll.scrollTop===0,"Reset clears scroll memory");
 return passed;
 }
