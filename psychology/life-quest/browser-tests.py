@@ -44,8 +44,10 @@ def run(browser, viewport, mobile):
     # First wrong answer, then correct, reload before coaching.
     first = page.evaluate("D[0][7]")
     choices(page, (first + 1) % 3)
+    expect(page.locator("#screen")).to_contain_text(page.evaluate("answerNote(0,0,(D[0][7]+1)%3)"))
     expect(page.locator("#xp")).to_have_text("✦ 0 XP")
     choices(page, first)
+    expect(page.locator("#answer-review summary")).to_have_text("Разбор всех вариантов")
     expect(page.locator("#xp")).to_have_text("✦ 50 XP")
     page.reload()
     expect(page.locator("#screen")).to_contain_text("Раунд 2")
@@ -133,6 +135,10 @@ def run(browser, viewport, mobile):
     assert page.locator("#progress").evaluate("(el)=>el.value") == 94
     mode(page, "learning")
     expect(page.locator("#screen")).to_contain_text("Все направления освоены")
+    mode(page, "models")
+    page.locator("#source-library summary").click()
+    page.locator("#source-search").fill("выготский")
+    expect(page.locator("#source-results")).to_contain_text("Выготский")
     mode(page, "settings")
     page.get_by_label("Крупный шрифт").check()
     page.get_by_label("Повышенный контраст").check()
