@@ -1,0 +1,36 @@
+// Simulated DOM only: does not test layout, native input events or real browsers.
+const fs=require("node:fs"),path=require("node:path");
+const html=fs.readFileSync(path.join(__dirname,"index.html"),"utf8"),script=html.match(/<script>([\s\S]*?)<\/script>/)[1];
+function makeDom(){
+ class E{
+ constructor(tag){this.tagName=tag.toUpperCase();this.children=[];this.attrs={};this.style={};this.className="";this._text="";this.disabled=false;this.scrollLeft=0;this.clientWidth=320;this.offsetWidth=80;this.offsetLeft=0;this.classList={toggle:(k,on)=>{let a=this.className.split(/\s+/).filter(Boolean).filter(x=>x!==k);if(on)a.push(k);this.className=a.join(" ")}}}
+ set textContent(v){this._text=String(v);this.children=[]}get textContent(){return this._text+this.children.map(c=>c.textContent).join("")}
+ append(...els){for(const e of els){e.parent=this;this.children.push(e)}}replaceChildren(...els){this.children=[];this._text="";this.append(...els)}
+ setAttribute(k,v){this.attrs[k]=String(v)}getAttribute(k){return this.attrs[k]}
+ contains(t){return this===t||this.children.some(e=>e.contains(t))}
+ remove(){if(this.parent)this.parent.children=this.parent.children.filter(x=>x!==this)}
+ focus(){} click(){if(!this.disabled)this.onclick?.()}
+ querySelector(sel){return this.all().find(e=>sel==="[aria-current=true]"?e.attrs["aria-current"]==="true":sel.startsWith(".")?e.className.split(/\s+/).includes(sel.slice(1)):e.tagName===sel.toUpperCase())||null}
+ all(){return this.children.flatMap(e=>[e,...e.all()])}
+ }
+ const body=new E("body");for(const id of ["screen","xp","count","progress","map","modeLabel","modeMenu","quest","brain","models","planner","story","conflicts","settings","reset"]){const e=new E("div");e.id=id;body.append(e)}
+ return {body,createElement:t=>new E(t),getElementById:id=>body.all().find(e=>e.id===id)||null,addEventListener:()=>{}}
+}
+function drive(){
+ let n=0;function check(v,label){if(!v)throw Error("UI "+n+": "+label);n++}
+ const screen=()=>$("screen"),find=(tag,t)=>{const e=screen().all().find(x=>x.tagName===tag&&x.textContent===t);if(!e)throw Error("missing "+t);return e},click=t=>find("BUTTON",t).click(),group=cls=>{const e=screen().querySelector("."+cls);if(!e)throw Error("missing group "+cls);return e},option=(i,cls="choices")=>group(cls).children[i].click(),nav=id=>$(id).click();
+ check(mode==="quest","initial mode");
+ for(const i of ORDER){$("map").children[ORDER.indexOf(i)].click();check(data.stage===i,"map stage");const d=D[i];option((d[7]+1)%3);check(!data.done.includes(i+":0"),"wrong no XP");option(d[7]);check(data.done.includes(i+":0"),"round one");click("Как Вы думаете?");check(phase===1,"coaching transition");option(d[14]);check(data.done.includes(i+":1"),"round two");click(i===ORDER.at(-1)?"Итоги этапа":"Следующий уровень");if(i!==ORDER.at(-1))check(data.stage===ORDER[ORDER.indexOf(i)+1],"next level")}
+ check(xp(data.done)===3000,"quest total");
+ nav("planner");for(let i=0;i<MISSIONS.length;i++){group("mission-tabs").children[i].click();const m=MISSIONS[i];for(let j=0;j<m[3].length;j++){const el=$("plan-"+j);el.value=String(m[3][j][2][0]);el.onchange()}click("Проверить решения");check(data.done.includes("m:"+i),"mission reward")}
+ nav("story");for(let i=0;i<STORIES.length;i++){group("mission-tabs").children[i].click();const st=STORIES[i];option(0);check(storyStep===1,"story transition");option(0);check(storyStep===2,"story consequence");option(st.correct);check(data.done.includes("t:"+i),"story reward")}
+ nav("brain");for(let i=0;i<COGNITIVE.length;i++){group("mission-tabs").children[i].click();for(let j=0;j<3;j++){if(i===0)click("Запомнил — скрыть числа");if(i===3)option(spaceTask.correct,"spatial-options");else option(chooseRound(i,j,cogVariant).correct);click("Далее")}check(data.done.includes("c:"+i),"cognitive reward")}
+ nav("conflicts");for(let i=0;i<CONFLICTS.length;i++){group("mission-tabs").children[i].click();const m=CONFLICTS[i];for(let j=0;j<3;j++){const k=m.steps[j][3];option((k+1)%3);check(conflictStep===j,"wrong stays");option(k);click(j===2?"Завершить диалог":"Следующий шаг");check(conflictStep===j+1,"dialogue next")}check(data.done.includes("r:"+i),"dialogue reward")}
+ check(data.done.length===78,"all complete");check(xp(data.done)===4800,"max XP");check($("progress").value===78,"progress meter");
+ group("mission-tabs").children[0].click();for(let j=0;j<3;j++){option(CONFLICTS[0].steps[j][3]);click(j===2?"Завершить диалог":"Следующий шаг")}check(xp(data.done)===4800,"repeat no double reward");
+ nav("models");check(screen().textContent.includes("Атлас развития"),"atlas");
+ nav("settings");check(screen().textContent.includes("Перенос прогресса"),"settings");click("Показать код резервной копии");check(decodeBackup($("backup-text").value).done.length===78,"backup export");click("Проверить копию");click("Подтвердить объединение");check(xp(data.done)===4800,"merge no loss");check(JSON.parse(localStorage.getItem(K)).done.length===78,"persisted");
+ $("reset").click();check(data.done.length===0&&xp(data.done)===0,"reset");check(mode==="quest","reset route");return n;
+}
+const mock=makeDom(),mem=new Map(),store={getItem:k=>mem.get(k)??null,setItem:(k,v)=>mem.set(k,v)};
+const n=new Function("document","localStorage","confirm",script+";return ("+drive.toString()+")()")(mock,store,()=>true);console.log(n+" simulated DOM assertions passed");
