@@ -377,18 +377,27 @@ function organelle(x,y,r,angle){
  if(r>2.5)strokePath([[-r*.6,0],[-r*.3,-r*.22],[0,r*.22],[r*.3,-r*.22],[r*.6,0]],'#705e57',Math.max(.6,r*.11));
  ctx.restore();
 }
-function cellBody(x,y,r,id,active,t,detail=true){
+function tissuePath(x,y,c,pixels,inset=1){
+ ctx.beginPath();for(let i=0;i<c.points.length;i++){
+  const p=c.points[i],px=x+p.x*pixels*inset,py=y+p.y*pixels*inset;
+  if(i===0)ctx.moveTo(px,py);else ctx.lineTo(px,py);
+ }ctx.closePath();
+}
+function cellBody(x,y,r,id,active,t,detail=true,shape=null,pixels=1){
  const outline=active?'#c5f9df':'#829eb1';
  const aspect=.84+.10*(.5+.5*Math.sin(id*1.73));
- const fill=ctx.createRadialGradient(x-r*.23,y-r*.26,r*.06,x,y,r*1.08);
+ const outer=shape?shape.maxR*pixels:r;
+ const fill=ctx.createRadialGradient(x-r*.23,y-r*.26,r*.06,x,y,Math.max(r,outer)*1.08);
  fill.addColorStop(0,active?'#d1e9cc':'#8eaeb9');
  fill.addColorStop(.43,active?'#68b7a3':'#527b8c');
  fill.addColorStop(.78,active?'#2b7775':'#355467');
  fill.addColorStop(1,active?'#17454f':'#213b50');
- if(detail&&r>22){ctx.shadowBlur=12;ctx.shadowColor=outline;}
- membrane(x,y,r,r*aspect,id,t);ctx.fillStyle=fill;ctx.fill();ctx.strokeStyle=outline;ctx.lineWidth=Math.max(.8,Math.min(3,r*.055));ctx.stroke();ctx.shadowBlur=0;
+ if(detail&&r>22&&!shape?.planes.length){ctx.shadowBlur=9;ctx.shadowColor=outline;}
+ if(shape)tissuePath(x,y,shape,pixels);else membrane(x,y,r,r*aspect,id,t);
+ ctx.fillStyle=fill;ctx.fill();ctx.strokeStyle=outline;ctx.lineWidth=Math.max(.8,Math.min(3,r*.055));ctx.stroke();ctx.shadowBlur=0;
  if(detail&&r>13){
-  membrane(x,y,r*.91,r*aspect*.91,id,t);ctx.strokeStyle=active?'#d2ffdb77':'#9ab3c455';ctx.lineWidth=Math.max(.8,r*.024);ctx.stroke();
+  if(shape)tissuePath(x,y,shape,pixels,.91);else membrane(x,y,r*.91,r*aspect*.91,id,t);
+  ctx.strokeStyle=active?'#d2ffdb77':'#9ab3c455';ctx.lineWidth=Math.max(.8,r*.024);ctx.stroke();
   ctx.save();ctx.globalAlpha=.19;ellipse(x-r*.25,y-r*.28,r*.26,r*.13,'#f4ffe8');ctx.restore();
   for(let i=0;i<3+(id%2);i++){const a=id*.79+i*2.1;organelle(x+Math.cos(a)*r*.57,y+Math.sin(a)*r*.48,r*(.13+.025*((id+i)%3)),a+.4);}
   for(let i=0;i<(r>40?15:6);i++){const a=i*2.399+id*.4,d=r*(.43+.29*((i*7)%11)/10);
@@ -414,7 +423,7 @@ function drawDivision(e,children,b){
  const detailed=oldR>=18;
  // Target rings preserve spatial feedback while accepting another tap immediately.
  for(const c of children)if(c.active){
-  ctx.save();ctx.globalAlpha=.55;ellipse(b.x+c.x*b.w,b.y+c.y*b.h,r,r*.93,null,'#bbffe1');ctx.restore();
+  ctx.save();ctx.globalAlpha=.65;tissuePath(b.x+c.x*b.w,b.y+c.y*b.h,c,b.w);ctx.strokeStyle='#bbffe1';ctx.lineWidth=1.2;ctx.stroke();ctx.restore();
  }
  if(p<.69){
   const k=smooth(p/.69),rx=lerp(oldR,2*r,k),ry=lerp(oldR*.92,r*.92,k);
@@ -439,8 +448,8 @@ function drawDivision(e,children,b){
   ctx.restore();
  }else{
   const k=smooth((p-.69)/.31),dx=Math.cos(angle)*r*.92,dy=Math.sin(angle)*r*.92;
-  cellBody(lerp(cx-dx,ax,k),lerp(cy-dy,ay,k),r,children[0].id,children[0].active,state.time,detailed);
-  cellBody(lerp(cx+dx,bx,k),lerp(cy+dy,by,k),r,children[1].id,children[1].active,state.time,detailed);
+  cellBody(lerp(cx-dx,ax,k),lerp(cy-dy,ay,k),r,children[0].id,children[0].active,state.time,detailed,children[0],b.w*(.68+.32*k));
+  cellBody(lerp(cx+dx,bx,k),lerp(cy+dy,by,k),r,children[1].id,children[1].active,state.time,detailed,children[1],b.w*(.68+.32*k));
  }
  return p;
 }
@@ -479,16 +488,15 @@ function drawCells(){
   const x=v.x+v.w*((i*37+11)%101)/101,y=v.y+v.h*((i*61+7)%103)/103;
   ctx.globalAlpha=.12+.05*(i%3);ellipse(x,y,1+(i%3)*.5,1+(i%2)*.4,'#b6d8ae');
  }ctx.globalAlpha=1;
- const positions=Core.cellPositions(state),n=positions.length,byId=new Map(positions.map(c=>[c.id,c]));
+ const positions=Core.cellGeometry(state),n=positions.length,byId=new Map(positions.map(c=>[c.id,c]));
  divisionEffects=reducedMotion?.matches?[]:divisionEffects.filter(e=>state.time-e.start<e.duration&&e.ids.every(id=>byId.has(id)));
  const animated=new Set(divisionEffects.flatMap(e=>e.ids));
  for(const c of positions){
   if(animated.has(c.id))continue;
   const x=b.x+c.x*b.w,y=b.y+c.y*b.h;
-  const radius=cellRadius(c,b);
-  if(x+radius*1.2<v.x||x-radius*1.2>v.x+v.w||y+radius*1.2<v.y||y-radius*1.2>v.y+v.h)continue;
-  const pulse=reducedMotion?.matches?1:1+.018*Math.sin(state.time*3+c.id*.34);
-  cellBody(x,y,radius*pulse,c.id,c.active,reducedMotion?.matches?0:state.time,radius>13);
+  const outer=c.maxR*b.w,radius=cellRadius(c,b);
+  if(x+outer<v.x||x-outer>v.x+v.w||y+outer<v.y||y-outer>v.y+v.h)continue;
+  cellBody(x,y,radius,c.id,c.active,reducedMotion?.matches?0:state.time,outer>13,c,b.w);
  }
  let stage='';
  for(const e of divisionEffects){

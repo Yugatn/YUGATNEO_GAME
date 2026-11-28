@@ -123,13 +123,53 @@ function cellPositions(s){
  }
  return out;
 }
+// Geometric soft-cell approximation: fixed centers and weighted contact planes.
+const shapeCache=new WeakMap();
+function cellGeometry(s){
+ const saved=shapeCache.get(s.cells);
+ if(saved&&saved.length===s.cells.length&&saved.wave===s.wave)return saved.geometry;
+ const geometry=cellPositions(s).map(c=>({...c,planes:[],points:[],maxR:0}));
+ for(let i=0;i<geometry.length;i++)for(let j=i+1;j<geometry.length;j++){
+  const a=geometry[i],b=geometry[j],dx=b.x-a.x,dy=b.y-a.y,d=Math.hypot(dx,dy);
+  if(d<=0||d>2.2*(a.r+b.r))continue;
+  const ux=dx/d,uy=dy/d,gap=Math.min(a.r,b.r)*.035,limit=d*a.r/(a.r+b.r);
+  a.planes.push({x:ux,y:uy,limit:Math.max(.001,limit-gap)});
+  b.planes.push({x:-ux,y:-uy,limit:Math.max(.001,d-limit-gap)});
+ }
+ for(const c of geometry){
+  const count=48,aspect=.90+.08*(.5+.5*Math.sin(c.id*1.73));
+  const growth=c.generation>=2?1.84:1.06;
+  for(let i=0;i<count;i++){
+   const a=i/count*Math.PI*2,ux=Math.cos(a),uy=Math.sin(a);
+   const irregular=1+.064*Math.sin(a*3+c.id*.71)+.038*Math.cos(a*5-c.id*.37)+.018*Math.sin(a*2+c.id*.19);
+   let r=c.r*growth*irregular/Math.hypot(ux,uy/aspect);
+   for(const plane of c.planes){
+    const dot=ux*plane.x+uy*plane.y;if(dot>0)r=Math.min(r,plane.limit/dot);
+   }
+   if(ux>0)r=Math.min(r,(.99-c.x)/ux);if(ux<0)r=Math.min(r,(.01-c.x)/ux);
+   if(uy>0)r=Math.min(r,(.99-c.y)/uy);if(uy<0)r=Math.min(r,(.01-c.y)/uy);
+   r=Math.max(0,r);c.points.push({x:ux*r,y:uy*r});c.maxR=Math.max(c.maxR,r);
+  }
+ }
+ shapeCache.set(s.cells,{length:s.cells.length,wave:s.wave,geometry});
+ return geometry;
+}
+function insideCell(c,dx,dy,margin=1){
+ if(Math.hypot(dx,dy)>c.maxR*margin)return false;
+ let inside=false;
+ for(let i=0,j=c.points.length-1;i<c.points.length;j=i++){
+  const a=c.points[i],b=c.points[j],ax=a.x*margin,ay=a.y*margin,bx=b.x*margin,by=b.y*margin;
+  if((ay>dy)!==(by>dy)&&dx<(bx-ax)*(dy-ay)/(by-ay)+ax)inside=!inside;
+ }
+ return inside;
+}
 function cellAt(s,nx,ny){
  if(!Number.isFinite(nx)||!Number.isFinite(ny)||nx<0||nx>1||ny<0||ny>1)return null;
  let best=null,nearest=Infinity;
- for(const c of cellPositions(s)){
-  const d=Math.hypot(nx-c.x,ny-c.y);
-  // A small touch margin, but an empty part of the field is not a cell.
-  if(d<=c.r*1.22&&d<nearest){nearest=d;best=c;}
+ for(const c of cellGeometry(s)){
+  const dx=nx-c.x,dy=ny-c.y,d=Math.hypot(dx,dy);
+  if(insideCell(c,dx,dy))return c;
+  if(d<nearest&&insideCell(c,dx,dy,1.12)){nearest=d;best=c;}
  }
  return best;
 }
@@ -312,7 +352,7 @@ function step(s,rawDt){
  return s.events;
 }
 const api={CELL_GOAL,RUN_GOAL,SPACE_GOAL,create,start,cellPositions,divide,
- cellAt,divideNext,steer,jump,ability,step,scoreProgress,profile,SPECIALIZATIONS,specialization,chooseSpecialization};
+ cellAt,cellGeometry,divideNext,steer,jump,ability,step,scoreProgress,profile,SPECIALIZATIONS,specialization,chooseSpecialization};
 if(typeof module!=='undefined'&&module.exports)module.exports=api;
 else root.StoryXEvolution=api;
 })(typeof globalThis!=='undefined'?globalThis:this);

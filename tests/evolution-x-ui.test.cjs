@@ -224,3 +224,14 @@ test('dense colony microscope renders during rapid division and reset',()=>{
  assert.equal(element(w,'zoomLabel').textContent,'×1');
  assert.match(element(w,'mission').textContent,/КЛЕТКИ 1\/256/);w.close();
 });
+
+test('dense tissue contours draw at microscope scale without moving cell targets',()=>{
+ const saved=Core.create(8);Core.start(saved);while(saved.cells.length<128)Core.divideNext(saved);
+ const {w,callbacks}=setup(saved);element(w,'start').click();
+ cycleTick(callbacks,1000);element(w,'zoomIn').click();element(w,'zoomFocus').click();
+ assert.doesNotThrow(()=>cycleTick(callbacks,1030));
+ element(w,'divideNext').click();
+ assert.match(element(w,'mission').textContent,/КЛЕТКИ 129\/256/);
+ assert.doesNotThrow(()=>cycleTick(callbacks,1060));
+ w.close();
+});

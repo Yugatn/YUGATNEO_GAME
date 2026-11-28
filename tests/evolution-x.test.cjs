@@ -196,7 +196,7 @@ test('PWA assets are complete and independently scoped',()=>{
   assert.ok(fs.existsSync(path.join(root,filename)),filename);
  }
  const sw=fs.readFileSync(path.join(root,'sw.js'),'utf8');
- assert.ok(sw.includes('evolution-x-v7'));
+ assert.ok(sw.includes('evolution-x-v8'));
 });
 
 test('accessible division requires exactly 255 actions and cannot skip waves',()=>{
@@ -299,4 +299,37 @@ test('cell hit testing rejects empty space and inactive cells, and layout surviv
  const inactive=pos.find(c=>!c.active);assert.ok(inactive);
  assert.equal(Evolution.divide(s,inactive.x,inactive.y),false);
  assert.ok(Evolution.divideNext(copy));
+});
+
+test('soft membrane geometry stays within shared contact planes and keeps centers selectable',()=>{
+ const s=started();
+ while(s.phase==='cells'){
+  const geo=Evolution.cellGeometry(s);
+  assert.equal(Evolution.cellGeometry(s),geo,'geometry cache reused until division');
+  for(const c of geo){
+   assert.equal(Evolution.cellAt(s,c.x,c.y).id,c.id);
+   assert.equal(c.points.length,48);
+   for(const p of c.points){
+    assert.ok(Number.isFinite(p.x)&&Number.isFinite(p.y));
+    assert.ok(c.x+p.x>=.01-1e-9&&c.x+p.x<=.99+1e-9);
+    assert.ok(c.y+p.y>=.01-1e-9&&c.y+p.y<=.99+1e-9);
+    for(const plane of c.planes)assert.ok(p.x*plane.x+p.y*plane.y<=plane.limit+1e-9);
+   }
+  }
+  assert.ok(Evolution.divideNext(s));
+ }
+ assert.equal(s.divisions,255);
+ const geo=Evolution.cellGeometry(s);
+ assert.ok(geo.every(c=>c.planes.length>0));
+ assert.ok(geo.some(c=>c.maxR>c.r*1.5));
+ assert.deepEqual(Evolution.cellGeometry(JSON.parse(JSON.stringify(s))),geo);
+});
+test('enlarged membrane interior is selectable beyond the old circular radius',()=>{
+ const s=started();while(s.cells.length<16)Evolution.divideNext(s);
+ const geo=Evolution.cellGeometry(s);
+ const c=geo.find(c=>c.points.some(p=>Math.hypot(p.x,p.y)>c.r*1.45));
+ assert.ok(c);
+ const p=c.points.find(p=>Math.hypot(p.x,p.y)>c.r*1.45);
+ assert.equal(Evolution.cellAt(s,c.x+p.x*.90,c.y+p.y*.90).id,c.id);
+ assert.ok(Evolution.divide(s,c.x+p.x*.90,c.y+p.y*.90));
 });
