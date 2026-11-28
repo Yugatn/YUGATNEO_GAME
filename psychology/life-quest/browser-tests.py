@@ -197,6 +197,25 @@ def run(browser, viewport, mobile):
         choices(page, 0, ".recovery-choices")
     expect(page.locator("#screen")).to_contain_text("Восстановление завершено")
     expect(page.locator("#xp")).to_have_text("✦ 7400 XP")
+    page.get_by_text("Обратные связи · ×0", exact=True).click()
+    button(page, "Связи ×2")
+    for j in range(5):
+        choices(page, 3)
+    page.get_by_text("Анализ чувствительности", exact=True).click()
+    expect(page.locator("#screen")).to_contain_text("Связи ×2:")
+    page.get_by_text("Архив экспериментов · 0/12", exact=True).click()
+    button(page, "Сохранить эксперимент в архив")
+    assert page.evaluate("systemArchive.length") == 1
+    page.reload()
+    mode(page, "systems")
+    page.get_by_text("Архив экспериментов · 1/12", exact=True).click()
+    button(page, "Открыть эксперимент 1")
+    assert page.evaluate("systemState.coupling") == 2
+    assert page.evaluate("systemState.turn") == 5
+    page.get_by_text("Архив экспериментов · 1/12", exact=True).click()
+    button(page, "Удалить эксперимент 1")
+    assert page.evaluate("systemArchive.length") == 0
+
     mode(page, "learning")
     expect(page.locator("#screen")).to_contain_text("Все направления освоены")
     mode(page, "models")
