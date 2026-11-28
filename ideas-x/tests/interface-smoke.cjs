@@ -97,6 +97,13 @@ switchTo("system");assert(state().enterprises.length===1&&!els.enterpriseSelect.
 assert(els.enterpriseDetail.innerHTML.includes("Производительность")&&els.enterpriseActions.innerHTML.includes("Условия труда"),"Enterprise indicators and actions");
 let well=state().enterprises[0].well;click(els.enterpriseActions,{enterprise:"care"});assert(state().enterprises[0].well>well,"Workplace action UI");
 els.reset.onclick();assert(state().enterprises.length===0,"New party clears enterprises");
+els.reset.onclick();els.mode.value="sandbox";els.regionSelect.value="eu";els.regionSelect.onchange({target:els.regionSelect});els.start.onclick();switchTo("system");
+els.contractGood.value="food";els.contractGood.onchange();els.contractAmount.value="4";assert(!els.contractAdd.disabled&&els.contractPreview.textContent.includes("Маршрут"),"Contract preview");
+els.contractAdd.onclick();assert(state().contracts.length===1&&els.contractList.innerHTML.includes("Ожидает"),"Contract UI creation");
+els.contractMap.onclick();assert(els.layer.value==="contracts"&&els.edges.children.some(n=>n.classList.contains("contractRoute")),"Contract atlas");
+click(els.controls,{step:"7"});assert(state().contracts[0].last>0&&els.contractList.innerHTML.includes("Выполняется")||state().contracts[0].last>0&&els.contractList.innerHTML.includes("Частично"),"Contract UI delivery");
+click(els.contractList,{cancelContract:"1"});assert(state().contracts.length===0,"Contract UI cancellation");
+els.reset.onclick();assert(state().contracts.length===0,"Contract reset");
 return passed;
 }
 const passed=runSmoke(fs.readFileSync(path.join(__dirname,"../index.html"),"utf8"));
