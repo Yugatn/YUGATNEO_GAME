@@ -47,6 +47,13 @@ canvas{position:absolute;inset:0;width:100%;height:100%;touch-action:none;displa
 #divideNext[hidden]{display:none}
 #microscope{position:absolute;bottom:calc(63px + env(safe-area-inset-bottom));left:50%;transform:translateX(-50%);display:flex;align-items:center;gap:5px;z-index:3;max-width:calc(100% - 12px);white-space:nowrap}
 #microscope[hidden]{display:none}
+#cycleHint{position:absolute;top:calc(166px + env(safe-area-inset-top));left:12px;right:12px;z-index:2;font-size:11px;line-height:1.25;color:#d2f5e5;text-align:center;pointer-events:none;background:#071d26d9;border-radius:8px;padding:4px 7px}
+#cycleHint[hidden]{display:none}
+#cycleGuide{width:min(100%,440px);text-align:left;color:#b7d9d9;font-size:12px;line-height:1.5;background:#102c38;border:1px solid #366963;border-radius:10px;padding:8px 12px}
+#cycleGuide summary{cursor:pointer;color:#a7ffd9;font-weight:800}
+#cycleGuide ol{padding-left:20px;margin:6px 0}
+#cycleGuide a{color:#a7ffd9}
+#cycleMode{width:min(100%,440px)}
 #microscope button{min-width:40px;min-height:38px;padding:5px 8px;border-radius:9px;border:1px solid #4d817d;background:#12363d;color:#d2f8e6;font-size:12px;font-weight:750}
 #microscope button:disabled{opacity:.45}
 #microscope button[aria-pressed=true]{background:#397a67;border-color:#b0f5cf}
@@ -100,6 +107,7 @@ canvas{position:absolute;inset:0;width:100%;height:100%;touch-action:none;displa
 <div class="progress"><div id="fill"></div></div>
 <div class="phase"><span id="mission">Коснись первой клетки</span><span id="planet">МИР · 1</span></div>
 <div id="worldTrait"></div>
+<div id="cycleHint" hidden></div>
 <button id="pause" type="button">Ⅱ ПАУЗА</button>
 <div class="message" id="message" role="status" aria-live="polite"></div>
 <div class="note" id="cellNote">Касайтесь ярких клеток. Следующее поколение активируется после завершения текущего. Пробел — альтернативное управление.</div>
@@ -145,6 +153,9 @@ canvas{position:absolute;inset:0;width:100%;height:100%;touch-action:none;displa
 <section class="overlay" id="paused" hidden aria-labelledby="pauseTitle">
   <div class="kicker">ВРЕМЯ ОСТАНОВЛЕНО</div><h1 id="pauseTitle">ПАУЗА</h1>
   <p id="pauseWorld"></p>
+  <button id="cycleMode" type="button" class="secondary" aria-pressed="false">Подробный цикл: ВЫКЛ</button>
+  <details id="cycleGuide"><summary>Как делится животная клетка</summary>
+  <ol><li>Интерфаза G1: рост клетки.</li><li>S: копирование ДНК; G2: дальнейшая подготовка.</li><li>Профаза и прометафаза: уплотнение хромосом, веретено деления.</li><li>Метафаза: расположение хромосом в центре.</li><li>Анафаза: разделение сестринских хроматид.</li><li>Телофаза: восстановление ядер. Цитокинез начинается ещё в поздней анафазе и разделяет цитоплазму.</li><li>Две дочерние клетки.</li></ol><p>Схема условная, длительность и число хромосом не соответствуют реальной клетке. В игре деление сразу засчитывается, а анимация — визуальная подсказка.</p><a href="https://openstax.org/books/biology-2e/pages/10-2-the-cell-cycle" target="_blank" rel="noopener noreferrer">Источник: OpenStax Biology 2e, 10.2</a></details>
   <section id="specializationPanel" aria-label="Эволюционная специализация">
    <div class="kicker">ПУТЬ РАЗВИТИЯ</div><p id="specializationStatus"></p>
    <div class="specs">

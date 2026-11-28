@@ -14,6 +14,30 @@ let zoom=1,focusX=.5,focusY=.5,panMode=false,drag=null;
 const reducedMotion=window.matchMedia?.('(prefers-reduced-motion: reduce)');
 const KEY='yugatneo.evolution-x.state.v1',BEST='yugatneo.evolution-x.best.v1';
 const SOUND_KEY='yugatneo.evolution-x.sound.v1';
+const CYCLE_KEY='yugatneo.evolution-x.cycle-guide.v1';
+let detailedCycle=false;
+try{detailedCycle=localStorage.getItem(CYCLE_KEY)==='1';}catch(_){}
+const CYCLE=[
+ {end:.12,name:'Интерфаза · рост',hint:'G1: клетка растёт и синтезирует вещества.'},
+ {end:.24,name:'Интерфаза · удвоение ДНК',hint:'S: ДНК копируется; затем G2 — подготовка к митозу.'},
+ {end:.38,name:'Профаза и прометафаза',hint:'Хромосомы уплотняются, формируется веретено, ядерная оболочка распадается.'},
+ {end:.53,name:'Метафаза',hint:'Хромосомы выстраиваются в экваториальной плоскости.'},
+ {end:.69,name:'Анафаза',hint:'Сестринские хроматиды расходятся к противоположным полюсам.'},
+ {end:.83,name:'Телофаза и цитокинез',hint:'Восстанавливаются ядра; перетяжка разделяет цитоплазму.'},
+ {end:1.01,name:'Две дочерние клетки',hint:'После цитокинеза образуются две клетки.'}
+];
+function cycleStage(p){return CYCLE.findIndex(s=>p<s.end);}
+function updateCyclePreference(){
+ const el=$('cycleMode');el.textContent=detailedCycle?'Подробный цикл: ВКЛ':'Подробный цикл: ВЫКЛ';
+ el.setAttribute('aria-pressed',String(detailedCycle));
+}
+$('cycleMode').addEventListener('click',()=>{
+ if(!pausedFrom)return;
+ detailedCycle=!detailedCycle;
+ try{localStorage.setItem(CYCLE_KEY,detailedCycle?'1':'0');}catch(_){}
+ updateCyclePreference();
+});
+updateCyclePreference();
 const worlds=[
  {name:'Исток',cell:'#0b2630',run:'#0b1731',road:'#142d3f',sky:'#020817',planet:'#6ef2a1',rim:'#94ffcb'},
  {name:'Криос',cell:'#102c49',run:'#182c51',road:'#233f59',sky:'#081527',planet:'#bcecff',rim:'#8ddcff'},
@@ -174,7 +198,7 @@ function performDivision(nx,ny){
   if(parent&&children.length===2){
    // Cancel an older effect if a daughter has already been divided again.
    divisionEffects=divisionEffects.filter(e=>e.ids.every(id=>ids.has(id))&&state.time-e.start<e.duration);
-   divisionEffects.push({parent,ids:children.map(c=>c.id),start:state.time,duration:after.length<=8?.88:after.length<=32?.58:.28});
+   divisionEffects.push({parent,ids:children.map(c=>c.id),start:state.time,duration:detailedCycle?(after.length<=32?1.9:after.length<=64?1.05:.45):(after.length<=8?.88:after.length<=32?.58:.28)});
    divisionEffects=divisionEffects.slice(-8);
    burstEffects.push({parent,start:state.time,id:parent.id,duration:after.length<=32?.95:.46});
    burstEffects=burstEffects.slice(-10);
@@ -287,6 +311,7 @@ function updateHUD(){
  $('worldTrait').textContent=state.phase==='space'||state.phase==='landing'?'Цель: '+world(1).name+' · '+Core.profile(state.planet+1).trait:worldBrief();
  $('divideNext').hidden=state.phase!=='cells'||!$('intro').hidden||!!pausedFrom;
  $('microscope').hidden=$('divideNext').hidden;
+ if(state.phase!=='cells'&&state.phase!=='emergence')$('cycleHint').hidden=true;
  $('zoomLabel').textContent='×'+zoom;
  $('zoomOut').disabled=zoom===1;$('zoomIn').disabled=zoom===3;
  $('zoomFocus').disabled=zoom===1;$('panMode').disabled=zoom===1;
@@ -425,29 +450,49 @@ function drawDivision(e,children,b){
  for(const c of children)if(c.active){
   ctx.save();ctx.globalAlpha=.65;tissuePath(b.x+c.x*b.w,b.y+c.y*b.h,c,b.w);ctx.strokeStyle='#bbffe1';ctx.lineWidth=1.2;ctx.stroke();ctx.restore();
  }
- if(p<.69){
-  const k=smooth(p/.69),rx=lerp(oldR,2*r,k),ry=lerp(oldR*.92,r*.92,k);
+ const stage=cycleStage(p);
+ if(p<.83){
+  const k=smooth(Math.min(1,p/.83)),rx=lerp(oldR,Math.max(2*r,Math.hypot(bx-ax,by-ay)*.5+r),k),ry=lerp(oldR*.92,r*.92,k);
   ctx.save();ctx.translate(cx,cy);ctx.rotate(angle);
   const grad=ctx.createRadialGradient(-rx*.2,-ry*.2,1,0,0,Math.max(rx,ry)*1.05);
   grad.addColorStop(0,'#b4e6c4');grad.addColorStop(.55,'#4cae9c');grad.addColorStop(1,'#17545d');
-  membrane(0,0,rx,ry,parent.id,state.time,.94*smooth(Math.max(0,(p-.25)/.44)));
+  membrane(0,0,rx,ry,parent.id,state.time,.94*smooth(Math.max(0,(p-.62)/.21)));
   ctx.fillStyle=grad;ctx.fill();ctx.strokeStyle='#baffde';ctx.lineWidth=Math.max(1,Math.min(3,r*.045));ctx.stroke();
   const nr=Math.max(1.8,ry*.29);
-  if(p<.16)nucleus(0,0,nr,true);
-  else if(p<.48&&detailed){
-   const split=smooth(Math.max(0,(p-.22)/.26))*rx*.46;
-   for(let i=0;i<3;i++){
-    const y=(i-1)*nr*.58;
-    chromosome(-split,y,nr*.27,i*.65+.2);
-    chromosome(split,y,nr*.27,-i*.65-.2);
+  if(stage<=1){
+   nucleus(0,0,nr,true);
+   if(stage===1&&detailed){
+    // DNA replication is indicated by paired chromatin threads, not condensed chromosomes.
+    for(let i=0;i<2;i++){
+     const pts=Array.from({length:15},(_,j)=>[nr*(-.65+j*.093),nr*(.23*Math.sin(j*.8+i*Math.PI)+(i-.5)*.18)]);
+     strokePath(pts,'#e2c8f8',Math.max(.7,nr*.08));
+    }
    }
+  }else if(stage<=4&&detailed){
+   const pole=rx*.68;
+   const sep=stage===4?smooth(Math.max(0,(p-.53)/.16))*rx*.46:0;
+   // Spindle fibres: illustrative, not a real chromosome count.
+   for(let i=0;i<4;i++){
+    const yy=(i-1.5)*nr*.64;
+    const xx=stage===2?Math.sin(i*2.1)*nr*.65:0;
+    ctx.save();ctx.globalAlpha=.45;
+    strokePath([[-pole,0],[xx-sep,yy]],'#c4f3c1',Math.max(.7,nr*.04));
+    strokePath([[pole,0],[xx+sep,yy]],'#c4f3c1',Math.max(.7,nr*.04));ctx.restore();
+    if(stage===4){
+     const d=nr*.24;
+     strokePath([[-sep+d,yy-d],[-sep,yy],[-sep+d,yy+d]],'#e6c7ff',Math.max(1,nr*.09));
+     strokePath([[sep-d,yy-d],[sep,yy],[sep-d,yy+d]],'#e6c7ff',Math.max(1,nr*.09));
+    }else chromosome(xx,yy,nr*.23,stage===3?.78:i*.65+.2);
+   }
+   ellipse(-pole,0,Math.max(1,nr*.12),Math.max(1,nr*.12),'#e3f4b8');
+   ellipse(pole,0,Math.max(1,nr*.12),Math.max(1,nr*.12),'#e3f4b8');
   }else{
-   const separation=rx*.49*smooth(Math.min(1,(p-.15)/.4));
+   const separation=rx*.49*smooth(Math.min(1,Math.max(0,(p-.48)/.21)));
    nucleus(-separation,0,nr,true);nucleus(separation,0,nr,true);
   }
   ctx.restore();
  }else{
-  const k=smooth((p-.69)/.31),dx=Math.cos(angle)*r*.92,dy=Math.sin(angle)*r*.92;
+  const k=smooth((p-.83)/.17),dx=Math.cos(angle)*r*.92,dy=Math.sin(angle)*r*.92;
   cellBody(lerp(cx-dx,ax,k),lerp(cy-dy,ay,k),r,children[0].id,children[0].active,state.time,detailed,children[0],b.w*(.68+.32*k));
   cellBody(lerp(cx+dx,bx,k),lerp(cy+dy,by,k),r,children[1].id,children[1].active,state.time,detailed,children[1],b.w*(.68+.32*k));
  }
@@ -498,11 +543,14 @@ function drawCells(){
   if(x+outer<v.x||x-outer>v.x+v.w||y+outer<v.y||y-outer>v.y+v.h)continue;
   cellBody(x,y,radius,c.id,c.active,reducedMotion?.matches?0:state.time,outer>13,c,b.w);
  }
- let stage='';
+ let stage='',phaseIndex=-1;
  for(const e of divisionEffects){
   const p=drawDivision(e,e.ids.map(id=>byId.get(id)),b);
-  if(n<=32)stage=p<.16?'Подготовка к делению':p<.48?'Разделение хромосом':p<.69?'Перетяжка мембраны':'Две дочерние клетки';
+  if(n<=32||detailedCycle){phaseIndex=cycleStage(p);stage=CYCLE[phaseIndex]?.name||'';}
  }
+ const hint=$('cycleHint');
+ hint.hidden=!detailedCycle||phaseIndex<0||panMode;
+ hint.textContent=hint.hidden?'':CYCLE[phaseIndex].hint;
  drawBursts(b);ctx.restore();
  ctx.textAlign='center';ctx.fillStyle='#bcffe3';ctx.font='bold 12px system-ui';
  ctx.fillText('ДЕЛЕНИЕ · '+state.divisions+' касаний',W/2,v.y-22);

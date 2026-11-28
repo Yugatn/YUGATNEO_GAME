@@ -161,11 +161,13 @@ test('cell division has staged visual feedback and immediate logical progress',(
  const {w,callbacks,labels}=setup();element(w,'start').click();touch(w,195,400);
  assert.match(element(w,'mission').textContent,/КЛЕТКИ 2\/256/);
  cycleTick(callbacks,1000);
- assert.ok(labels.includes('Подготовка к делению'));
+ assert.ok(labels.includes('Интерфаза · рост'));
  for(let i=1;i<=8;i++)cycleTick(callbacks,1000+i*30);
- assert.ok(labels.includes('Разделение хромосом'));
+ assert.ok(labels.includes('Интерфаза · удвоение ДНК'));
+ assert.ok(labels.includes('Профаза и прометафаза'));
  for(let i=9;i<=19;i++)cycleTick(callbacks,1000+i*30);
- assert.ok(labels.includes('Перетяжка мембраны'));
+ assert.ok(labels.includes('Метафаза'));
+ assert.ok(labels.includes('Анафаза'));
  for(let i=20;i<=30;i++)cycleTick(callbacks,1000+i*30);
  assert.ok(labels.includes('Две дочерние клетки'));
  assert.match(element(w,'mission').textContent,/КЛЕТКИ 2\/256/);
@@ -182,7 +184,7 @@ test('rapid successive division, dense field and reduced motion remain playable'
  w.close();
  const reduced=setup(undefined,true);element(reduced.w,'start').click();touch(reduced.w,195,400);
  cycleTick(reduced.callbacks,1000);
- assert.ok(!reduced.labels.includes('Подготовка к делению'));
+ assert.ok(!reduced.labels.includes('Интерфаза · рост'));
  assert.match(element(reduced.w,'mission').textContent,/КЛЕТКИ 2\/256/);
  reduced.w.close();
 });
@@ -233,5 +235,18 @@ test('dense tissue contours draw at microscope scale without moving cell targets
  element(w,'divideNext').click();
  assert.match(element(w,'mission').textContent,/КЛЕТКИ 129\/256/);
  assert.doesNotThrow(()=>cycleTick(callbacks,1060));
+ w.close();
+});
+
+test('optional detailed cell cycle persists and shows all stages without delaying logical progress',()=>{
+ const {w,callbacks,labels}=setup();element(w,'start').click();element(w,'pause').click();
+ element(w,'cycleMode').click();assert.equal(element(w,'cycleMode').getAttribute('aria-pressed'),'true');
+ assert.equal(w.localStorage.getItem('yugatneo.evolution-x.cycle-guide.v1'),'1');
+ element(w,'resume').click();element(w,'divideNext').click();
+ assert.match(element(w,'mission').textContent,/КЛЕТКИ 2\/256/);
+ for(let i=0;i<70;i++)cycleTick(callbacks,1000+i*30);
+ for(const name of ['Интерфаза · рост','Интерфаза · удвоение ДНК','Профаза и прометафаза','Метафаза','Анафаза','Телофаза и цитокинез','Две дочерние клетки'])assert.ok(labels.includes(name),name);
+ element(w,'divideNext').click();element(w,'divideNext').click();
+ assert.match(element(w,'mission').textContent,/КЛЕТКИ 4\/256/);
  w.close();
 });
