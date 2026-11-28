@@ -1,0 +1,7 @@
+// node psychology/life-quest/conflict-tests.cjs
+const fs=require("node:fs"),vm=require("node:vm"),assert=require("node:assert/strict"),path=require("node:path");
+const html=fs.readFileSync(path.join(__dirname,"index.html"),"utf8"),script=html.match(/<script>([\s\S]*?)<\/script>/)[1];new vm.Script(script);
+const l=vm.runInNewContext(script.slice(0,script.indexOf("let data={done:[]"))+";({CONFLICTS,conflictCorrect,validKey,grant,xp,mergeProgress,decodeBackup,encodeBackup})");
+let n=0;function check(v){assert.ok(v);n++}
+check(l.CONFLICTS.length===4);for(const m of l.CONFLICTS){check(m.steps.length===3);check(m.steps[2][0]==="Как Вы думаете?");for(const s of m.steps){check(s[2].length===3);check(new Set(s[2].map(x=>x[0])).size===3);check(s[2].every(x=>x[1].length>0));for(let i=0;i<3;i++)check(l.conflictCorrect(s,i)===(i===s[3]));check(!l.conflictCorrect(s,null))}}
+const keys=[...Array.from({length:60},(_,i)=>Math.floor(i/2)+":"+i%2),...Array.from({length:4},(_,i)=>"m:"+i),...Array.from({length:4},(_,i)=>"t:"+i),...Array.from({length:6},(_,i)=>"c:"+i),...Array.from({length:4},(_,i)=>"r:"+i)];check(keys.length===78);check(keys.every(l.validKey));check(l.xp(keys)===4800);check(!l.validKey("r:4"));const a={done:["r:0"],route:"care",stage:28};check(l.decodeBackup(l.encodeBackup(a)).done[0]==="r:0");check(l.mergeProgress(a,a).done.length===1);check(!l.grant(a.done,"r:0"));console.log(n+" conflict assertions passed");
