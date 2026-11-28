@@ -31,4 +31,13 @@ for(let i=0;i<4;i++){labIndex=i;[()=>preset(100,105,108,98),()=>preset(105,100,1
 switchMode('sandbox');ck(!practiceActive&&$('practicebar').hidden);tick(1);let old=cursor;switchMode('lab');switchMode('sandbox');ck(cursor===old);
 ck($('xp').textContent===(Q.length*100+practiceTasks.length*75+4*75+cityQuests.length*150)+' XP');
 return {tests,xp:$('xp').textContent};`)(doc,storage,win,()=>true);
+// Legacy snapshots: preserve old numeric IDs, then verify a reload with stable IDs.
+function bootSnapshot(snapshot){stored=JSON.stringify(snapshot);return new Function('document','localStorage','window','confirm',scripts[1]+`
+return {index,solved:[...solved],review:[...reviewPending],xp:$('xp').textContent,snapshot:JSON.parse(localStorage.getItem('trading-x-v1'))};`)(doc,storage,win,()=>true)}
+const legacy=bootSnapshot({solved:[0,5,23],index:5,netSolved:[0],labSolved:[0],practiceSolved:['body']});
+if(legacy.index!==5||legacy.solved.length!==3||legacy.xp!=='600 XP'||legacy.snapshot.lessonId!=='rsi')throw Error('legacy migration');
+if(legacy.snapshot.solvedIds.join(',')!=='ohlc,rsi,financial-safety')throw Error('stable ID migration');
+const migrated=bootSnapshot({...legacy.snapshot,solved:[],reviewPending:['rsi','invalid-id']});
+if(migrated.index!==5||migrated.solved.length!==3||migrated.xp!=='600 XP'||migrated.review.join(',')!=='rsi')throw Error('stable ID reload');
+result.tests+=3;
 console.log('Trading X smoke OK',result);
