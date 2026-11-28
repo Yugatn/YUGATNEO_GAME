@@ -1,5 +1,13 @@
 # Kombat Memory — дорожная карта
 
+## Версия 1.3
+- 716 записей, 11 из 16 выпусков имеют локальные команды. Добавлено 161 запись: MK4 PS1 (42), MK Gold Dreamcast (46), Sega Genesis 3-button (66 для MK I–III), удержание и отпускание MKII 6-button (7).
+- Трёхкнопочная Sega: отдельный выбор платформы; для MK I–II A/B/C/START имеют иной смысл, чем для MK III. Перенос команд только по явно заданным вариантам, не универсальной подстановкой. Проверенные справочные страницы: https://icemantraveler.github.io/mkksg/mk1/default_genesis.htm , https://icemantraveler.github.io/mkksg/mk2/default_genesis.htm , https://icemantraveler.github.io/mkksg/mk3/default.htm .
+- MK4 и Gold: первичное наполнение, фильтр оружия, раскладки PS1 и Dreamcast; источники https://icemantraveler.github.io/mkksg/mk4/default.htm и https://icemantraveler.github.io/mkksg/mkg/default.htm .
+- Символические команды удержания H_LK:3 и отпускания R_LK. Тренажёр проверяет последовательность действий и указанное время, а не реальные длительности удержания.
+- Синтаксис и 15 сценариев в имитации DOM пройдены. Проверка движений непосредственно в игре, реальных браузеров и физических геймпадов остаётся открытой.
+- Далее: заполнение MK4/Gold и 3-button UMK3, исправление платформенных исключений, подключение Gamepad API, действительное измерение времени удержания, затем MKDA/Deception/Armageddon.
+
 ## Версия 1.2
 - 555 локальных записей, 9 из 16 выпусков с локальными командами. Добавлено 95 записей UMK3 Genesis и по 89 записей Trilogy для PS1 и Saturn.
 - Ссылки на источники: https://icemantraveler.github.io/mkksg/umk3/defaultx.htm и https://icemantraveler.github.io/mkksg/mkt/default.htm . Отдельная сверка команд и условий в самой игре ещё необходима; каталог не полный.
