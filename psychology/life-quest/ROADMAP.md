@@ -91,7 +91,8 @@
 - [x] Дополнительные адаптивные стили для узкого экрана и перенос длинного текста; доступность требует визуальной проверки.
 - [x] 124 новых утверждений возобновления, прежние тесты чистой логики и имитированного DOM выполнены до записи: 90 planner assertions passed; 77 story assertions passed; 229 cognitive and regression assertions passed; 68 spatial assertions passed; 259 social assertions passed; 19 backup assertions passed; 100 conflict assertions passed; 242 simulated DOM assertions passed; 124 resume assertions passed.
 - [x] Добавлены browser-tests.py и workflow life-quest-browser.yml: полный цикл 78 единиц, каталог, повторное открытие, настройки и импорт в Chromium/WebKit с мобильными и настольным viewport. 
-- [ ] Получить фактический результат CI; физические iPhone/Safari и Android/Chrome, публичная страница и научная экспертиза требуют отдельной проверки.
+- [x] Первый CI: все 1208 утверждений прошли в Node.js; установка Playwright 1.51.0 остановилась на ubuntu-latest (26.04, несовместимая ОС). Закреплён runner ubuntu-24.04.
+- [ ] Получить результат повторного браузерного CI; физические iPhone/Safari и Android/Chrome, публичная страница и научная экспертиза требуют отдельной проверки.
 
 ## Следующая задача (P0)
 - [ ] Пройти 60 заданий, 4 семейные миссии, 4 истории, 6 упражнений и 4 диалога на iPhone/Safari, Android/Chrome и ПК; проверить начисление XP ровно один раз, повторы, переходы и восстановление прогресса. Проверить GitHub Pages и оба меню. Автоматические тесты данных, игрового цикла и браузерный workflow добавлены; подтвердить результат CI.
