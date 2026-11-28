@@ -13,7 +13,7 @@ function makeDom(){
  querySelector(sel){return this.all().find(e=>sel==="[aria-current=true]"?e.attrs["aria-current"]==="true":sel.startsWith(".")?e.className.split(/\s+/).includes(sel.slice(1)):e.tagName===sel.toUpperCase())||null}
  all(){return this.children.flatMap(e=>[e,...e.all()])}
  }
- const body=new E("body");for(const id of ["screen","xp","count","progress","map","modeLabel","modeMenu","quest","brain","models","planner","story","conflicts","perspectives","habits","thinking","learning","settings","reset"]){const e=new E("div");e.id=id;body.append(e)}
+ const body=new E("body");for(const id of ["screen","xp","count","progress","map","modeLabel","modeMenu","quest","brain","models","planner","story","conflicts","perspectives","habits","thinking","reflection","learning","settings","reset"]){const e=new E("div");e.id=id;body.append(e)}
  return {body,createElement:t=>new E(t),getElementById:id=>body.all().find(e=>e.id===id)||null,addEventListener:()=>{}}
 }
 function drive(){
@@ -31,16 +31,20 @@ function drive(){
  nav("perspectives");for(let i=0;i<PERSPECTIVES.length;i++){group("mission-tabs").children[i].click();const m=PERSPECTIVES[i];for(let j=0;j<m.roles.length;j++){const role=m.roles[j];option([0,1,2].find(k=>!role.accepted.includes(k)));check(perspectiveStep===j&&!perspectiveCorrect(role,perspectiveChoice),"invalid role choice");option(role.accepted[j%2]);click(j===0?"Поменяться ролями":"Завершить сценарий");check(perspectiveStep===j+1,"role transition")}check(data.done.includes("p:"+i),"role reward")}
  check(data.done.length===82&&xp(data.done)===5200,"expanded total");
  group("mission-tabs").children[0].click();for(let j=0;j<2;j++){option(PERSPECTIVES[0].roles[j].accepted[1-j]);click(j===0?"Поменяться ролями":"Завершить сценарий")}check(xp(data.done)===5200,"role replay no XP");
- nav("learning");check(screen().textContent.includes("Мой маршрут развития"),"learning dashboard");check(nextLearning(data.done,data.route).key==="h:0","remaining recommendation");click("Продолжить по маршруту");check(mode==="habits"&&habitIndex===0,"recommendation opens habit");
+ nav("learning");check(screen().textContent.includes("Мой маршрут развития"),"learning dashboard");check(nextLearning(data.done,data.route).key==="f:0","remaining recommendation");click("Продолжить по маршруту");check(mode==="reflection"&&reflectionIndex===0,"recommendation opens reflection");nav("habits");
  for(let i=0;i<HABITS.length;i++){group("mission-tabs").children[i].click();for(let j=0;j<2;j++){const q=HABITS[i].rounds[j];option((q.ok+1)%3);check(habitRound===j,"habit wrong stays");option(q.ok);click(j===0?"Следующий вопрос":"Завершить сценарий")}check(data.done.includes("h:"+i),"habit XP")}
  check(data.done.length===86&&xp(data.done)===5600,"expanded learning total");
- nav("learning");check(nextLearning(data.done,data.route).key==="k:0","thinking recommendation");click("Продолжить по маршруту");check(mode==="thinking"&&thinkingIndex===0,"open thinking");
+ nav("learning");check(nextLearning(data.done,data.route).key==="f:0","reflection priority");nav("thinking");
  for(let i=0;i<THINKING.length;i++){group("mission-tabs").children[i].click();for(let j=0;j<2;j++){const q=THINKING[i].rounds[j];option((q.ok+1)%3);check(thinkingRound===j,"thinking wrong stays");option(q.ok);click(j===0?"Следующий вопрос":"Завершить сценарий")}check(data.done.includes("k:"+i),"thinking XP");check(screen().textContent.includes(THINKING[i].practice),"offline task")}
  check(data.done.length===90&&xp(data.done)===6000,"thinking total");
  group("mission-tabs").children[0].click();for(let j=0;j<2;j++){option(THINKING[0].rounds[j].ok);click(j===0?"Следующий вопрос":"Завершить сценарий")}check(xp(data.done)===6000,"thinking replay");
+ nav("learning");click("Продолжить по маршруту");check(mode==="reflection","open reflection");
+ for(let i=0;i<REFLECTIONS.length;i++){group("mission-tabs").children[i].click();check($("reflection-finish").disabled,"cannot finish early");for(let j=0;j<3;j++){const c=$("reflection-"+j);c.checked=true;c.onchange();check($("reflection-finish").disabled===(j<2),"checklist gate")}click("Отметить практикум выполненным");check(data.done.includes("f:"+i),"reflection XP")}
+ check(data.done.length===94&&xp(data.done)===6400,"reflection total");
+ group("mission-tabs").children[0].click();for(let j=0;j<3;j++){const c=$("reflection-"+j);c.checked=true;c.onchange()}click("Отметить практикум выполненным");check(xp(data.done)===6400,"reflection replay");
  nav("learning");check(nextLearning(data.done,data.route)===null,"learning complete");check(screen().textContent.includes("Все направления освоены"),"learning final");
  nav("models");check(screen().textContent.includes("Атлас развития"),"atlas");
- nav("settings");check(screen().textContent.includes("Перенос прогресса"),"settings");click("Показать код резервной копии");check(decodeBackup($("backup-text").value).done.length===90,"backup export");click("Проверить копию");click("Подтвердить объединение");check(xp(data.done)===6000,"merge no loss");check(JSON.parse(localStorage.getItem(K)).done.length===90,"persisted");
+ nav("settings");check(screen().textContent.includes("Перенос прогресса"),"settings");click("Показать код резервной копии");check(decodeBackup($("backup-text").value).done.length===94,"backup export");click("Проверить копию");click("Подтвердить объединение");check(xp(data.done)===6400,"merge no loss");check(JSON.parse(localStorage.getItem(K)).done.length===94,"persisted");
  $("reset").click();check(data.done.length===0&&xp(data.done)===0,"reset");check(mode==="quest","reset route");return n;
 }
 const mock=makeDom(),mem=new Map(),store={getItem:k=>mem.get(k)??null,setItem:(k,v)=>mem.set(k,v)};
