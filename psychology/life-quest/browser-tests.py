@@ -170,6 +170,20 @@ def run(browser, viewport, mobile):
         button(page, "Отметить разбор завершённым")
     expect(page.locator("#xp")).to_have_text("✦ 7400 XP")
     assert page.locator("#progress").evaluate("(el)=>el.value") == 104
+    button(page, "Включить стресс-тест и начать заново")
+    for j in range(5):
+        if j == 2:
+            expect(page.locator("#screen")).to_contain_text("Внешнее событие")
+        choices(page, 3)
+    button(page, "Сохранить как стратегию А и начать заново")
+    for j in range(5):
+        choices(page, j % 4)
+    expect(page.locator("#screen")).to_contain_text("Сравнение стратегий")
+    expect(page.locator("#screen")).to_contain_text("Динамика условной устойчивости")
+    assert page.evaluate("systemCompare(systemBaselines[systemBaselineKey(systemState)],systemState) !== null")
+    button(page, "Отметить разбор завершённым")
+    expect(page.locator("#xp")).to_have_text("✦ 7400 XP")
+    button(page, "Очистить стратегию А")
     mode(page, "learning")
     expect(page.locator("#screen")).to_contain_text("Все направления освоены")
     mode(page, "models")
