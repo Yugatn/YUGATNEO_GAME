@@ -1,7 +1,7 @@
 // node psychology/life-quest/system-tests.cjs
 const fs=require("node:fs"),vm=require("node:vm"),assert=require("node:assert/strict"),path=require("node:path");
 const html=fs.readFileSync(path.join(__dirname,"index.html"),"utf8"),script=html.match(/<script>([\s\S]*?)<\/script>/)[1];new vm.Script(script);
-const l=vm.runInNewContext(script.slice(0,script.indexOf("let data={done:[]"))+";({SYSTEMS,SYSTEM_TURNS,systemStart,systemStep,systemCanAct,systemFinal,systemStability,systemClamp,systemEvent,systemBeforeAction,systemSeries,systemCompare,systemBaselineKey,validKey,xp,grant,learningGroups,nextLearning})");
+const l=vm.runInNewContext(script.slice(0,script.indexOf("let data={done:[]"))+";({SYSTEMS,SYSTEM_TURNS,systemStart,systemStep,systemCanAct,systemFinal,systemStability,systemClamp,systemEvent,systemBeforeAction,systemSeries,systemCompare,systemBaselineKey,systemReserveUsed,systemRawEvent,recoveryStart,recoveryStep,RECOVERY_TURNS,validKey,xp,grant,learningGroups,nextLearning})");
 let n=0,ends=0,shockEnds=0;function check(v){assert.ok(v);n++}
 check(l.SYSTEMS.length===2);check(l.SYSTEM_TURNS===5);
 const first=l.systemStart(0),a=l.systemStep(first,2),b=l.systemStep(a,3);
@@ -11,4 +11,10 @@ check(l.systemCanAct(s,3));for(let a=0;a<4;a++){const next=l.systemStep(s,a);if(
 for(let i=0;i<2;i++){explore(l.systemStart(i));explore(l.systemStart(i,true))}check(ends===2048);check(shockEnds>0);
 function play(i,crisis,actions){let s=l.systemStart(i,crisis);for(const a of actions)s=l.systemStep(s,a);return s}
 for(let i=0;i<2;i++){const a=play(i,true,[3,3,3,3,3]),b=play(i,true,[0,1,2,3,0]),normal=play(i,false,[3,3,3,3,3]);check(a.history.filter(e=>e.event.some(x=>x!==0)).length===1);check(a.history[2].event[0]<0);check(l.systemSeries(a).length===7);check(l.systemCompare(a,b).delta.every((v,j)=>v===l.systemFinal(b)[j]-l.systemFinal(a)[j]));check(l.systemCompare(a,normal)===null);check(l.systemCompare(a,l.systemStart(i,true))===null);check(l.systemBaselineKey(a)!==l.systemBaselineKey(normal));check(l.systemCompare(a,a).delta.every(v=>v===0))}
+for(let i=0;i<2;i++)for(const intensity of [0.5,1,1.5])for(const reserve of [0,10,20]){
+ let s=l.systemStart(i,true,intensity,reserve);check(s.values[0]+s.reserve===l.SYSTEMS[i].start[0]);check(s.initialReserve===reserve);check(l.systemSeries(s)[0][0]===s.values[0]);check(l.recoveryStart(s)===null);
+ for(let j=0;j<5;j++){const before=s;const expected=j===2?Math.min(before.reserve,Math.max(0,-l.systemRawEvent(before)[0])):0;s=l.systemStep(s,3);check(s.reserve===before.reserve-expected);check(s.history[j].reserveUsed===expected);check(s.values.every(v=>v>=0&&v<=100))}
+ check(l.systemBaselineKey(s)!==l.systemBaselineKey(l.systemStart(i,true,intensity,reserve===0?10:0)));const rec=l.recoveryStart(s);check(rec.values.every((v,j)=>v===l.systemFinal(s)[j]));check(rec.reserve===s.reserve);
+ function recover(x){check(x.values.every(v=>v>=0&&v<=100));check(x.reserve>=0&&x.history.length===x.turn);if(x.turn===l.RECOVERY_TURNS){check(l.recoveryStep(x,0)===null);return}for(let a=0;a<4;a++){const y=l.recoveryStep(x,a);if(!y)continue;check(y.turn===x.turn+1);check(y.reserve<=x.reserve);if(a===3)check(y.values[0]+y.reserve===x.values[0]+x.reserve);recover(y)}}recover(rec);
+}
 const keys=l.learningGroups().flatMap(g=>g.keys);check(keys.length===104);check(new Set(keys).size===104);check(keys.every(l.validKey));check(l.xp(keys)===7400);check(!l.validKey("y:2"));check(!l.grant(keys,"y:1"));check(l.nextLearning(keys.filter(k=>!k.startsWith("y:")),"parents").key==="y:0");console.log(n+" system assertions passed; "+ends+" normal and "+shockEnds+" stress-test completed paths");

@@ -1,6 +1,6 @@
 /* Scoped offline shell; no user data caching. */
 const PREFIX="yugatna-life-quest-shell-";
-const CACHE=PREFIX+"v0.22";
+const CACHE=PREFIX+"v0.23";
 const ROOT=new URL(self.registration.scope);
 const PAGE=new URL("index.html",ROOT).href;
 const ASSETS=["manifest.webmanifest","icon-192.svg","icon-512.svg"].map(x=>new URL(x,ROOT).href);

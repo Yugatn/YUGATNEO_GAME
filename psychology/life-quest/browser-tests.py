@@ -184,6 +184,19 @@ def run(browser, viewport, mobile):
     button(page, "Отметить разбор завершённым")
     expect(page.locator("#xp")).to_have_text("✦ 7400 XP")
     button(page, "Очистить стратегию А")
+    page.get_by_text("Настроить интенсивность и резерв (начать заново)", exact=True).click()
+    button(page, "Сильное событие ×1,5")
+    page.get_by_text("Настроить интенсивность и резерв (начать заново)", exact=True).click()
+    button(page, "Исходный резерв: 20")
+    assert page.evaluate("systemState.reserve") == 20
+    for j in range(5):
+        choices(page, 3)
+    assert page.evaluate("systemState.history[2].reserveUsed") == 20
+    button(page, "Начать восстановление")
+    for j in range(3):
+        choices(page, 0, ".recovery-choices")
+    expect(page.locator("#screen")).to_contain_text("Восстановление завершено")
+    expect(page.locator("#xp")).to_have_text("✦ 7400 XP")
     mode(page, "learning")
     expect(page.locator("#screen")).to_contain_text("Все направления освоены")
     mode(page, "models")
