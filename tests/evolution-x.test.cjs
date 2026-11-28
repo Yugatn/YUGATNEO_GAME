@@ -196,7 +196,7 @@ test('PWA assets are complete and independently scoped',()=>{
   assert.ok(fs.existsSync(path.join(root,filename)),filename);
  }
  const sw=fs.readFileSync(path.join(root,'sw.js'),'utf8');
- assert.ok(sw.includes('evolution-x-v10'));
+ assert.ok(sw.includes('evolution-x-v11'));
 });
 
 test('accessible division requires exactly 255 actions and cannot skip waves',()=>{
@@ -360,4 +360,21 @@ test('local cell signals are bounded and deterministic without altering game sta
  assert.ok(links.length>0&&links.length<=6);
  for(const l of links){assert.ok(ids.includes(l.from));assert.ok(known.has(l.to));assert.ok(!ids.includes(l.to));}
  assert.deepEqual(Evolution.signalLinks(s,ids),links);assert.equal(JSON.stringify(s),before);
+});
+
+test('functional territories develop by generation, retain position and do not change division rules',()=>{
+ const s=started();
+ assert.deepEqual(Evolution.tissueSummary(s),{stem:1,barrier:0,motor:0,sensory:0,relay:0});
+ while(s.cells.length<16)assert.ok(Evolution.divideNext(s));
+ assert.ok(s.events.includes('tissueUnlocked'));
+ while(s.cells.length<64)assert.ok(Evolution.divideNext(s));
+ const summary=Evolution.tissueSummary(s);
+ for(const t of Evolution.CELL_TYPES)assert.ok(summary[t.id]>0,t.id);
+ assert.equal(Object.values(summary).reduce((a,b)=>a+b,0),64);
+ const copy=JSON.parse(JSON.stringify(s));
+ assert.deepEqual(Evolution.tissueSummary(copy),summary);
+ for(const c of Evolution.cellGeometry(s))assert.equal(Evolution.cellAt(s,c.x,c.y).id,c.id);
+ while(s.phase==='cells')assert.ok(Evolution.divideNext(s));
+ assert.equal(s.divisions,255);
+ assert.equal(Object.values(Evolution.tissueSummary(s)).reduce((a,b)=>a+b,0),256);
 });

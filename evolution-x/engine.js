@@ -123,12 +123,35 @@ function cellPositions(s){
  }
  return out;
 }
+// Fictional functional territories, inferred from position and generation.
+ // No claim that real tissues develop this way. All game cells retain division ability.
+const CELL_TYPES=Object.freeze([
+ {id:'stem',name:'Неспециализированные',desc:'Условный резерв развития.'},
+ {id:'barrier',name:'Защитные',desc:'Образуют внешний слой колонии.'},
+ {id:'motor',name:'Двигательные',desc:'Внутренние условные сократительные группы.'},
+ {id:'sensory',name:'Сенсорные',desc:'Условно принимают сигналы среды.'},
+ {id:'relay',name:'Сигнальные',desc:'Условно передают сигналы между группами.'}
+].map(Object.freeze));
+function cellType(c){
+ if(c.generation<4)return 'stem';
+ const x=c.x-.5,y=c.y-.5,d=Math.hypot(x,y);
+ if(d>.42)return 'barrier';
+ if(Math.abs(x)<.15&&Math.abs(y)<.22)return 'relay';
+ if(y<-.12)return 'sensory';
+ if(y>.10)return 'motor';
+ return 'stem';
+}
+function tissueSummary(s){
+ const counts=Object.fromEntries(CELL_TYPES.map(t=>[t.id,0]));
+ for(const c of cellGeometry(s))counts[c.type]++;
+ return counts;
+}
 // Geometric soft-cell approximation: fixed centers and weighted contact planes.
 const shapeCache=new WeakMap();
 function cellGeometry(s){
  const saved=shapeCache.get(s.cells);
  if(saved&&saved.length===s.cells.length&&saved.wave===s.wave)return saved.geometry;
- const geometry=cellPositions(s).map(c=>({...c,planes:[],points:[],maxR:0}));
+ const geometry=cellPositions(s).map(c=>({...c,type:cellType(c),planes:[],points:[],maxR:0}));
  for(let i=0;i<geometry.length;i++)for(let j=i+1;j<geometry.length;j++){
   const a=geometry[i],b=geometry[j],dx=b.x-a.x,dy=b.y-a.y,d=Math.hypot(dx,dy);
   if(d<=0||d>2.2*(a.r+b.r))continue;
@@ -192,6 +215,7 @@ function divide(s,nx,ny){
   s.score+=s.wave*12;
   s.events.push('newwave');
  }
+ if(s.cells.length===16)s.events.push('tissueUnlocked');
  if(s.cells.length===32&&!specialization(s))s.events.push('specializationUnlocked');
  return true;
 }
@@ -399,7 +423,7 @@ function step(s,rawDt){
  return s.events;
 }
 const api={CELL_GOAL,RUN_GOAL,SPACE_GOAL,create,start,cellPositions,divide,
- cellAt,cellGeometry,questAvailable,questStatus,questAction,signalLinks,QUEST_ORDER,QUEST_RECEPTORS,QUEST_BONUS,divideNext,steer,jump,ability,step,scoreProgress,profile,SPECIALIZATIONS,specialization,chooseSpecialization};
+ cellAt,cellGeometry,CELL_TYPES,cellType,tissueSummary,questAvailable,questStatus,questAction,signalLinks,QUEST_ORDER,QUEST_RECEPTORS,QUEST_BONUS,divideNext,steer,jump,ability,step,scoreProgress,profile,SPECIALIZATIONS,specialization,chooseSpecialization};
 if(typeof module!=='undefined'&&module.exports)module.exports=api;
 else root.StoryXEvolution=api;
 })(typeof globalThis!=='undefined'?globalThis:this);

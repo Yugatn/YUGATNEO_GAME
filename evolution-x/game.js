@@ -15,8 +15,8 @@ const reducedMotion=window.matchMedia?.('(prefers-reduced-motion: reduce)');
 const KEY='yugatneo.evolution-x.state.v1',BEST='yugatneo.evolution-x.best.v1';
 const SOUND_KEY='yugatneo.evolution-x.sound.v1';
 const CYCLE_KEY='yugatneo.evolution-x.cycle-guide.v1';
-let detailedCycle=false;
-try{detailedCycle=localStorage.getItem(CYCLE_KEY)==='1';}catch(_){}
+let detailedCycle=false,tissueView=true;
+try{detailedCycle=localStorage.getItem(CYCLE_KEY)==='1';tissueView=localStorage.getItem('yugatneo.evolution-x.tissue-view.v1')!=='0';}catch(_){}
 const CYCLE=[
  {end:.12,name:'Интерфаза · рост',hint:'G1: клетка растёт и синтезирует вещества.'},
  {end:.24,name:'Интерфаза · удвоение ДНК',hint:'S: ДНК копируется; затем G2 — подготовка к митозу.'},
@@ -47,6 +47,24 @@ const worlds=[
 ];
 function world(offset=0){return worlds[(state.planet+offset)%worlds.length];}
 function boostCapacity(){return state.space?.boostCapacity||Math.max(3,state.space?.boostCharges||0);}
+const TISSUE_PALETTES={
+ barrier:['#e5d7ad','#af9c66','#776044','#473e39','#ead6a5'],
+ motor:['#efc1a4','#c47f6b','#8f4f49','#53383e','#f0bcab'],
+ sensory:['#b8dced','#689fbd','#426789','#293f5a','#b6e3fa'],
+ relay:['#dfc3ee','#a183c1','#70598f','#403956','#e2c7ff']
+};
+function renderTissue(){
+ const counts=Core.tissueSummary(state),ready=state.cells.length>=16;
+ $('tissueStatus').textContent=ready?'Функциональные группы · '+state.cells.length+' клеток':'Различия появляются с пятого поколения (16 клеток).';
+ for(const type of Core.CELL_TYPES)$('tissue-'+type.id).textContent=counts[type.id];
+ $('tissueToggle').setAttribute('aria-pressed',String(tissueView));
+ $('tissueToggle').textContent=tissueView?'Различать группы: ВКЛ':'Различать группы: ВЫКЛ';
+}
+$('tissueToggle').addEventListener('click',()=>{
+ if(!pausedFrom)return;
+ tissueView=!tissueView;try{localStorage.setItem('yugatneo.evolution-x.tissue-view.v1',tissueView?'1':'0');}catch(_){}
+ renderTissue();
+});
 function renderSpecializations(){
  const chosen=Core.specialization(state),eligible=state.phase==='cells'&&state.cells.length>=32&&!chosen;
  $('specializationStatus').textContent=chosen?chosen.name+' · '+chosen.desc:eligible?'Выберите один путь развития. Выбор действует до конца мира.':state.phase==='cells'?'Откроется при достижении 32 клеток.':'Специализация в этом мире не выбрана.';
@@ -161,7 +179,7 @@ function pause(){
  if(pausedFrom||state.phase==='intro'||!$('intro').hidden)return;
  pausedFrom=state.phase;
  $('paused').hidden=false;
- $('pauseWorld').textContent=world().name+' · '+worldBrief();renderJournal();renderSpecializations();renderCellQuest();
+ $('pauseWorld').textContent=world().name+' · '+worldBrief();renderJournal();renderSpecializations();renderCellQuest();renderTissue();
  save(true);
 }
 const questLabels={growth:'Рост клетки',dna:'Копирование ДНК',mitosis:'Разделение хромосом',cytokinesis:'Разделение цитоплазмы'};
@@ -443,14 +461,19 @@ function tissuePath(x,y,c,pixels,inset=1){
  }ctx.closePath();
 }
 function cellBody(x,y,r,id,active,t,detail=true,shape=null,pixels=1){
- const outline=active?'#c5f9df':'#829eb1';
+ const type=tissueView?shape?.type:null,palette=TISSUE_PALETTES[type];
+ const outline=active?'#d7ffe7':palette?palette[4]:'#829eb1';
  const aspect=.84+.10*(.5+.5*Math.sin(id*1.73));
  const outer=shape?shape.maxR*pixels:r;
  const fill=ctx.createRadialGradient(x-r*.23,y-r*.26,r*.06,x,y,Math.max(r,outer)*1.08);
- fill.addColorStop(0,active?'#d1e9cc':'#8eaeb9');
- fill.addColorStop(.43,active?'#68b7a3':'#527b8c');
- fill.addColorStop(.78,active?'#2b7775':'#355467');
- fill.addColorStop(1,active?'#17454f':'#213b50');
+ if(palette){
+  fill.addColorStop(0,palette[0]);fill.addColorStop(.43,palette[1]);fill.addColorStop(.78,palette[2]);fill.addColorStop(1,palette[3]);
+ }else{
+  fill.addColorStop(0,active?'#d1e9cc':'#8eaeb9');
+  fill.addColorStop(.43,active?'#68b7a3':'#527b8c');
+  fill.addColorStop(.78,active?'#2b7775':'#355467');
+  fill.addColorStop(1,active?'#17454f':'#213b50');
+ }
  if(detail&&r>22&&!shape?.planes.length){ctx.shadowBlur=9;ctx.shadowColor=outline;}
  if(shape)tissuePath(x,y,shape,pixels);else membrane(x,y,r,r*aspect,id,t);
  ctx.fillStyle=fill;ctx.fill();ctx.strokeStyle=outline;ctx.lineWidth=Math.max(.8,Math.min(3,r*.055));ctx.stroke();ctx.shadowBlur=0;
@@ -463,7 +486,32 @@ function cellBody(x,y,r,id,active,t,detail=true,shape=null,pixels=1){
    ellipse(x+Math.cos(a)*d,y+Math.sin(a)*d,Math.max(.65,r*.024),Math.max(.65,r*.021),active?'#dbf9c688':'#a4c8d477');
   }
  }
+ // Different internal motifs reinforce colour, including at small scales.
+ if(palette&&r>4){
+  ctx.save();ctx.globalAlpha=active?.9:.65;
+  if(type==='motor'){
+   for(let i=-1;i<=1;i++)strokePath([[x-r*.68,y+r*i*.23],[x+r*.68,y+r*i*.23]],palette[4],Math.max(.65,r*.055));
+  }else if(type==='sensory'){
+   for(let i=0;i<3;i++){
+    const a=-Math.PI/2+(i-1)*.54;
+    ellipse(x+Math.cos(a)*r*.67,y+Math.sin(a)*r*.67,Math.max(.8,r*.10),Math.max(.8,r*.10),palette[4]);
+   }
+  }else if(type==='relay'){
+   for(let i=0;i<3;i++){
+    const a=i*2.094+id*.15;
+    strokePath([[x,y],[x+Math.cos(a)*r*.74,y+Math.sin(a)*r*.74]],palette[4],Math.max(.65,r*.065));
+   }
+  }else if(type==='barrier'){
+   if(shape)tissuePath(x,y,shape,pixels,.82);else membrane(x,y,r*.82,r*.82,id,t);
+   ctx.strokeStyle=palette[4];ctx.lineWidth=Math.max(.7,r*.045);ctx.stroke();
+  }
+  ctx.restore();
+ }
  nucleus(x+r*.11*Math.sin(id*1.13),y+r*.09*Math.cos(id*.87),Math.max(1.7,r*(.31+.025*Math.sin(id*.67))),active);
+ if(palette&&active){
+  // Shared bright rim and small readiness dot distinguish action state from tissue colour.
+  ellipse(x,y-r*.72,Math.max(1,r*.085),Math.max(1,r*.085),'#effff3');
+ }
 }
 function lerp(a,b,t){return a+(b-a)*t;}
 function smooth(t){return t*t*(3-2*t);}
@@ -605,7 +653,7 @@ function drawCells(){
  ctx.textAlign='center';ctx.fillStyle='#bcffe3';ctx.font='bold 12px system-ui';
  ctx.fillText('ДЕЛЕНИЕ · '+state.divisions+' касаний',W/2,v.y-22);
  ctx.fillStyle='#b6e3d6';ctx.font='11px system-ui';
- ctx.fillText(panMode?'Перемещайте поле; «Делить» — возврат':stage||'Касайтесь ярких клеток и их контуров',W/2,v.y+v.h+26);
+ ctx.fillText(panMode?'Перемещайте поле; «Делить» — возврат':stage||(n>=16&&tissueView?'Светлая мембрана · готовность к делению':'Касайтесь ярких клеток и их контуров'),W/2,v.y+v.h+26);
 }
 function matrixRain(){
  ctx.save();ctx.font='13px monospace';ctx.textAlign='center';
@@ -783,6 +831,7 @@ function render(){
 function reactions(events){
  for(const e of events){
   if(e==='newwave'){message('ПОКОЛЕНИЕ '+(state.wave+1)+' · НОВОЕ ДЕЛЕНИЕ',1050);feel('medium');if(state.cells.length===8)message('8 КЛЕТОК · КВЕСТ СВЯЗИ ДОСТУПЕН В ПАУЗЕ',2400);}
+  if(e==='tissueUnlocked'){message('16 КЛЕТОК · ПОЯВЛЯЮТСЯ ФУНКЦИОНАЛЬНЫЕ ГРУППЫ',2300);}
   if(e==='specializationUnlocked'){message('32 КЛЕТКИ · ВЫБЕРИТЕ СПЕЦИАЛИЗАЦИЮ В ПАУЗЕ',2600);feel('medium');}
   if(e==='emergence'){feel('heavy');}
   if(e==='human'){message('ЧЕЛОВЕК · БЕГИ К ПОРТАЛУ',2300);feel('heavy');}

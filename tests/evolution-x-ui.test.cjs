@@ -266,3 +266,16 @@ test('optional quest opens in pause, persists reward, and does not block the gam
  for(let i=0;i<35;i++)assert.doesNotThrow(()=>cycleTick(callbacks,1000+30*i));
  w.close();
 });
+
+test('functional group legend counts colony and preference can be switched off without changing progress',()=>{
+ const saved=Core.create(8);Core.start(saved);while(saved.cells.length<64)Core.divideNext(saved);
+ const {w,callbacks}=setup(saved);element(w,'start').click();cycleTick(callbacks,1000);
+ element(w,'pause').click();
+ const counts=Core.tissueSummary(saved);
+ for(const id of Object.keys(counts))assert.equal(element(w,'tissue-'+id).textContent,String(counts[id]));
+ element(w,'tissueToggle').click();assert.equal(element(w,'tissueToggle').getAttribute('aria-pressed'),'false');
+ assert.equal(w.localStorage.getItem('yugatneo.evolution-x.tissue-view.v1'),'0');
+ element(w,'resume').click();element(w,'divideNext').click();
+ assert.match(element(w,'mission').textContent,/КЛЕТКИ 65\/256/);
+ assert.doesNotThrow(()=>cycleTick(callbacks,1030));w.close();
+});
