@@ -37,7 +37,7 @@ function rand(s){s.seed=(Math.imul(s.seed,1664525)+1013904223)>>>0;return s.seed
 function chooseLane(s){return Math.floor(rand(s)*3)-1;}
 function newCellState(s){
  s.cells=[{id:++s.nextId,generation:0}];
- s.wave=0;s.waveRemaining=1;s.divisions=0;s.specialization=null;
+ s.wave=0;s.waveRemaining=1;s.divisions=0;s.specialization=null;s.cellQuest=null;
 }
 function runnerEntities(s){
  let list=[],loc=36;
@@ -201,6 +201,53 @@ function divideNext(s){
  const c=cellPositions(s).find(x=>x.active);
  return !!c&&divide(s,c.x,c.y);
 }
+// Optional learning task; no timer, no division requirements beyond unlock.
+const QUEST_ORDER=Object.freeze(['growth','dna','mitosis','cytokinesis']);
+const QUEST_RECEPTORS=Object.freeze([0,1,3,4,5,7,8]);
+const QUEST_BONUS=200;
+function questAvailable(s){return s.phase==='cells'&&s.cells.length>=8;}
+function questStatus(s){
+ const q=s.cellQuest;
+ if(!q||q.planet!==s.planet)return {planet:s.planet,order:0,route:[0],complete:false};
+ return q;
+}
+function questAction(s,action,value){
+ if(!questAvailable(s))return 'unavailable';
+ const old=questStatus(s);
+ if(old.complete)return 'complete';
+ const q={planet:s.planet,order:old.order,route:old.route.slice(),complete:false};
+ if(action==='order'){
+  if(q.order>=QUEST_ORDER.length||value!==QUEST_ORDER[q.order])return 'wrong';
+  q.order++;
+ }else if(action==='reset'){
+  if(q.order!==QUEST_ORDER.length)return 'wrong';
+  q.route=[0];
+ }else if(action==='relay'){
+  if(q.order!==QUEST_ORDER.length||!QUEST_RECEPTORS.includes(value)||q.route.includes(value))return 'wrong';
+  const last=q.route[q.route.length-1];
+  if(Math.abs(last%3-value%3)+Math.abs(Math.floor(last/3)-Math.floor(value/3))!==1)return 'wrong';
+  q.route.push(value);
+  if(value===8){q.complete=true;s.score+=QUEST_BONUS;}
+ }else return 'wrong';
+ s.cellQuest=q;
+ return q.complete?'won':'ok';
+}
+// Bounded local signal fanout from daughter cells. Stable geometry, no RNG or score changes.
+function signalLinks(s,sources){
+ const g=cellGeometry(s),byId=new Map(g.map(c=>[c.id,c])),links=[];
+ const used=new Set();
+ for(const id of sources.slice(0,2)){
+  const a=byId.get(id);if(!a)continue;
+  const nearby=g.filter(c=>c.id!==id&&!sources.includes(c.id))
+   .map(c=>({c,d:Math.hypot(c.x-a.x,c.y-a.y)}))
+   .filter(o=>o.d<=2.1*(a.r+o.c.r)).sort((x,y)=>x.d-y.d||x.c.id-y.c.id).slice(0,3);
+  for(const {c} of nearby){
+   const key=id+':'+c.id;if(used.has(key))continue;used.add(key);
+   links.push({from:id,to:c.id});
+  }
+ }
+ return links;
+}
 function creditDistance(s,actor,old,goal){
  const before=Math.max(old,Number.isFinite(actor.furthest)?actor.furthest:old);
  const after=Math.max(before,Math.min(goal,actor.distance));
@@ -255,7 +302,7 @@ function recordWorld(s){
  if(s.runner&&Number.isFinite(r.hits)&&runHits===0)medals.push('Безупречный бег');
  if(spaceHits===0)medals.push('Звёздный пилот');
  const bonus=medals.length*150;s.score+=bonus;
- journal.push({planet:s.planet,name:profile(s.planet).name,specialization:specialization(s)?.name||null,portals,runHits,spaceHits,medals,bonus,score:Math.round(s.score)});
+ journal.push({planet:s.planet,name:profile(s.planet).name,specialization:specialization(s)?.name||null,cellQuest:questStatus(s).complete,portals,runHits,spaceHits,medals,bonus,score:Math.round(s.score)});
  s.chronicle=journal.slice(-30);
 }
 function scoreProgress(s){
@@ -352,7 +399,7 @@ function step(s,rawDt){
  return s.events;
 }
 const api={CELL_GOAL,RUN_GOAL,SPACE_GOAL,create,start,cellPositions,divide,
- cellAt,cellGeometry,divideNext,steer,jump,ability,step,scoreProgress,profile,SPECIALIZATIONS,specialization,chooseSpecialization};
+ cellAt,cellGeometry,questAvailable,questStatus,questAction,signalLinks,QUEST_ORDER,QUEST_RECEPTORS,QUEST_BONUS,divideNext,steer,jump,ability,step,scoreProgress,profile,SPECIALIZATIONS,specialization,chooseSpecialization};
 if(typeof module!=='undefined'&&module.exports)module.exports=api;
 else root.StoryXEvolution=api;
 })(typeof globalThis!=='undefined'?globalThis:this);

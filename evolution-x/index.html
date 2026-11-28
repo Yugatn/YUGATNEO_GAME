@@ -54,6 +54,16 @@ canvas{position:absolute;inset:0;width:100%;height:100%;touch-action:none;displa
 #cycleGuide ol{padding-left:20px;margin:6px 0}
 #cycleGuide a{color:#a7ffd9}
 #cycleMode{width:min(100%,440px)}
+#cellQuest{width:min(100%,440px);text-align:left;color:#b7d9d9;font-size:12px;background:#102c38;border:1px solid #366963;border-radius:10px;padding:8px 12px}
+#cellQuest summary{cursor:pointer;color:#a7ffd9;font-weight:800}
+#questOrder,#relayGrid{display:grid;gap:6px;grid-template-columns:repeat(2,minmax(0,1fr));margin:8px 0}
+#relayGrid{grid-template-columns:repeat(3,minmax(0,1fr))}
+#questOrder[hidden],#questRelay[hidden]{display:none}
+#cellQuest button{min-height:44px;border:1px solid #4f8a89;border-radius:9px;background:#1a3c4b;color:#d8f4e9;font-size:12px;padding:5px;white-space:normal}
+#cellQuest button:disabled{opacity:.55}
+#relayGrid button[aria-pressed=true]{background:#376e5a;opacity:1}
+#relayGrid button.current{outline:2px solid #c5e7ff}
+#questFeedback{min-height:1em;color:#c5e7ff}
 #microscope button{min-width:40px;min-height:38px;padding:5px 8px;border-radius:9px;border:1px solid #4d817d;background:#12363d;color:#d2f8e6;font-size:12px;font-weight:750}
 #microscope button:disabled{opacity:.45}
 #microscope button[aria-pressed=true]{background:#397a67;border-color:#b0f5cf}
@@ -156,6 +166,12 @@ canvas{position:absolute;inset:0;width:100%;height:100%;touch-action:none;displa
   <button id="cycleMode" type="button" class="secondary" aria-pressed="false">Подробный цикл: ВЫКЛ</button>
   <details id="cycleGuide"><summary>Как делится животная клетка</summary>
   <ol><li>Интерфаза G1: рост клетки.</li><li>S: копирование ДНК; G2: дальнейшая подготовка.</li><li>Профаза и прометафаза: уплотнение хромосом, веретено деления.</li><li>Метафаза: расположение хромосом в центре.</li><li>Анафаза: разделение сестринских хроматид.</li><li>Телофаза: восстановление ядер. Цитокинез начинается ещё в поздней анафазе и разделяет цитоплазму.</li><li>Две дочерние клетки.</li></ol><p>Схема условная, длительность и число хромосом не соответствуют реальной клетке. В игре деление сразу засчитывается, а анимация — визуальная подсказка.</p><a href="https://openstax.org/books/biology-2e/pages/10-2-the-cell-cycle" target="_blank" rel="noopener noreferrer">Источник: OpenStax Biology 2e, 10.2</a></details>
+  <details id="cellQuest"><summary>Клеточный квест · связь и развитие</summary>
+   <p id="questStatus"></p>
+   <div id="questOrder" hidden><button id="quest-mitosis" type="button"></button><button id="quest-growth" type="button"></button><button id="quest-cytokinesis" type="button"></button><button id="quest-dna" type="button"></button></div>
+   <div id="questRelay" hidden><p>Сигнал идёт только к соседнему приёмнику. Клетки без рецептора не принимают этот условный сигнал. Задача — игровая модель, не схема реального сигнального пути.</p><div id="relayGrid"><button id="relay-0" type="button" aria-pressed="false"></button><button id="relay-1" type="button" aria-pressed="false"></button><button id="relay-2" type="button" aria-pressed="false"></button><button id="relay-3" type="button" aria-pressed="false"></button><button id="relay-4" type="button" aria-pressed="false"></button><button id="relay-5" type="button" aria-pressed="false"></button><button id="relay-6" type="button" aria-pressed="false"></button><button id="relay-7" type="button" aria-pressed="false"></button><button id="relay-8" type="button" aria-pressed="false"></button></div><button id="questReset" type="button">Начать передачу заново</button></div>
+   <p id="questFeedback" role="status"></p><p>Необязательное задание. Без таймера и штрафов; +200 очков один раз за мир.</p>
+  </details>
   <section id="specializationPanel" aria-label="Эволюционная специализация">
    <div class="kicker">ПУТЬ РАЗВИТИЯ</div><p id="specializationStatus"></p>
    <div class="specs">

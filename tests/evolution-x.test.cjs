@@ -196,7 +196,7 @@ test('PWA assets are complete and independently scoped',()=>{
   assert.ok(fs.existsSync(path.join(root,filename)),filename);
  }
  const sw=fs.readFileSync(path.join(root,'sw.js'),'utf8');
- assert.ok(sw.includes('evolution-x-v9'));
+ assert.ok(sw.includes('evolution-x-v10'));
 });
 
 test('accessible division requires exactly 255 actions and cannot skip waves',()=>{
@@ -332,4 +332,32 @@ test('enlarged membrane interior is selectable beyond the old circular radius',(
  const p=c.points.find(p=>Math.hypot(p.x,p.y)>c.r*1.45);
  assert.equal(Evolution.cellAt(s,c.x+p.x*.90,c.y+p.y*.90).id,c.id);
  assert.ok(Evolution.divide(s,c.x+p.x*.90,c.y+p.y*.90));
+});
+
+test('optional cell quest validates order, adjacent receptors, unique reward and legacy restore',()=>{
+ const s=started();assert.equal(Evolution.questAction(s,'order','growth'),'unavailable');
+ while(s.cells.length<8)Evolution.divideNext(s);
+ delete s.cellQuest;const before=s.score;
+ assert.equal(Evolution.questAction(s,'order','dna'),'wrong');
+ for(const id of Evolution.QUEST_ORDER)assert.equal(Evolution.questAction(s,'order',id),'ok');
+ assert.equal(Evolution.questAction(s,'relay',8),'wrong');
+ assert.equal(Evolution.questAction(s,'relay',2),'wrong');
+ assert.equal(Evolution.questAction(s,'relay',1),'ok');
+ assert.equal(Evolution.questAction(s,'relay',2),'wrong');
+ assert.equal(Evolution.questAction(s,'reset'),'ok');
+ for(const id of [3,4,7])assert.equal(Evolution.questAction(s,'relay',id),'ok');
+ const copy=JSON.parse(JSON.stringify(s));
+ assert.equal(Evolution.questAction(copy,'relay',8),'won');
+ assert.equal(copy.score,before+200);
+ assert.equal(Evolution.questAction(copy,'relay',8),'complete');
+ assert.equal(copy.score,before+200);assert.equal(copy.divisions,7);
+ divideAll(copy);advance(copy,2.5);assert.equal(copy.phase,'runner');
+});
+test('local cell signals are bounded and deterministic without altering game state',()=>{
+ const s=started();while(s.cells.length<32)Evolution.divideNext(s);
+ const ids=[s.nextId-1,s.nextId],before=JSON.stringify(s);
+ const links=Evolution.signalLinks(s,ids),known=new Set(s.cells.map(c=>c.id));
+ assert.ok(links.length>0&&links.length<=6);
+ for(const l of links){assert.ok(ids.includes(l.from));assert.ok(known.has(l.to));assert.ok(!ids.includes(l.to));}
+ assert.deepEqual(Evolution.signalLinks(s,ids),links);assert.equal(JSON.stringify(s),before);
 });

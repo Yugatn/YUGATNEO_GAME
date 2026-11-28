@@ -9,7 +9,7 @@ const $=id=>document.getElementById(id);
 const canvas=$('canvas'),ctx=canvas.getContext('2d',{alpha:false});
 let W=390,H=780,scale=1,frameLast=0,hudLast=0,lastSave=0,noticeUntil=0;
 let noticeText='',pausedFrom=null;
-let divisionEffects=[],burstEffects=[];
+let divisionEffects=[],burstEffects=[],signalEffects=[];
 let zoom=1,focusX=.5,focusY=.5,panMode=false,drag=null;
 const reducedMotion=window.matchMedia?.('(prefers-reduced-motion: reduce)');
 const KEY='yugatneo.evolution-x.state.v1',BEST='yugatneo.evolution-x.best.v1';
@@ -59,7 +59,7 @@ function renderJournal(){
  if(!entries.length){list.textContent='Первые результаты появятся после посадки на следующей планете.';return;}
  for(const entry of entries){
   const row=document.createElement('li');
-  row.textContent='Мир '+(entry.planet+1)+' · '+entry.name+' — порталы '+entry.portals+'/3, удары '+entry.runHits+'/'+entry.spaceHits+'; '+(entry.specialization?entry.specialization+' · ':'')+(entry.medals.length?entry.medals.join(', ')+' · +'+entry.bonus:'цикл пройден');
+  row.textContent='Мир '+(entry.planet+1)+' · '+entry.name+' — порталы '+entry.portals+'/3, удары '+entry.runHits+'/'+entry.spaceHits+'; '+(entry.specialization?entry.specialization+' · ':'')+(entry.cellQuest?'Квест связи · ':'')+(entry.medals.length?entry.medals.join(', ')+' · +'+entry.bonus:'цикл пройден');
   list.append(row);
  }
 }
@@ -143,7 +143,7 @@ function save(force){
  }
 }
 function newGame(){
- divisionEffects=[];burstEffects=[];resetMicroscope();
+ divisionEffects=[];burstEffects=[];signalEffects=[];resetMicroscope();
  state=Core.create(Date.now()>>>0);
  Core.start(state);
  $('intro').hidden=true;$('paused').hidden=true;pausedFrom=null;
@@ -161,9 +161,39 @@ function pause(){
  if(pausedFrom||state.phase==='intro'||!$('intro').hidden)return;
  pausedFrom=state.phase;
  $('paused').hidden=false;
- $('pauseWorld').textContent=world().name+' · '+worldBrief();renderJournal();renderSpecializations();
+ $('pauseWorld').textContent=world().name+' · '+worldBrief();renderJournal();renderSpecializations();renderCellQuest();
  save(true);
 }
+const questLabels={growth:'Рост клетки',dna:'Копирование ДНК',mitosis:'Разделение хромосом',cytokinesis:'Разделение цитоплазмы'};
+function renderCellQuest(feedback=''){
+ const q=Core.questStatus(state),available=Core.questAvailable(state);
+ $('questStatus').textContent=q.complete?'Квест пройден · +'+Core.QUEST_BONUS+' очков':!available?'Откроется при 8 клетках в текущем мире.':q.order<4?'Стадия '+(q.order+1)+'/4: выберите следующий процесс.':'Передайте сигнал от клетки «Старт» к клетке «Цель».';
+ $('questOrder').hidden=!available||q.order>=4;
+ $('questRelay').hidden=!available||q.order<4||q.complete;
+ $('questFeedback').textContent=feedback;
+ for(const id of Core.QUEST_ORDER){
+  const btn=$('quest-'+id),chosen=Core.QUEST_ORDER.indexOf(id)<q.order;
+  btn.disabled=!available||chosen||q.complete;btn.textContent=questLabels[id]+(chosen?' ✓':'');
+ }
+ for(let i=0;i<9;i++){
+  const btn=$('relay-'+i),receptor=Core.QUEST_RECEPTORS.includes(i),visited=q.route.includes(i),current=q.route.at(-1)===i;
+  btn.disabled=!available||!receptor||visited||q.complete;
+  btn.setAttribute('aria-pressed',String(visited));
+  btn.textContent=i===0?'Старт':i===8?'Цель':!receptor?'Нет рецептора':current?'Сигнал':visited?'✓':'Приёмник';
+  btn.classList.toggle('current',current);
+ }
+ $('questReset').disabled=!available||q.complete;
+}
+function questInput(action,value){
+ if(!pausedFrom)return;
+ const result=Core.questAction(state,action,value);
+ const msg=result==='wrong'?(action==='order'?'Не эта стадия. Попробуйте ещё раз.':'Сигнал передаётся соседнему приёмнику по горизонтали или вертикали.') :result==='won'?'Связь установлена. Награда получена один раз в этом мире.':'';
+ if(result==='ok'||result==='won'){save(true);if(result==='won')feel('medium');}
+ renderCellQuest(msg);updateHUD();
+}
+for(const id of Core.QUEST_ORDER)$('quest-'+id).addEventListener('click',()=>questInput('order',id));
+for(let i=0;i<9;i++)$('relay-'+i).addEventListener('click',()=>questInput('relay',i));
+$('questReset').addEventListener('click',()=>questInput('reset'));
 function resume(){
  if(!pausedFrom)return;
  unlockAudio();
@@ -202,6 +232,10 @@ function performDivision(nx,ny){
    divisionEffects=divisionEffects.slice(-8);
    burstEffects.push({parent,start:state.time,id:parent.id,duration:after.length<=32?.95:.46});
    burstEffects=burstEffects.slice(-10);
+   if(after.length>=8){
+    signalEffects.push(...Core.signalLinks(state,children.map(c=>c.id)).map(link=>({...link,start:state.time+.22,duration:.65})));
+    signalEffects=signalEffects.slice(-18);
+   }
   }
  }
  afterDivision();return true;
@@ -519,6 +553,22 @@ function drawBursts(b){
   ctx.restore();
  }
 }
+function drawSignals(b,byId){
+ if(reducedMotion?.matches){signalEffects=[];return;}
+ signalEffects=signalEffects.filter(e=>state.time-e.start<e.duration&&byId.has(e.from)&&byId.has(e.to));
+ for(const e of signalEffects){
+  const p=(state.time-e.start)/e.duration;if(p<0)continue;
+  const a=byId.get(e.from),c=byId.get(e.to);
+  const ax=b.x+a.x*b.w,ay=b.y+a.y*b.h,bx=b.x+c.x*b.w,by=b.y+c.y*b.h;
+  ctx.save();ctx.globalAlpha=.32*Math.sin(Math.PI*p);
+  strokePath([[ax,ay],[bx,by]],'#a9d8ff',1);
+  ctx.globalAlpha=.85*Math.sin(Math.PI*p);
+  const size=Math.max(1.3,Math.min(4,cellRadius(c,b)*.12));
+  ellipse(lerp(ax,bx,p),lerp(ay,by,p),size,size,'#c0e6ff');
+  if(p>.7){ctx.globalAlpha=.36*(1-p)/.3;tissuePath(bx,by,c,b.w);ctx.strokeStyle='#a8d7ff';ctx.lineWidth=1.5;ctx.stroke();}
+  ctx.restore();
+ }
+}
 function drawCells(){
  gradient(world().cell,'#04101b');
  drawStars(reducedMotion?.matches?0:2);
@@ -551,7 +601,7 @@ function drawCells(){
  const hint=$('cycleHint');
  hint.hidden=!detailedCycle||phaseIndex<0||panMode;
  hint.textContent=hint.hidden?'':CYCLE[phaseIndex].hint;
- drawBursts(b);ctx.restore();
+ drawSignals(b,byId);drawBursts(b);ctx.restore();
  ctx.textAlign='center';ctx.fillStyle='#bcffe3';ctx.font='bold 12px system-ui';
  ctx.fillText('ДЕЛЕНИЕ · '+state.divisions+' касаний',W/2,v.y-22);
  ctx.fillStyle='#b6e3d6';ctx.font='11px system-ui';
@@ -732,7 +782,7 @@ function render(){
 }
 function reactions(events){
  for(const e of events){
-  if(e==='newwave'){message('ПОКОЛЕНИЕ '+(state.wave+1)+' · НОВОЕ ДЕЛЕНИЕ',1050);feel('medium');}
+  if(e==='newwave'){message('ПОКОЛЕНИЕ '+(state.wave+1)+' · НОВОЕ ДЕЛЕНИЕ',1050);feel('medium');if(state.cells.length===8)message('8 КЛЕТОК · КВЕСТ СВЯЗИ ДОСТУПЕН В ПАУЗЕ',2400);}
   if(e==='specializationUnlocked'){message('32 КЛЕТКИ · ВЫБЕРИТЕ СПЕЦИАЛИЗАЦИЮ В ПАУЗЕ',2600);feel('medium');}
   if(e==='emergence'){feel('heavy');}
   if(e==='human'){message('ЧЕЛОВЕК · БЕГИ К ПОРТАЛУ',2300);feel('heavy');}
@@ -744,7 +794,7 @@ function reactions(events){
   if(e==='asteroidHit'){message('УДАР АСТЕРОИДА · МАНЕВРИРУЙ',1000);feel('medium');}
   if(e==='checkpoint'){message('ВОССТАНОВЛЕН КОРАБЛЬ · ПРОДОЛЖАЙ',1250);}
   if(e==='planetReached'){message('ПОСАДКА · '+world(1).name.toUpperCase(),2600);feel('heavy');save(true);}
-  if(e==='newPlanet'){resetMicroscope();divisionEffects=[];burstEffects=[];message(world().name.toUpperCase()+' · '+worldBrief(),3000);feel('heavy');save(true);}
+  if(e==='newPlanet'){resetMicroscope();divisionEffects=[];burstEffects=[];signalEffects=[];message(world().name.toUpperCase()+' · '+worldBrief(),3000);feel('heavy');save(true);}
  }
 }
 function frame(now){

@@ -250,3 +250,19 @@ test('optional detailed cell cycle persists and shows all stages without delayin
  assert.match(element(w,'mission').textContent,/КЛЕТКИ 4\/256/);
  w.close();
 });
+
+test('optional quest opens in pause, persists reward, and does not block the game',()=>{
+ const saved=Core.create(8);Core.start(saved);while(saved.cells.length<8)Core.divideNext(saved);
+ const {w,callbacks}=setup(saved);element(w,'start').click();element(w,'pause').click();
+ element(w,'quest-dna').click();assert.match(element(w,'questFeedback').textContent,/Попробуйте/);
+ for(const id of Core.QUEST_ORDER)element(w,'quest-'+id).click();
+ assert.equal(element(w,'questRelay').hidden,false);
+ for(const i of [1,4,5,8])element(w,'relay-'+i).click();
+ assert.match(element(w,'questStatus').textContent,/Квест пройден/);
+ const stored=JSON.parse(w.localStorage.getItem('yugatneo.evolution-x.state.v1'));
+ assert.equal(stored.score,saved.score+200);assert.equal(stored.cellQuest.complete,true);
+ element(w,'resume').click();element(w,'divideNext').click();
+ assert.match(element(w,'mission').textContent,/КЛЕТКИ 9\/256/);
+ for(let i=0;i<35;i++)assert.doesNotThrow(()=>cycleTick(callbacks,1000+30*i));
+ w.close();
+});
