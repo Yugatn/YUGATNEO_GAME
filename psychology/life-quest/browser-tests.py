@@ -139,6 +139,9 @@ def run(browser, viewport, mobile):
     page.locator("#source-library summary").click()
     page.locator("#source-search").fill("выготский")
     expect(page.locator("#source-results")).to_contain_text("Выготский")
+    page.locator("#source-search").fill("")
+    page.locator("#source-topic").select_option("prevention")
+    expect(page.locator("#source-results")).to_contain_text("Alcohol")
     mode(page, "settings")
     page.get_by_label("Крупный шрифт").check()
     page.get_by_label("Повышенный контраст").check()
@@ -163,6 +166,20 @@ def run(browser, viewport, mobile):
     button(other, "Подтвердить объединение")
     expect(other.locator("#xp")).to_have_text("✦ 6400 XP")
     second.close()
+    if browser.browser_type.name == "chromium":
+        page.wait_for_function("navigator.serviceWorker.controller !== null", timeout=30000)
+        expect(page.locator("#offline-status")).to_contain_text("Автономная копия подготовлена")
+        context.set_offline(True)
+        try:
+            page.reload(wait_until="domcontentloaded")
+            expect(page.locator("#xp")).to_have_text("✦ 6400 XP")
+            mode(page, "thinking")
+            expect(page.locator("#screen")).to_contain_text("Мастерская мышления")
+            layout(page)
+            page.goto(game + "index.html?offline=1", wait_until="domcontentloaded")
+            expect(page.locator("#xp")).to_have_text("✦ 6400 XP")
+        finally:
+            context.set_offline(False)
     assert not errors, errors
     context.close()
 
