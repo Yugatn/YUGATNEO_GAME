@@ -136,7 +136,7 @@ def run(browser, viewport, mobile):
     mode(page, "learning")
     expect(page.locator("#screen")).to_contain_text("Все направления освоены")
     mode(page, "models")
-    page.locator("#source-library summary").click()
+    page.locator("#source-library > summary").click()
     page.locator("#source-search").fill("выготский")
     expect(page.locator("#source-results")).to_contain_text("Выготский")
     page.locator("#source-search").fill("")
