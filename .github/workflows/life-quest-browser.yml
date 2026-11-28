@@ -1,0 +1,38 @@
+name: Yugatna trainer browser checks
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - 'psychology/life-quest/**'
+      - 'psychology/index.html'
+      - 'games/index.html'
+      - '.github/workflows/life-quest-browser.yml'
+  pull_request:
+    paths:
+      - 'psychology/life-quest/**'
+      - 'psychology/index.html'
+      - 'games/index.html'
+      - '.github/workflows/life-quest-browser.yml'
+permissions:
+  contents: read
+jobs:
+  browser:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Logic and simulated UI
+        run: |
+          for test in psychology/life-quest/*-tests.cjs; do node "$test" || exit 1; done
+      - name: Install browsers
+        run: |
+          python -m pip install playwright==1.51.0
+          python -m playwright install --with-deps chromium webkit
+      - name: Real browser interaction
+        run: python psychology/life-quest/browser-tests.py
