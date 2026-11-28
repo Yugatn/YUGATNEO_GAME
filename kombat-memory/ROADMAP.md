@@ -1,5 +1,14 @@
 # Kombat Memory — дорожная карта
 
+## Версия 1.6
+- 1090 локальных записей (+221), все 16 выпусков текущего каталога содержат хотя бы одну локальную команду. Это не означает полноту всех бойцов, комбинаций и платформ.
+- Mortal Kombat vs. DC Universe: 168 записей, все 22 доступных бойца имеют локальные команды; PS3/Xbox 360, Pro Move и Heroic Brutality, отдельные обозначения TH/CK/MOV/BL. Условия тайминга Pro Move отображаются как текст; квест проверяет последовательность, не точный игровой тайминг.
+- Unchained: 53 записи для 11 бойцов, отдельная раскладка PSP и фильтр стилей.
+- Armageddon: отдельный справочный блок Kreate-A-Fatality (13 шагов, не включены в число 1090), с разделением начальных шагов, переходов и завершений; пока не симулятор полной цепочки.
+- Источники: https://icemantraveler.github.io/mkksg/mkvsdcu/default.htm , https://icemantraveler.github.io/mkksg/mku/default.htm , https://www.mortalkombatwarehouse.com/mka/fatalities/?platform=general .
+- 16 программных сценариев в симулированном DOM пройдены, синтаксис проверен. Реальные консоли, браузеры и все игровые команды не проверены.
+- Следующий приоритет: полный аудит источников старых записей, заполнение недостающих бойцов Unchained и современных MK9/X/11/1; отдельный режим тренировки последовательностей Kreate-A-Fatality с состояниями и дальнейшая проверка интерфейса.
+
 ## Версия 1.5
 - 869 записей, 14 из 16 выпусков с локальными командами. Добавлено 153 универсальных записи PS2/Xbox: Deadly Alliance (30), Deception (82, включая семь комбо Ashrah), Armageddon (41).
 - Источники: https://icemantraveler.github.io/mkksg/mk5/default.htm , https://icemantraveler.github.io/mkksg/mk6/default.htm , https://icemantraveler.github.io/mkksg/mk7/default.htm , https://icemantraveler.github.io/mkksg/combos/mk6.htm . Команды новой выборки сверены со справочниками; вся ранее накопленная база не прошла сплошную верификацию.
