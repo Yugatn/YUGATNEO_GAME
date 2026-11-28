@@ -89,6 +89,14 @@ els.eventRegion.onclick();assert(els.zoomLevel.textContent==="3×","Event region
 els.eventDetails.onclick();assert(!els.peace.hidden,"Event opens relevant section");
 els.eventAlert.onclick();els.eventDismiss.onclick();assert(els.eventAlert.hidden&&els.eventCard.hidden,"Dismiss event");
 click(els.controls,{step:"1"});assert(els.eventAlert.hidden,"Dismissed event does not repeat");
+els.reset.onclick();els.mode.value="human";els.regionSelect.value="eu";els.regionSelect.onchange({target:els.regionSelect});els.start.onclick();
+switchTo("system");assert(els.enterpriseSelect.disabled&&els.enterpriseDetail.innerHTML.includes("Школа"),"Empty enterprise panel");
+switchTo("generations");els.lifeStart.value="10";els.lifeStart.onchange();els.enroll.onclick();
+for(let i=0;i<22;i++){if(i%4===0){switchTo("society");click(els.humanActions,{human:"network"})}click(els.controls,{step:"7"})}
+switchTo("system");assert(state().enterprises.length===1&&!els.enterpriseSelect.disabled,"Enterprise panel after project");
+assert(els.enterpriseDetail.innerHTML.includes("Производительность")&&els.enterpriseActions.innerHTML.includes("Условия труда"),"Enterprise indicators and actions");
+let well=state().enterprises[0].well;click(els.enterpriseActions,{enterprise:"care"});assert(state().enterprises[0].well>well,"Workplace action UI");
+els.reset.onclick();assert(state().enterprises.length===0,"New party clears enterprises");
 return passed;
 }
 const passed=runSmoke(fs.readFileSync(path.join(__dirname,"../index.html"),"utf8"));
