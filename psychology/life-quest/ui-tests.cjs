@@ -13,7 +13,7 @@ function makeDom(){
  querySelector(sel){return this.all().find(e=>sel==="[aria-current=true]"?e.attrs["aria-current"]==="true":sel.startsWith(".")?e.className.split(/\s+/).includes(sel.slice(1)):e.tagName===sel.toUpperCase())||null}
  all(){return this.children.flatMap(e=>[e,...e.all()])}
  }
- const body=new E("body");for(const id of ["screen","xp","count","progress","map","modeLabel","modeMenu","quest","brain","models","planner","story","conflicts","perspectives","habits","thinking","reflection","learning","settings","reset"]){const e=new E("div");e.id=id;body.append(e)}
+ const body=new E("body");for(const id of ["screen","xp","count","progress","map","modeLabel","modeMenu","quest","brain","models","planner","story","conflicts","perspectives","habits","thinking","reflection","skills","learning","settings","reset"]){const e=new E("div");e.id=id;body.append(e)}
  return {body,createElement:t=>new E(t),getElementById:id=>body.all().find(e=>e.id===id)||null,addEventListener:()=>{}}
 }
 function drive(){
@@ -42,9 +42,12 @@ function drive(){
  for(let i=0;i<REFLECTIONS.length;i++){group("mission-tabs").children[i].click();check($("reflection-finish").disabled,"cannot finish early");for(let j=0;j<3;j++){const c=$("reflection-"+j);c.checked=true;c.onchange();check($("reflection-finish").disabled===(j<2),"checklist gate")}click("Отметить практикум выполненным");check(data.done.includes("f:"+i),"reflection XP")}
  check(data.done.length===94&&xp(data.done)===6400,"reflection total");
  group("mission-tabs").children[0].click();for(let j=0;j<3;j++){const c=$("reflection-"+j);c.checked=true;c.onchange()}click("Отметить практикум выполненным");check(xp(data.done)===6400,"reflection replay");
+ nav("learning");check(nextLearning(data.done,data.route).key==="s:0","skills recommendation");click("Продолжить по маршруту");check(mode==="skills","open skills");
+ for(let i=0;i<SKILLS.length;i++){group("mission-tabs").children[i].click();click("Проверить план");check(!skillComplete&&!data.done.includes("s:"+i),"incomplete not awarded");const m=SKILLS[i];for(const id of m.example)option(m.steps.findIndex(x=>x[0]===id));click("Проверить план");check(skillComplete&&data.done.includes("s:"+i),"plan completed")}
+ check(data.done.length===98&&xp(data.done)===6800,"skills total");group("mission-tabs").children[0].click();for(const id of SKILLS[0].example)option(SKILLS[0].steps.findIndex(x=>x[0]===id));click("Проверить план");check(xp(data.done)===6800,"skills replay");
  nav("learning");check(nextLearning(data.done,data.route)===null,"learning complete");check(screen().textContent.includes("Все направления освоены"),"learning final");
  nav("models");check(screen().textContent.includes("Атлас развития"),"atlas");check($("source-library").textContent.includes("Библиотека источников"),"library");$("source-search").value="выготский";$("source-search").oninput();check($("source-results").textContent.includes("Выготский"),"search result");$("source-search").value="";$("source-topic").value="prevention";$("source-topic").onchange();check($("source-results").textContent.includes("Alcohol"),"prevention filter");check(!$("source-results").textContent.includes("Эльконин"),"topic excludes unrelated sources");
- nav("settings");check(screen().textContent.includes("Перенос прогресса"),"settings");click("Показать код резервной копии");check(decodeBackup($("backup-text").value).done.length===94,"backup export");click("Проверить копию");click("Подтвердить объединение");check(xp(data.done)===6400,"merge no loss");check(JSON.parse(localStorage.getItem(K)).done.length===94,"persisted");
+ nav("settings");check(screen().textContent.includes("Перенос прогресса"),"settings");click("Показать код резервной копии");check(decodeBackup($("backup-text").value).done.length===98,"backup export");click("Проверить копию");click("Подтвердить объединение");check(xp(data.done)===6800,"merge no loss");check(JSON.parse(localStorage.getItem(K)).done.length===98,"persisted");
  $("reset").click();check(data.done.length===0&&xp(data.done)===0,"reset");check(mode==="quest","reset route");return n;
 }
 const mock=makeDom(),mem=new Map(),store={getItem:k=>mem.get(k)??null,setItem:(k,v)=>mem.set(k,v)};

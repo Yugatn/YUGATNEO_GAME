@@ -37,6 +37,10 @@ def run(browser, viewport, mobile):
     page.goto(game)
     expect(page.locator("h1")).to_have_text("Тренажер Югатна")
     layout(page)
+    manifest = page.request.get(game + "manifest.webmanifest")
+    assert manifest.ok and manifest.json()["display"] == "standalone"
+    for item in manifest.json()["icons"]:
+        assert page.request.get(game + item["src"]).ok
     page.locator("#science-card summary").click()
     expect(page.locator("#science-card")).to_contain_text("Авторская философская связь")
     assert page.locator("#science-card a").count() >= 1
@@ -134,6 +138,19 @@ def run(browser, viewport, mobile):
     expect(page.locator("#xp")).to_have_text("✦ 6400 XP")
     assert page.locator("#progress").evaluate("(el)=>el.value") == 94
     mode(page, "learning")
+    button(page, "Продолжить по маршруту")
+    expect(page.locator("#modeLabel")).to_have_text("Практикумы")
+    for i in range(4):
+        page.locator(".mission-tabs button").nth(i).click()
+        button(page, "Проверить план")
+        expect(page.locator("#screen")).to_contain_text("План можно улучшить")
+        for index in page.evaluate("SKILLS[skillIndex].example.map(id=>SKILLS[skillIndex].steps.findIndex(x=>x[0]===id))"):
+            choices(page, index)
+        button(page, "Проверить план")
+        expect(page.locator("#screen")).to_contain_text("План составлен")
+    expect(page.locator("#xp")).to_have_text("✦ 6800 XP")
+    assert page.locator("#progress").evaluate("(el)=>el.value") == 98
+    mode(page, "learning")
     expect(page.locator("#screen")).to_contain_text("Все направления освоены")
     mode(page, "models")
     page.locator("#source-library > summary").click()
@@ -151,9 +168,9 @@ def run(browser, viewport, mobile):
     backup = page.locator("#backup-text").input_value()
     button(page, "Проверить копию")
     button(page, "Подтвердить объединение")
-    expect(page.locator("#xp")).to_have_text("✦ 6400 XP")
+    expect(page.locator("#xp")).to_have_text("✦ 6800 XP")
     page.reload()
-    expect(page.locator("#xp")).to_have_text("✦ 6400 XP")
+    expect(page.locator("#xp")).to_have_text("✦ 6800 XP")
     assert page.locator("body").evaluate("(el)=>el.classList.contains('pref-large')")
     layout(page)
     # Fresh browser context: transfer through text import.
@@ -164,7 +181,7 @@ def run(browser, viewport, mobile):
     other.locator("#backup-text").fill(backup)
     button(other, "Проверить копию")
     button(other, "Подтвердить объединение")
-    expect(other.locator("#xp")).to_have_text("✦ 6400 XP")
+    expect(other.locator("#xp")).to_have_text("✦ 6800 XP")
     second.close()
     if browser.browser_type.name == "chromium":
         page.wait_for_function("navigator.serviceWorker.controller !== null", timeout=30000)
@@ -172,12 +189,12 @@ def run(browser, viewport, mobile):
         context.set_offline(True)
         try:
             page.reload(wait_until="domcontentloaded")
-            expect(page.locator("#xp")).to_have_text("✦ 6400 XP")
+            expect(page.locator("#xp")).to_have_text("✦ 6800 XP")
             mode(page, "thinking")
             expect(page.locator("#screen")).to_contain_text("Мастерская мышления")
             layout(page)
             page.goto(game + "index.html?offline=1", wait_until="domcontentloaded")
-            expect(page.locator("#xp")).to_have_text("✦ 6400 XP")
+            expect(page.locator("#xp")).to_have_text("✦ 6800 XP")
         finally:
             context.set_offline(False)
     assert not errors, errors
