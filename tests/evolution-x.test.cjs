@@ -196,7 +196,7 @@ test('PWA assets are complete and independently scoped',()=>{
   assert.ok(fs.existsSync(path.join(root,filename)),filename);
  }
  const sw=fs.readFileSync(path.join(root,'sw.js'),'utf8');
- assert.ok(sw.includes('evolution-x-v11'));
+ assert.ok(sw.includes('evolution-x-v12'));
 });
 
 test('accessible division requires exactly 255 actions and cannot skip waves',()=>{
@@ -377,4 +377,31 @@ test('functional territories develop by generation, retain position and do not c
  while(s.phase==='cells')assert.ok(Evolution.divideNext(s));
  assert.equal(s.divisions,255);
  assert.equal(Object.values(Evolution.tissueSummary(s)).reduce((a,b)=>a+b,0),256);
+});
+
+test('spiral ancestry preserves unrelated positions, exact hit targets and all 255 divisions',()=>{
+ const s=started();assert.ok(Evolution.setMorphology(s,'spiral'));
+ while(s.phase==='cells'){
+  const before=Evolution.cellPositions(s),p=before.filter(c=>c.active).at(-1);
+  assert.ok(p);assert.equal(Evolution.cellAt(s,p.x,p.y).id,p.id);
+  assert.ok(Evolution.divide(s,p.x,p.y));
+  const after=Evolution.cellPositions(s),byId=new Map(after.map(c=>[c.id,c]));
+  for(const c of before)if(c.id!==p.id)assert.deepEqual([byId.get(c.id).x,byId.get(c.id).y,byId.get(c.id).r],[c.x,c.y,c.r]);
+ }
+ assert.equal(s.divisions,255);assert.equal(s.phase,'emergence');
+ const pos=Evolution.cellPositions(s),geometry=Evolution.cellGeometry(s);
+ for(let i=0;i<pos.length;i++){
+  const p=pos[i];assert.ok(p.arc>0&&p.arc<1);assert.equal(Evolution.cellAt(s,p.x,p.y).id,p.id);
+  if(i>0)assert.ok(p.arc>pos[i-1].arc);
+  for(const v of geometry[i].points)assert.ok(Number.isFinite(v.x)&&Number.isFinite(v.y));
+ }
+ assert.deepEqual(Evolution.cellPositions(JSON.parse(JSON.stringify(s))),pos);
+});
+test('morphology switching invalidates shape cache but leaves progress and score intact',()=>{
+ const s=started();while(s.cells.length<32)Evolution.divideNext(s);
+ const old=Evolution.cellGeometry(s),score=s.score,divisions=s.divisions;
+ assert.ok(Evolution.setMorphology(s,'spiral'));const next=Evolution.cellGeometry(s);
+ assert.notDeepEqual(next.map(c=>[c.x,c.y]),old.map(c=>[c.x,c.y]));
+ assert.equal(s.score,score);assert.equal(s.divisions,divisions);
+ assert.ok(Evolution.setMorphology(s,'colony'));assert.deepEqual(Evolution.cellGeometry(s),old);
 });

@@ -92,9 +92,33 @@ function start(s){
 }
 // The ordered leaves of a binary division tree encode their ancestry by generation.
  // Reconstruct fixed local regions from legacy saves without adding persisted coordinates.
+// Arc-length parametrized spiral, fixed binary intervals encode ancestry.
+ // The first two cells retain a recognizable simple division; subsequent daughters
+ // occupy sub-arcs of the parent interval. No extra persisted lineage is required.
+function morphology(s){return s.morphology==='spiral'?'spiral':'colony';}
+function setMorphology(s,value){
+ if(s.phase!=='cells'&&s.phase!=='intro')return false;
+ if(value!=='spiral'&&value!=='colony')return false;
+ s.morphology=value;return true;
+}
+const SPIRAL_TURNS=2.4;
+const spiralSamples=[{x:.5,y:.5,d:0}];
+for(let i=1;i<=512;i++){
+ const t=i/512,a=-Math.PI/2+t*SPIRAL_TURNS*2*Math.PI,r=.46*t;
+ const x=.5+r*Math.cos(a),y=.5+r*Math.sin(a),prev=spiralSamples[i-1];
+ spiralSamples.push({x,y,d:prev.d+Math.hypot(x-prev.x,y-prev.y)});
+}
+const SPIRAL_LENGTH=spiralSamples.at(-1).d;
+function spiralPoint(t){
+ const target=Math.max(0,Math.min(1,t))*SPIRAL_LENGTH;
+ let lo=0,hi=spiralSamples.length-1;
+ while(hi-lo>1){const mid=(lo+hi)>>1;if(spiralSamples[mid].d<target)lo=mid;else hi=mid;}
+ const a=spiralSamples[lo],b=spiralSamples[hi],k=(target-a.d)/(b.d-a.d);
+ return {x:a.x+(b.x-a.x)*k,y:a.y+(b.y-a.y)*k};
+}
 function cellPositions(s){
- const out=[];let index=0;
- function visit(depth,left,top,width,height){
+ const out=[];let index=0;const spiral=morphology(s)==='spiral';
+ function visit(depth,left,top,width,height,lo,hi){
   const c=s.cells[index];if(!c)return;
   if(c.generation===depth){
    const x=left+width/2,y=top+height/2,u=2*x-1,v=2*y-1;
@@ -102,19 +126,22 @@ function cellPositions(s){
    const cx=.5+.5*u*Math.sqrt(1-.24*v*v);
    const cy=.5+.5*v*Math.sqrt(1-.24*u*u);
    const r=Math.min(width,height)*(depth<2?.38:.30);
-   out.push({id:c.id,x:cx,y:cy,r,generation:c.generation,active:c.generation===s.wave});
+   const mid=(lo+hi)/2,point=spiral&&depth>=2?spiralPoint(mid):{x:cx,y:cy};
+   const radius=spiral&&depth>=2?Math.min(.15,SPIRAL_LENGTH*(hi-lo)*.29):r;
+   out.push({id:c.id,x:point.x,y:point.y,r:radius,generation:c.generation,active:c.generation===s.wave,...(spiral?{arc:mid}: {})});
    index++;return;
   }
   if(depth>=8||!Number.isInteger(c.generation)||c.generation<depth)return;
+  const mid=(lo+hi)/2;
   if(depth%2===0){
-   visit(depth+1,left,top,width/2,height);
-   visit(depth+1,left+width/2,top,width/2,height);
+   visit(depth+1,left,top,width/2,height,lo,mid);
+   visit(depth+1,left+width/2,top,width/2,height,mid,hi);
   }else{
-   visit(depth+1,left,top,width,height/2);
-   visit(depth+1,left,top+height/2,width,height/2);
+   visit(depth+1,left,top,width,height/2,lo,mid);
+   visit(depth+1,left,top+height/2,width,height/2,mid,hi);
   }
  }
- visit(0,0,0,1,1);
+ visit(0,0,0,1,1,0,1);
  // Defensive fallback for malformed/non-tree legacy data; never recurse indefinitely.
  if(out.length!==s.cells.length){
   const n=s.cells.length,cols=Math.ceil(Math.sqrt(n)),rows=Math.ceil(n/cols);
@@ -150,7 +177,7 @@ function tissueSummary(s){
 const shapeCache=new WeakMap();
 function cellGeometry(s){
  const saved=shapeCache.get(s.cells);
- if(saved&&saved.length===s.cells.length&&saved.wave===s.wave)return saved.geometry;
+ if(saved&&saved.length===s.cells.length&&saved.wave===s.wave&&saved.morphology===morphology(s))return saved.geometry;
  const geometry=cellPositions(s).map(c=>({...c,type:cellType(c),planes:[],points:[],maxR:0}));
  for(let i=0;i<geometry.length;i++)for(let j=i+1;j<geometry.length;j++){
   const a=geometry[i],b=geometry[j],dx=b.x-a.x,dy=b.y-a.y,d=Math.hypot(dx,dy);
@@ -174,7 +201,7 @@ function cellGeometry(s){
    r=Math.max(0,r);c.points.push({x:ux*r,y:uy*r});c.maxR=Math.max(c.maxR,r);
   }
  }
- shapeCache.set(s.cells,{length:s.cells.length,wave:s.wave,geometry});
+ shapeCache.set(s.cells,{length:s.cells.length,wave:s.wave,morphology:morphology(s),geometry});
  return geometry;
 }
 function insideCell(c,dx,dy,margin=1){
@@ -423,7 +450,7 @@ function step(s,rawDt){
  return s.events;
 }
 const api={CELL_GOAL,RUN_GOAL,SPACE_GOAL,create,start,cellPositions,divide,
- cellAt,cellGeometry,CELL_TYPES,cellType,tissueSummary,questAvailable,questStatus,questAction,signalLinks,QUEST_ORDER,QUEST_RECEPTORS,QUEST_BONUS,divideNext,steer,jump,ability,step,scoreProgress,profile,SPECIALIZATIONS,specialization,chooseSpecialization};
+ cellAt,cellGeometry,morphology,setMorphology,spiralPoint,CELL_TYPES,cellType,tissueSummary,questAvailable,questStatus,questAction,signalLinks,QUEST_ORDER,QUEST_RECEPTORS,QUEST_BONUS,divideNext,steer,jump,ability,step,scoreProgress,profile,SPECIALIZATIONS,specialization,chooseSpecialization};
 if(typeof module!=='undefined'&&module.exports)module.exports=api;
 else root.StoryXEvolution=api;
 })(typeof globalThis!=='undefined'?globalThis:this);

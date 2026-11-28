@@ -15,6 +15,9 @@ const reducedMotion=window.matchMedia?.('(prefers-reduced-motion: reduce)');
 const KEY='yugatneo.evolution-x.state.v1',BEST='yugatneo.evolution-x.best.v1';
 const SOUND_KEY='yugatneo.evolution-x.sound.v1';
 const CYCLE_KEY='yugatneo.evolution-x.cycle-guide.v1';
+const MORPH_KEY='yugatneo.evolution-x.morphology.v1';
+let preferredMorphology='spiral';
+try{if(localStorage.getItem(MORPH_KEY)==='colony')preferredMorphology='colony';}catch(_){}
 let detailedCycle=false,tissueView=true;
 try{detailedCycle=localStorage.getItem(CYCLE_KEY)==='1';tissueView=localStorage.getItem('yugatneo.evolution-x.tissue-view.v1')!=='0';}catch(_){}
 const CYCLE=[
@@ -53,6 +56,18 @@ const TISSUE_PALETTES={
  sensory:['#b8dced','#689fbd','#426789','#293f5a','#b6e3fa'],
  relay:['#dfc3ee','#a183c1','#70598f','#403956','#e2c7ff']
 };
+function renderMorphology(){
+ const spiral=Core.morphology(state)==='spiral';
+ $('morphToggle').textContent=spiral?'Структура: спираль':'Структура: колония';
+ $('morphToggle').setAttribute('aria-pressed',String(spiral));
+ $('morphToggle').disabled=state.phase!=='cells';
+ $('morphStatus').textContent=spiral?'Клетки занимают участки спирали, дочерние наследуют их части.':'Клетки формируют компактную колонию.';
+}
+$('morphToggle').addEventListener('click',()=>{
+ if(!pausedFrom||!Core.setMorphology(state,Core.morphology(state)==='spiral'?'colony':'spiral'))return;
+ preferredMorphology=Core.morphology(state);try{localStorage.setItem(MORPH_KEY,preferredMorphology);}catch(_){}
+ divisionEffects=[];burstEffects=[];signalEffects=[];resetMicroscope();renderMorphology();renderTissue();save(true);updateHUD();
+});
 function renderTissue(){
  const counts=Core.tissueSummary(state),ready=state.cells.length>=16;
  $('tissueStatus').textContent=ready?'Функциональные группы · '+state.cells.length+' клеток':'Различия появляются с пятого поколения (16 клеток).';
@@ -116,6 +131,7 @@ function restore(){
   if((item.phase==='space'||item.phase==='landing')&&!item.space)return null;
   if((item.phase==='cells'||item.phase==='emergence')&&!item.cells.length)return null;
   if(!Number.isFinite(item.score)||item.score<0||!Number.isInteger(item.planet)||item.planet<0||item.planet>1000)return null;
+  if(item.morphology!=='colony'&&item.morphology!=='spiral')item.morphology=preferredMorphology;
   if(!Array.isArray(item.chronicle))item.chronicle=[];
   item.chronicle=item.chronicle.filter(x=>x&&Number.isInteger(x.planet)&&Array.isArray(x.medals)&&typeof x.name==='string').slice(-30);
   return item;
@@ -163,6 +179,7 @@ function save(force){
 function newGame(){
  divisionEffects=[];burstEffects=[];signalEffects=[];resetMicroscope();
  state=Core.create(Date.now()>>>0);
+ Core.setMorphology(state,preferredMorphology);
  Core.start(state);
  $('intro').hidden=true;$('paused').hidden=true;pausedFrom=null;
  message('ИСТОК · '+worldBrief(),2200);
@@ -179,7 +196,7 @@ function pause(){
  if(pausedFrom||state.phase==='intro'||!$('intro').hidden)return;
  pausedFrom=state.phase;
  $('paused').hidden=false;
- $('pauseWorld').textContent=world().name+' · '+worldBrief();renderJournal();renderSpecializations();renderCellQuest();renderTissue();
+ $('pauseWorld').textContent=world().name+' · '+worldBrief();renderJournal();renderSpecializations();renderCellQuest();renderTissue();renderMorphology();
  save(true);
 }
 const questLabels={growth:'Рост клетки',dna:'Копирование ДНК',mitosis:'Разделение хромосом',cytokinesis:'Разделение цитоплазмы'};
@@ -236,7 +253,7 @@ updateSound();
 // The core still commits exactly one split immediately. Animation is visual only.
 function performDivision(nx,ny){
  if(state.phase!=='cells')return false;
- const before=Core.cellPositions(state);
+ const before=Core.cellGeometry(state);
  const ok=nx===undefined?Core.divideNext(state):Core.divide(state,nx,ny);
  if(!ok)return false;
  if(!reducedMotion?.matches){
@@ -246,7 +263,7 @@ function performDivision(nx,ny){
   if(parent&&children.length===2){
    // Cancel an older effect if a daughter has already been divided again.
    divisionEffects=divisionEffects.filter(e=>e.ids.every(id=>ids.has(id))&&state.time-e.start<e.duration);
-   divisionEffects.push({parent,ids:children.map(c=>c.id),start:state.time,duration:detailedCycle?(after.length<=32?1.9:after.length<=64?1.05:.45):(after.length<=8?.88:after.length<=32?.58:.28)});
+   divisionEffects.push({parent,ids:children.map(c=>c.id),start:state.time,duration:detailedCycle?(after.length<=32?1.9:after.length<=64?1.05:.45):(after.length<=8?(Core.morphology(state)==='spiral'?1.12:.88):after.length<=32?.58:.28)});
    divisionEffects=divisionEffects.slice(-8);
    burstEffects.push({parent,start:state.time,id:parent.id,duration:after.length<=32?.95:.46});
    burstEffects=burstEffects.slice(-10);
@@ -523,9 +540,10 @@ function chromosome(x,y,r,a){
 }
 function drawDivision(e,children,b){
  const p=Math.max(0,Math.min(1,(state.time-e.start)/e.duration));
- const parent=e.parent,oldR=cellRadius(parent,b),r=cellRadius(children[0],b);
+ const parent=e.parent,oldR=Core.morphology(state)==='spiral'&&parent.maxR?parent.maxR*b.w:cellRadius(parent,b),r=cellRadius(children[0],b);
  const ax=b.x+children[0].x*b.w,ay=b.y+children[0].y*b.h,bx=b.x+children[1].x*b.w,by=b.y+children[1].y*b.h;
- const cx=lerp(b.x+parent.x*b.w,(ax+bx)/2,smooth(p)),cy=lerp(b.y+parent.y*b.h,(ay+by)/2,smooth(p));
+ const spiral=Core.morphology(state)==='spiral',shift=spiral?smooth(Math.max(0,(p-.35)/.65)):smooth(p);
+ const cx=lerp(b.x+parent.x*b.w,(ax+bx)/2,shift),cy=lerp(b.y+parent.y*b.h,(ay+by)/2,shift);
  const angle=Math.atan2(by-ay,bx-ax);
  const detailed=oldR>=18;
  // Target rings preserve spatial feedback while accepting another tap immediately.
@@ -534,7 +552,7 @@ function drawDivision(e,children,b){
  }
  const stage=cycleStage(p);
  if(p<.83){
-  const k=smooth(Math.min(1,p/.83)),rx=lerp(oldR,Math.max(2*r,Math.hypot(bx-ax,by-ay)*.5+r),k),ry=lerp(oldR*.92,r*.92,k);
+  const k=smooth(Math.min(1,p/.83)),extent=Math.max(2*r,Math.hypot(bx-ax,by-ay)*.5+r),rx=lerp(oldR,spiral?Math.min(extent,oldR*1.35):extent,k),ry=lerp(oldR*.92,r*.92,k);
   ctx.save();ctx.translate(cx,cy);ctx.rotate(angle);
   const grad=ctx.createRadialGradient(-rx*.2,-ry*.2,1,0,0,Math.max(rx,ry)*1.05);
   grad.addColorStop(0,'#b4e6c4');grad.addColorStop(.55,'#4cae9c');grad.addColorStop(1,'#17545d');
@@ -617,6 +635,15 @@ function drawSignals(b,byId){
   ctx.restore();
  }
 }
+function drawSpiralGuide(b){
+ if(Core.morphology(state)!=='spiral'||state.cells.length<4)return;
+ // A low-contrast continuous guide remains legible between generations.
+ ctx.save();ctx.globalAlpha=.22;ctx.strokeStyle='#8fcfc1';ctx.lineWidth=1.4;ctx.beginPath();
+ for(let i=0;i<=160;i++){
+  const p=Core.spiralPoint(i/160),x=b.x+p.x*b.w,y=b.y+p.y*b.h;
+  if(i===0)ctx.moveTo(x,y);else ctx.lineTo(x,y);
+ }ctx.stroke();ctx.restore();
+}
 function drawCells(){
  gradient(world().cell,'#04101b');
  drawStars(reducedMotion?.matches?0:2);
@@ -631,6 +658,7 @@ function drawCells(){
   const x=v.x+v.w*((i*37+11)%101)/101,y=v.y+v.h*((i*61+7)%103)/103;
   ctx.globalAlpha=.12+.05*(i%3);ellipse(x,y,1+(i%3)*.5,1+(i%2)*.4,'#b6d8ae');
  }ctx.globalAlpha=1;
+ drawSpiralGuide(b);
  const positions=Core.cellGeometry(state),n=positions.length,byId=new Map(positions.map(c=>[c.id,c]));
  divisionEffects=reducedMotion?.matches?[]:divisionEffects.filter(e=>state.time-e.start<e.duration&&e.ids.every(id=>byId.has(id)));
  const animated=new Set(divisionEffects.flatMap(e=>e.ids));
@@ -651,7 +679,7 @@ function drawCells(){
  hint.textContent=hint.hidden?'':CYCLE[phaseIndex].hint;
  drawSignals(b,byId);drawBursts(b);ctx.restore();
  ctx.textAlign='center';ctx.fillStyle='#bcffe3';ctx.font='bold 12px system-ui';
- ctx.fillText('ДЕЛЕНИЕ · '+state.divisions+' касаний',W/2,v.y-22);
+ ctx.fillText((Core.morphology(state)==='spiral'?'СПИРАЛЬ':'ДЕЛЕНИЕ')+' · '+state.divisions+' касаний',W/2,v.y-22);
  ctx.fillStyle='#b6e3d6';ctx.font='11px system-ui';
  ctx.fillText(panMode?'Перемещайте поле; «Делить» — возврат':stage||(n>=16&&tissueView?'Светлая мембрана · готовность к делению':'Касайтесь ярких клеток и их контуров'),W/2,v.y+v.h+26);
 }

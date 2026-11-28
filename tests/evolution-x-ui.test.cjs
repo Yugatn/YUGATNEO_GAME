@@ -32,6 +32,7 @@ function setup(saved,reduce=false){
  w.requestAnimationFrame=fn=>{callbacks.push(fn);return callbacks.length;};
  w.StoryXEvolution=Core;
  w.confirm=()=>true;
+ w.localStorage.setItem('yugatneo.evolution-x.morphology.v1','colony');
  if(saved)w.localStorage.setItem('yugatneo.evolution-x.state.v1',JSON.stringify(saved));
  w.eval(script);
  return {w,callbacks,labels};
@@ -278,4 +279,19 @@ test('functional group legend counts colony and preference can be switched off w
  element(w,'resume').click();element(w,'divideNext').click();
  assert.match(element(w,'mission').textContent,/КЛЕТКИ 65\/256/);
  assert.doesNotThrow(()=>cycleTick(callbacks,1030));w.close();
+});
+
+test('spiral can be enabled in pause and survives saved progress and microscope rendering',()=>{
+ const saved=Core.create(8);Core.start(saved);while(saved.cells.length<32)Core.divideNext(saved);
+ const {w,callbacks}=setup(saved);element(w,'start').click();element(w,'pause').click();
+ element(w,'morphToggle').click();assert.equal(element(w,'morphToggle').getAttribute('aria-pressed'),'true');
+ const stored=JSON.parse(w.localStorage.getItem('yugatneo.evolution-x.state.v1'));
+ assert.equal(stored.morphology,'spiral');assert.equal(stored.score,saved.score);
+ element(w,'resume').click();
+ const c=Core.cellPositions(stored).find(c=>c.active);
+ touch(w,15+c.x*360,220+c.y*360);
+ assert.match(element(w,'mission').textContent,/КЛЕТКИ 33\/256/);
+ element(w,'zoomIn').click();element(w,'zoomFocus').click();
+ assert.doesNotThrow(()=>cycleTick(callbacks,1000));element(w,'divideNext').click();
+ assert.match(element(w,'mission').textContent,/КЛЕТКИ 34\/256/);w.close();
 });
