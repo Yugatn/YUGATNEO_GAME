@@ -96,6 +96,17 @@ def run(browser, viewport, mobile):
             button(page, "Поменяться ролями" if j == 0 else "Завершить сценарий")
     expect(page.locator("#xp")).to_have_text("✦ 5200 XP")
     assert page.locator("#progress").evaluate("(el)=>el.value") == 82
+    mode(page, "learning")
+    button(page, "Продолжить по маршруту")
+    expect(page.locator("#modeLabel")).to_have_text("Привычки")
+    for i in range(4):
+        page.locator(".mission-tabs button").nth(i).click()
+        for j in range(2):
+            choices(page, page.evaluate("HABITS[habitIndex].rounds[habitRound].ok"))
+            button(page, "Следующий вопрос" if j == 0 else "Завершить сценарий")
+    expect(page.locator("#xp")).to_have_text("✦ 5600 XP")
+    mode(page, "learning")
+    expect(page.locator("#screen")).to_contain_text("Все направления освоены")
     mode(page, "settings")
     page.get_by_label("Крупный шрифт").check()
     page.get_by_label("Повышенный контраст").check()
@@ -105,9 +116,9 @@ def run(browser, viewport, mobile):
     backup = page.locator("#backup-text").input_value()
     button(page, "Проверить копию")
     button(page, "Подтвердить объединение")
-    expect(page.locator("#xp")).to_have_text("✦ 5200 XP")
+    expect(page.locator("#xp")).to_have_text("✦ 5600 XP")
     page.reload()
-    expect(page.locator("#xp")).to_have_text("✦ 5200 XP")
+    expect(page.locator("#xp")).to_have_text("✦ 5600 XP")
     assert page.locator("body").evaluate("(el)=>el.classList.contains('pref-large')")
     layout(page)
     # Fresh browser context: transfer through text import.
@@ -118,7 +129,7 @@ def run(browser, viewport, mobile):
     other.locator("#backup-text").fill(backup)
     button(other, "Проверить копию")
     button(other, "Подтвердить объединение")
-    expect(other.locator("#xp")).to_have_text("✦ 5200 XP")
+    expect(other.locator("#xp")).to_have_text("✦ 5600 XP")
     second.close()
     assert not errors, errors
     context.close()
