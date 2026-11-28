@@ -140,7 +140,8 @@ def run(browser, viewport, mobile):
     mode(page, "learning")
     button(page, "Продолжить по маршруту")
     expect(page.locator("#modeLabel")).to_have_text("Практикумы")
-    for i in range(4):
+    for i in range(8):
+        page.locator(".skill-picker > summary").click()
         page.locator(".mission-tabs button").nth(i).click()
         button(page, "Проверить план")
         expect(page.locator("#screen")).to_contain_text("План можно улучшить")
@@ -148,8 +149,16 @@ def run(browser, viewport, mobile):
             choices(page, index)
         button(page, "Проверить план")
         expect(page.locator("#screen")).to_contain_text("План составлен")
-    expect(page.locator("#xp")).to_have_text("✦ 6800 XP")
-    assert page.locator("#progress").evaluate("(el)=>el.value") == 98
+    expect(page.locator("#xp")).to_have_text("✦ 7200 XP")
+    assert page.locator("#progress").evaluate("(el)=>el.value") == 102
+    page.locator(".skill-picker > summary").click()
+    page.locator(".mission-tabs button").first.click()
+    choices(page, 1)
+    choices(page, 0)
+    page.get_by_role("button", name="Переместить ниже: Выполнить обязательное задание").click()
+    assert page.evaluate("skillOrder.join(',')") == "prep,work"
+    page.get_by_role("button", name="Убрать: Подготовить материалы").click()
+    assert page.evaluate("skillOrder.join(',')") == "work"
     mode(page, "learning")
     expect(page.locator("#screen")).to_contain_text("Все направления освоены")
     mode(page, "models")
@@ -168,9 +177,9 @@ def run(browser, viewport, mobile):
     backup = page.locator("#backup-text").input_value()
     button(page, "Проверить копию")
     button(page, "Подтвердить объединение")
-    expect(page.locator("#xp")).to_have_text("✦ 6800 XP")
+    expect(page.locator("#xp")).to_have_text("✦ 7200 XP")
     page.reload()
-    expect(page.locator("#xp")).to_have_text("✦ 6800 XP")
+    expect(page.locator("#xp")).to_have_text("✦ 7200 XP")
     assert page.locator("body").evaluate("(el)=>el.classList.contains('pref-large')")
     layout(page)
     # Fresh browser context: transfer through text import.
@@ -181,7 +190,7 @@ def run(browser, viewport, mobile):
     other.locator("#backup-text").fill(backup)
     button(other, "Проверить копию")
     button(other, "Подтвердить объединение")
-    expect(other.locator("#xp")).to_have_text("✦ 6800 XP")
+    expect(other.locator("#xp")).to_have_text("✦ 7200 XP")
     second.close()
     if browser.browser_type.name == "chromium":
         page.wait_for_function("navigator.serviceWorker.controller !== null", timeout=30000)
@@ -189,12 +198,12 @@ def run(browser, viewport, mobile):
         context.set_offline(True)
         try:
             page.reload(wait_until="domcontentloaded")
-            expect(page.locator("#xp")).to_have_text("✦ 6800 XP")
+            expect(page.locator("#xp")).to_have_text("✦ 7200 XP")
             mode(page, "thinking")
             expect(page.locator("#screen")).to_contain_text("Мастерская мышления")
             layout(page)
             page.goto(game + "index.html?offline=1", wait_until="domcontentloaded")
-            expect(page.locator("#xp")).to_have_text("✦ 6800 XP")
+            expect(page.locator("#xp")).to_have_text("✦ 7200 XP")
         finally:
             context.set_offline(False)
     assert not errors, errors
