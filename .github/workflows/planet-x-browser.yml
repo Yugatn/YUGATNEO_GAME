@@ -33,6 +33,7 @@ jobs:
           node ideas-x/tests/interface-smoke.cjs
           node ideas-x/tests/human-potential.cjs
           node ideas-x/tests/life-path.cjs
+          node ideas-x/tests/enterprises.cjs
       - name: Browser dependencies
         run: |
           python -m pip install playwright==1.51.0
