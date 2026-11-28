@@ -88,6 +88,14 @@ def run(browser, viewport, mobile):
             button(page, "Завершить диалог" if j == 2 else "Следующий шаг")
     expect(page.locator("#xp")).to_have_text("✦ 4800 XP")
     assert page.locator("#progress").evaluate("(el)=>el.value") == 78
+    mode(page, "perspectives")
+    for i in range(4):
+        page.locator(".mission-tabs button").nth(i).click()
+        for j in range(2):
+            choices(page, page.evaluate("PERSPECTIVES[perspectiveIndex].roles[perspectiveStep].accepted[" + str(j) + "]"))
+            button(page, "Поменяться ролями" if j == 0 else "Завершить сценарий")
+    expect(page.locator("#xp")).to_have_text("✦ 5200 XP")
+    assert page.locator("#progress").evaluate("(el)=>el.value") == 82
     mode(page, "settings")
     page.get_by_label("Крупный шрифт").check()
     page.get_by_label("Повышенный контраст").check()
@@ -97,9 +105,9 @@ def run(browser, viewport, mobile):
     backup = page.locator("#backup-text").input_value()
     button(page, "Проверить копию")
     button(page, "Подтвердить объединение")
-    expect(page.locator("#xp")).to_have_text("✦ 4800 XP")
+    expect(page.locator("#xp")).to_have_text("✦ 5200 XP")
     page.reload()
-    expect(page.locator("#xp")).to_have_text("✦ 4800 XP")
+    expect(page.locator("#xp")).to_have_text("✦ 5200 XP")
     assert page.locator("body").evaluate("(el)=>el.classList.contains('pref-large')")
     layout(page)
     # Fresh browser context: transfer through text import.
@@ -110,7 +118,7 @@ def run(browser, viewport, mobile):
     other.locator("#backup-text").fill(backup)
     button(other, "Проверить копию")
     button(other, "Подтвердить объединение")
-    expect(other.locator("#xp")).to_have_text("✦ 4800 XP")
+    expect(other.locator("#xp")).to_have_text("✦ 5200 XP")
     second.close()
     assert not errors, errors
     context.close()
