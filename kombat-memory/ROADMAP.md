@@ -1,5 +1,14 @@
 # Kombat Memory — дорожная карта
 
+## Версия 1.8
+- 1241 запись (+85): MK1 — отдельный каталог 21 Kameo с Fatality; MKX — 64 записи (25 Kitana, 6 Cassie Cage, 33 универсальных X-Ray).
+- Основные бойцы и помощники фильтруются отдельно; история Kameo сохраняется независимо. Вариации Kitana Royal Storm/Assassin/Mournful; универсальные команды доступны при любом фильтре.
+- Источники: https://www.mortalkombatwarehouse.com/mk12/fatalities/?platform=general , https://icemantraveler.github.io/mkksg/mk10/default.htm , https://www.mksecrets.net/index.php?contentID=47308&section=mkx&title=Mortal-Kombat-X-Kitana-Moves-and-Finishers-Guide . Для Jax/Goro Kameo источники расходятся в дистанции; предупреждение внесено в записи.
+- Перепроверен MK1 Fatal Blow: стандартный Flip Stance + Block = L2+R2 / LT+RT, подтверждён общим и платформенным справочниками. Условия здоровья и доступности Kameo уточнены. Не использовать противоречивую графическую подпись L1.
+- Липкие вкладки, адаптивная двухколоночная сетка, увеличенное удобство кнопок на узких экранах.
+- Синтаксис и 15 сценариев симулированного DOM пройдены. Реальные браузеры и консоли не проверены.
+- Далее: специальные вызовы Kameo, вариации остальных MKX, системный аудит MK9 и MK11, браузерные и мобильные проверки.
+
 ## Версия 1.7
 - 1156 записей (+66): MK11 — 45, MK1 (2023) — 21. Все 16 выпусков текущего каталога имеют локальные записи, но не все бойцы и типы команд заполнены.
 - Новые записи сверены по MKKomplete (https://icemantraveler.github.io/mkksg/mk11/default.htm) и Mortal Kombat Warehouse (https://www.mortalkombatwarehouse.com/mk12/moves/special/?platform=general). Для отдельных способностей указаны условия экипировки, стойки, положения и усиления.
