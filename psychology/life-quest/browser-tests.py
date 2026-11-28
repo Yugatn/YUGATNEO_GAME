@@ -37,6 +37,10 @@ def run(browser, viewport, mobile):
     page.goto(game)
     expect(page.locator("h1")).to_have_text("Тренажер Югатна")
     layout(page)
+    page.locator("#science-card summary").click()
+    expect(page.locator("#science-card")).to_contain_text("Авторская философская связь")
+    assert page.locator("#science-card a").count() >= 1
+    page.locator("#science-card summary").click()
     # First wrong answer, then correct, reload before coaching.
     first = page.evaluate("D[0][7]")
     choices(page, (first + 1) % 3)
@@ -52,6 +56,8 @@ def run(browser, viewport, mobile):
     # Complete remaining main quest through real click handlers.
     for stage in page.evaluate("ORDER.slice(1)"):
         page.locator("#map button").nth(page.evaluate(f"ORDER.indexOf({stage})")).click()
+        expect(page.locator("#science-card summary")).to_have_text("Научная карточка этапа")
+        assert not page.locator("#science-card").evaluate("(el)=>el.open")
         choices(page, page.evaluate("D[data.stage][7]"))
         button(page, "Как Вы думаете?")
         choices(page, page.evaluate("D[data.stage][14]"))
